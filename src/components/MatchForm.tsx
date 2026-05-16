@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { saveMatch } from "@/lib/firestore";
 import { calculateBasePoint, calculateUmaPoints } from "@/lib/scoring";
-import type { Player } from "@/lib/firestore";
+import type { Player, Table } from "@/lib/firestore";
 
 type Props = {
   tournamentId: string;
   players: Player[];
+  tables: Table[];
   matchCounts: Record<string, number>;
   maxRound: number;
 };
@@ -27,7 +28,7 @@ const calcLastScore = (slots: PlayerSlot[]): string => {
   return String((100000 - sum) / 100);
 };
 
-export default function MatchForm({ tournamentId, players, matchCounts, maxRound }: Props) {
+export default function MatchForm({ tournamentId, players, tables, matchCounts, maxRound }: Props) {
   const [roundNumber, setRoundNumber] = useState("");
   const [tableName, setTableName] = useState("");
   const [slots, setSlots] = useState<PlayerSlot[]>([EMPTY_SLOT, EMPTY_SLOT, EMPTY_SLOT, EMPTY_SLOT].map(s => ({ ...s })));
@@ -125,14 +126,17 @@ export default function MatchForm({ tournamentId, players, matchCounts, maxRound
         </div>
         <div className="flex flex-col gap-1 flex-1">
           <label className="text-sm font-medium" style={{ color: "var(--muted)" }}>卓名</label>
-          <input
-            type="text"
+          <select
             value={tableName}
             onChange={(e) => setTableName(e.target.value)}
-            placeholder="例: A卓"
             className="rounded-lg px-3 py-3 text-lg w-full"
-            style={inputStyle}
-          />
+            style={selectStyle}
+          >
+            <option value="">選択</option>
+            {tables.map((t) => (
+              <option key={t.id} value={t.name}>{t.name}</option>
+            ))}
+          </select>
         </div>
       </div>
 

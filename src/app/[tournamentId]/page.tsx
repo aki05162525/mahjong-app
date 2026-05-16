@@ -7,11 +7,13 @@ import {
   getTournament,
   subscribePlayers,
   subscribeMatches,
+  subscribeTables,
   buildRanking,
   type Tournament,
   type Player,
   type Match,
   type RankingEntry,
+  type Table,
 } from "@/lib/firestore";
 import MatchForm from "@/components/MatchForm";
 import MatchHistory from "@/components/MatchHistory";
@@ -23,6 +25,7 @@ export default function TournamentPage() {
   const { tournamentId } = useParams<{ tournamentId: string }>();
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
+  const [tables, setTables] = useState<Table[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [ranking, setRanking] = useState<RankingEntry[]>([]);
   const [notFound, setNotFound] = useState(false);
@@ -42,6 +45,11 @@ export default function TournamentPage() {
 
   useEffect(() => {
     const unsub = subscribePlayers(tournamentId, setPlayers);
+    return unsub;
+  }, [tournamentId]);
+
+  useEffect(() => {
+    const unsub = subscribeTables(tournamentId, setTables);
     return unsub;
   }, [tournamentId]);
 
@@ -203,11 +211,12 @@ export default function TournamentPage() {
         {tab === "input" && (
           players.length >= 4 ? (
             <MatchForm
-          tournamentId={tournamentId}
-          players={players}
-          matchCounts={Object.fromEntries(ranking.map((r) => [r.playerId, r.matchCount]))}
-          maxRound={matches.reduce((max, m) => Math.max(max, m.roundNumber), 0)}
-        />
+              tournamentId={tournamentId}
+              players={players}
+              tables={tables}
+              matchCounts={Object.fromEntries(ranking.map((r) => [r.playerId, r.matchCount]))}
+              maxRound={matches.reduce((max, m) => Math.max(max, m.roundNumber), 0)}
+            />
           ) : (
             <div className="flex flex-col gap-3 mt-4">
               <p style={{ color: "var(--muted)" }}>

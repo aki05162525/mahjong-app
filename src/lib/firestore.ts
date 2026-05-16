@@ -32,6 +32,12 @@ export type Player = {
   createdAt: Date;
 };
 
+export type Table = {
+  id: string;
+  name: string;
+  createdAt: Date;
+};
+
 export type Match = {
   id: string;
   roundNumber: number;
@@ -116,6 +122,39 @@ export function subscribePlayers(
 ): Unsubscribe {
   return onSnapshot(
     query(collection(db, "tournaments", tournamentId, "players"), orderBy("createdAt")),
+    (snap) => {
+      callback(
+        snap.docs.map((d) => {
+          const data = d.data();
+          return {
+            id: d.id,
+            name: data.name,
+            createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate() : new Date(),
+          };
+        })
+      );
+    }
+  );
+}
+
+// ========================================
+// Tables
+// ========================================
+
+export async function addTable(tournamentId: string, name: string): Promise<string> {
+  const ref = await addDoc(
+    collection(db, "tournaments", tournamentId, "tables"),
+    { name, createdAt: serverTimestamp() }
+  );
+  return ref.id;
+}
+
+export function subscribeTables(
+  tournamentId: string,
+  callback: (tables: Table[]) => void
+): Unsubscribe {
+  return onSnapshot(
+    query(collection(db, "tournaments", tournamentId, "tables"), orderBy("createdAt")),
     (snap) => {
       callback(
         snap.docs.map((d) => {
