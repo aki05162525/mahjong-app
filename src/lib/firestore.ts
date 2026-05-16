@@ -263,6 +263,7 @@ export function buildRanking(matches: Match[]): RankingEntry[] {
   }
 
   const round1 = (n: number) => Math.round(n * 10) / 10;
+  const round2 = (n: number) => Math.round(n * 100) / 100;
 
   const entries = Array.from(map.entries()).map(([playerId, v]) => ({
     playerId,
@@ -270,7 +271,7 @@ export function buildRanking(matches: Match[]): RankingEntry[] {
     totalPoint:     v.total,
     matchCount:     v.count,
     avgPoint:       v.count > 0 ? round1(v.total / v.count) : 0,
-    avgRank:        v.count > 0 ? round1(v.rankSum / v.count) : 0,
+    avgRank:        v.count > 0 ? round2(v.rankSum / v.count) : 0,
     avgScore:       v.count > 0 ? Math.round(v.scoreSum / v.count) : 0,
     topRate:        v.count > 0 ? Math.round((v.topCount / v.count) * 100) : 0,
     inTheMoneyRate: v.count > 0 ? Math.round((v.itmCount / v.count) * 100) : 0,
