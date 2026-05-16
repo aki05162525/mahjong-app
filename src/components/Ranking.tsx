@@ -26,6 +26,7 @@ export default function Ranking({ ranking }: Props) {
               <th className="py-2 pr-3 text-left">名前</th>
               <th className="py-2 pr-3 text-right">合計</th>
               <th className="py-2 pr-3 text-right">平均打点</th>
+              <th className="py-2 pr-3 text-right">最高打点</th>
               <th className="py-2 pr-3 text-right">平均着順</th>
               <th className="py-2 pr-3 text-right">トップ率</th>
               <th className="py-2 pr-3 text-right">連対率</th>
@@ -47,6 +48,9 @@ export default function Ranking({ ranking }: Props) {
                 </td>
                 <td className="py-3 pr-3 text-right font-mono" style={{ color: "var(--body)" }}>
                   {entry.avgScore.toLocaleString()}
+                </td>
+                <td className="py-3 pr-3 text-right font-mono" style={{ color: "var(--body)" }}>
+                  {entry.maxScore.toLocaleString()}
                 </td>
                 <td className="py-3 pr-3 text-right font-mono" style={{ color: "var(--body)" }}>{entry.avgRank.toFixed(2)}</td>
                 <td className="py-3 pr-3 text-right font-mono" style={{ color: "var(--body)" }}>{(entry.topRate / 100).toFixed(2)}</td>

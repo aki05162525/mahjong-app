@@ -54,6 +54,7 @@ export type RankingEntry = {
   avgPoint: number;
   avgRank: number;
   avgScore: number;
+  maxScore: number;
   topRate: number;
   inTheMoneyRate: number;
   lastAvoidRate: number;
@@ -231,6 +232,7 @@ export function buildRanking(matches: Match[]): RankingEntry[] {
     count: number;
     rankSum: number;
     scoreSum: number;
+    maxScore: number;
     topCount: number;
     itmCount: number;
     lastCount: number;
@@ -244,6 +246,7 @@ export function buildRanking(matches: Match[]): RankingEntry[] {
         existing.count     += 1;
         existing.rankSum   += result.rank;
         existing.scoreSum  += result.score;
+        existing.maxScore   = Math.max(existing.maxScore, result.score);
         existing.topCount  += result.rank === 1 ? 1 : 0;
         existing.itmCount  += result.rank <= 2 ? 1 : 0;
         existing.lastCount += result.rank === 4 ? 1 : 0;
@@ -254,6 +257,7 @@ export function buildRanking(matches: Match[]): RankingEntry[] {
           count:     1,
           rankSum:   result.rank,
           scoreSum:  result.score,
+          maxScore:  result.score,
           topCount:  result.rank === 1 ? 1 : 0,
           itmCount:  result.rank <= 2 ? 1 : 0,
           lastCount: result.rank === 4 ? 1 : 0,
@@ -273,6 +277,7 @@ export function buildRanking(matches: Match[]): RankingEntry[] {
     avgPoint:       v.count > 0 ? round1(v.total / v.count) : 0,
     avgRank:        v.count > 0 ? round2(v.rankSum / v.count) : 0,
     avgScore:       v.count > 0 ? Math.round(v.scoreSum / v.count) : 0,
+    maxScore:       v.maxScore,
     topRate:        v.count > 0 ? Math.round((v.topCount / v.count) * 100) : 0,
     inTheMoneyRate: v.count > 0 ? Math.round((v.itmCount / v.count) * 100) : 0,
     lastAvoidRate:  v.count > 0 ? Math.round(((v.count - v.lastCount) / v.count) * 100) : 0,
