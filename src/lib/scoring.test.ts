@@ -28,6 +28,14 @@ describe("calculateBasePoint", () => {
   it("9000点は -16pt", () => {
     expect(calculateBasePoint(9000)).toBe(-16);
   });
+
+  it("36100点は +11.1pt（百点単位の端数が小数第一位に出る）", () => {
+    expect(calculateBasePoint(36100)).toBe(11.1);
+  });
+
+  it("24900点は -0.1pt", () => {
+    expect(calculateBasePoint(24900)).toBe(-0.1);
+  });
 });
 
 // ========================================

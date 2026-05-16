@@ -17,7 +17,7 @@ export type MatchResult = {
 const UMA = [30, 10, -10, -30] as const;
 
 export function calculateBasePoint(score: number): number {
-  return Math.floor((score - 25000) / 1000);
+  return Math.round((score - 25000) / 100) / 10;
 }
 
 // scores配列の各要素に対応するウマ点を返す（同点按分あり）
