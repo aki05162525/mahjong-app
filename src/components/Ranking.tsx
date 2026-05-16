@@ -41,7 +41,7 @@ export default function Ranking({ ranking }: Props) {
                   {entry.rank}
                 </td>
                 <td className="py-3 pr-3 font-semibold text-base" style={{ color: "var(--ink)" }}>{entry.playerName}</td>
-                <td className="py-3 pr-3 text-right font-mono font-bold text-base" style={{
+                <td className={`py-3 pr-3 text-right font-mono text-base ${entry.totalPoint > 0 ? "font-bold" : ""}`} style={{
                   color: entry.totalPoint > 0 ? "var(--primary)" : entry.totalPoint < 0 ? "var(--error)" : "var(--body)"
                 }}>
                   {fmtPt(entry.totalPoint)}
