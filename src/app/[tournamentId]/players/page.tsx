@@ -25,10 +25,10 @@ export default function PlayersPage() {
   return (
     <main className="max-w-2xl mx-auto px-4 py-6 flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <Link href={`/${tournamentId}`} className="text-blue-600 text-sm">
+        <Link href={`/${tournamentId}`} className="text-sm" style={{ color: "var(--primary)" }}>
           ← 大会ページへ戻る
         </Link>
-        <h1 className="text-2xl font-bold">{tournamentName}</h1>
+        <h1 className="text-2xl font-bold" style={{ color: "var(--ink)" }}>{tournamentName}</h1>
       </div>
 
       <PlayerRegistration tournamentId={tournamentId} players={players} />

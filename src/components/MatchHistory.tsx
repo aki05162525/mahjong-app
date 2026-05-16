@@ -4,10 +4,7 @@ import { useState } from "react";
 import { deleteMatch } from "@/lib/firestore";
 import type { Match } from "@/lib/firestore";
 
-type Props = {
-  tournamentId: string;
-  matches: Match[];
-};
+type Props = { tournamentId: string; matches: Match[] };
 
 export default function MatchHistory({ tournamentId, matches }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -27,37 +24,37 @@ export default function MatchHistory({ tournamentId, matches }: Props) {
   if (matches.length === 0) {
     return (
       <div className="flex flex-col gap-4">
-        <h2 className="text-xl font-semibold">対局履歴</h2>
-        <p className="text-gray-500">まだ対局結果がありません</p>
+        <h2 className="text-xl font-semibold" style={{ color: "var(--body)" }}>対局履歴</h2>
+        <p style={{ color: "var(--muted)" }}>まだ対局結果がありません</p>
       </div>
     );
   }
 
-  const sorted = [...matches].sort((a, b) => {
-    if (a.roundNumber !== b.roundNumber) return a.roundNumber - b.roundNumber;
-    return a.tableName.localeCompare(b.tableName);
-  });
+  const sorted = [...matches].sort((a, b) =>
+    a.roundNumber !== b.roundNumber ? a.roundNumber - b.roundNumber : a.tableName.localeCompare(b.tableName)
+  );
 
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="text-xl font-semibold">対局履歴</h2>
+      <h2 className="text-xl font-semibold" style={{ color: "var(--body)" }}>対局履歴</h2>
       <div className="flex flex-col gap-4">
         {sorted.map((match) => {
           const sortedResults = [...match.results].sort((a, b) => a.rank - b.rank);
           return (
-            <div key={match.id} className="border rounded-xl p-4 flex flex-col gap-3">
+            <div key={match.id} className="rounded-xl p-4 flex flex-col gap-3" style={{ background: "var(--surface-card)", border: "1px solid var(--hairline)" }}>
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-lg">
+                <span className="font-semibold text-lg" style={{ color: "var(--ink)" }}>
                   第{match.roundNumber}回戦 {match.tableName}
                 </span>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm" style={{ color: "var(--muted)" }}>
                     {match.createdAt.toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                   </span>
                   <button
                     onClick={() => handleDelete(match.id)}
                     disabled={deletingId === match.id}
-                    className="text-red-500 border border-red-300 rounded-lg px-3 py-1 text-sm active:opacity-70 disabled:opacity-40"
+                    className="rounded-lg px-3 py-1 text-sm active:opacity-70 disabled:opacity-40"
+                    style={{ color: "var(--error)", border: "1px solid var(--error)" }}
                   >
                     削除
                   </button>
@@ -65,9 +62,9 @@ export default function MatchHistory({ tournamentId, matches }: Props) {
               </div>
               <table className="w-full text-base">
                 <thead>
-                  <tr className="border-b border-gray-200 text-left text-gray-600">
-                    <th className="pb-1 pr-2">順位</th>
-                    <th className="pb-1 pr-2">名前</th>
+                  <tr className="text-xs" style={{ borderBottom: "1px solid var(--hairline)", color: "var(--muted)" }}>
+                    <th className="pb-1 pr-2 text-left">順位</th>
+                    <th className="pb-1 pr-2 text-left">名前</th>
                     <th className="pb-1 pr-2 text-right">点数</th>
                     <th className="pb-1 pr-2 text-right">素点</th>
                     <th className="pb-1 pr-2 text-right">ウマ</th>
@@ -76,21 +73,19 @@ export default function MatchHistory({ tournamentId, matches }: Props) {
                 </thead>
                 <tbody>
                   {sortedResults.map((r) => (
-                    <tr key={r.playerId} className="border-b border-gray-100">
-                      <td className="py-2 pr-2">{r.rank}位</td>
-                      <td className="py-2 pr-2 font-medium">{r.playerName}</td>
-                      <td className="py-2 pr-2 text-right font-mono">{r.score.toLocaleString()}</td>
-                      <td className="py-2 pr-2 text-right font-mono text-gray-600">
+                    <tr key={r.playerId} style={{ borderBottom: "1px solid var(--hairline)" }}>
+                      <td className="py-2 pr-2" style={{ color: "var(--muted)" }}>{r.rank}位</td>
+                      <td className="py-2 pr-2 font-medium" style={{ color: "var(--ink)" }}>{r.playerName}</td>
+                      <td className="py-2 pr-2 text-right font-mono" style={{ color: "var(--body)" }}>{r.score.toLocaleString()}</td>
+                      <td className="py-2 pr-2 text-right font-mono" style={{ color: "var(--muted)" }}>
                         {r.basePoint > 0 ? `+${r.basePoint}` : r.basePoint}
                       </td>
-                      <td className="py-2 pr-2 text-right font-mono text-gray-600">
+                      <td className="py-2 pr-2 text-right font-mono" style={{ color: "var(--muted)" }}>
                         {r.umaPoint > 0 ? `+${r.umaPoint}` : r.umaPoint}
                       </td>
-                      <td
-                        className={`py-2 text-right font-mono font-semibold ${
-                          r.totalPoint > 0 ? "text-blue-700" : r.totalPoint < 0 ? "text-red-600" : ""
-                        }`}
-                      >
+                      <td className="py-2 text-right font-mono font-semibold" style={{
+                        color: r.totalPoint > 0 ? "var(--primary)" : r.totalPoint < 0 ? "var(--error)" : "var(--body)"
+                      }}>
                         {r.totalPoint > 0 ? `+${r.totalPoint}` : r.totalPoint}
                       </td>
                     </tr>

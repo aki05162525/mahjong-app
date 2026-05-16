@@ -84,8 +84,8 @@ export default function TournamentPage() {
   if (notFound) {
     return (
       <main className="flex flex-col items-center justify-center min-h-screen p-6 gap-6">
-        <p className="text-xl text-gray-600">大会が見つかりませんでした</p>
-        <Link href="/" className="text-blue-600 underline text-lg">
+        <p className="text-xl" style={{ color: "var(--body)" }}>大会が見つかりませんでした</p>
+        <Link href="/" className="underline text-lg" style={{ color: "var(--primary)" }}>
           トップへ戻る
         </Link>
       </main>
@@ -95,7 +95,7 @@ export default function TournamentPage() {
   if (!tournament) {
     return (
       <main className="flex flex-col items-center justify-center min-h-screen p-6">
-        <p className="text-gray-500 text-lg">読み込み中...</p>
+        <p className="text-lg" style={{ color: "var(--muted)" }}>読み込み中...</p>
       </main>
     );
   }
@@ -111,37 +111,40 @@ export default function TournamentPage() {
       {/* ヘッダー */}
       <div className="px-4 pt-4 pb-2 flex flex-col gap-1">
         <div className="flex items-center justify-between">
-          <Link href="/" className="text-blue-600 text-sm">← トップ</Link>
+          <Link href="/" className="text-sm" style={{ color: "var(--primary)" }}>← トップ</Link>
           <div className="flex gap-2">
             <button
               onClick={handleCopyUrl}
-              className="text-sm border rounded-lg px-3 py-1 text-blue-600 border-blue-300 active:opacity-70"
+              className="text-sm rounded-lg px-3 py-1 active:opacity-70"
+              style={{ color: "var(--primary)", border: "1px solid var(--primary)" }}
             >
               {copied ? "コピー済み！" : "URLをコピー"}
             </button>
             <Link
               href={`/${tournamentId}/players`}
-              className="text-sm border rounded-lg px-3 py-1 text-gray-600 border-gray-300 active:opacity-70"
+              className="text-sm rounded-lg px-3 py-1 active:opacity-70"
+              style={{ color: "var(--muted)", border: "1px solid var(--hairline)" }}
             >
               選手管理 ({players.length})
             </Link>
             <button
               onClick={() => { setShowDeleteModal(true); setDeleteError(""); setDeletePassword(""); }}
-              className="text-sm border rounded-lg px-3 py-1 text-red-500 border-red-300 active:opacity-70"
+              className="text-sm rounded-lg px-3 py-1 active:opacity-70"
+              style={{ color: "var(--error)", border: "1px solid var(--error)" }}
             >
               大会削除
             </button>
           </div>
         </div>
-        <h1 className="text-xl font-bold">{tournament.name}</h1>
+        <h1 className="text-xl font-bold" style={{ color: "var(--ink)" }}>{tournament.name}</h1>
       </div>
 
       {/* 削除モーダル */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-6">
-          <div className="bg-white rounded-xl p-6 w-full max-w-sm flex flex-col gap-4">
-            <h2 className="text-lg font-bold">大会を削除</h2>
-            <p className="text-gray-600 text-sm">
+          <div className="rounded-xl p-6 w-full max-w-sm flex flex-col gap-4" style={{ background: "var(--surface-card)", border: "1px solid var(--hairline)" }}>
+            <h2 className="text-lg font-bold" style={{ color: "var(--ink)" }}>大会を削除</h2>
+            <p className="text-sm" style={{ color: "var(--body)" }}>
               「{tournament.name}」を削除します。プレイヤー・対局履歴も全て消えます。
             </p>
             <input
@@ -150,21 +153,24 @@ export default function TournamentPage() {
               onChange={(e) => setDeletePassword(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleDelete()}
               placeholder="管理者パスワード"
-              className="border rounded-lg px-4 py-3 text-lg w-full"
+              className="rounded-lg px-4 py-3 text-lg w-full"
+              style={{ border: "1px solid var(--hairline)", background: "var(--canvas)" }}
               autoFocus
             />
-            {deleteError && <p className="text-red-600 text-sm">{deleteError}</p>}
+            {deleteError && <p className="text-sm" style={{ color: "var(--error)" }}>{deleteError}</p>}
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="flex-1 border rounded-lg py-3 text-base text-gray-600 active:opacity-70"
+                className="flex-1 rounded-lg py-3 text-base active:opacity-70"
+                style={{ color: "var(--muted)", border: "1px solid var(--hairline)" }}
               >
                 キャンセル
               </button>
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="flex-1 bg-red-600 text-white rounded-lg py-3 text-base font-semibold active:opacity-70 disabled:opacity-50"
+                className="flex-1 rounded-lg py-3 text-base font-semibold active:opacity-70 disabled:opacity-50"
+                style={{ background: "var(--error)", color: "#fff" }}
               >
                 {deleting ? "削除中..." : "削除する"}
               </button>
@@ -174,16 +180,16 @@ export default function TournamentPage() {
       )}
 
       {/* タブ */}
-      <div className="flex border-b sticky top-0 bg-white z-10">
+      <div className="flex sticky top-0 z-10" style={{ borderBottom: "1px solid var(--hairline)", background: "var(--canvas)" }}>
         {tabs.map(({ key, label }) => (
           <button
             key={key}
             onClick={() => setTab(key)}
-            className={`flex-1 py-3 text-base font-semibold border-b-2 transition-colors ${
-              tab === key
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-500"
-            }`}
+            className="flex-1 py-3 text-base font-semibold border-b-2 transition-colors"
+            style={{
+              borderBottomColor: tab === key ? "var(--primary)" : "transparent",
+              color: tab === key ? "var(--primary)" : "var(--muted)",
+            }}
           >
             {label}
           </button>
@@ -204,12 +210,13 @@ export default function TournamentPage() {
         />
           ) : (
             <div className="flex flex-col gap-3 mt-4">
-              <p className="text-gray-500">
+              <p style={{ color: "var(--muted)" }}>
                 4人以上の選手を登録すると入力できます（現在 {players.length} 人）
               </p>
               <Link
                 href={`/${tournamentId}/players`}
-                className="bg-green-600 text-white rounded-lg px-4 py-3 text-lg font-semibold text-center active:opacity-80"
+                className="rounded-lg px-4 py-3 text-lg font-semibold text-center active:opacity-80"
+                style={{ background: "var(--primary)", color: "#fff" }}
               >
                 選手を登録する
               </Link>
