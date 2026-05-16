@@ -35,8 +35,8 @@ export default function Ranking({ ranking }: Props) {
             </tr>
           </thead>
           <tbody>
-            {ranking.map((entry) => (
-              <tr key={entry.playerId} style={{ borderBottom: "1px solid var(--hairline)" }}>
+            {ranking.map((entry, idx) => (
+              <tr key={entry.playerId} style={{ background: idx % 2 === 0 ? "var(--surface-soft)" : "var(--canvas)" }}>
                 <td className="py-3 pr-2 text-center text-base" style={{ color: "var(--muted)" }}>
                   {entry.rank}
                 </td>
