@@ -115,12 +115,12 @@ export default function TournamentPage() {
   ];
 
   return (
-    <div className="max-w-2xl mx-auto flex flex-col min-h-screen">
+    <div className="max-w-2xl mx-auto flex flex-col min-h-screen overflow-x-hidden">
       {/* ヘッダー */}
       <div className="px-4 pt-4 pb-2 flex flex-col gap-1">
-        <div className="flex items-center justify-between">
-          <Link href="/" className="text-sm" style={{ color: "var(--primary)" }}>← トップ</Link>
-          <div className="flex gap-2">
+        <div className="flex items-start justify-between gap-2">
+          <Link href="/" className="text-sm shrink-0 pt-1" style={{ color: "var(--primary)" }}>← トップ</Link>
+          <div className="flex flex-wrap gap-2 justify-end">
             <button
               onClick={handleCopyUrl}
               className="text-sm rounded-lg px-3 py-1 active:opacity-70"
