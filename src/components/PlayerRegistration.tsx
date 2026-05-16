@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { addPlayer } from "@/lib/firestore";
+import { addPlayer, renamePlayer } from "@/lib/firestore";
 import type { Player } from "@/lib/firestore";
 
 type Props = {
@@ -13,6 +13,9 @@ export default function PlayerRegistration({ tournamentId, players }: Props) {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
+  const [renaming, setRenaming] = useState(false);
 
   const handleAdd = async () => {
     const trimmed = name.trim();
@@ -27,6 +30,30 @@ export default function PlayerRegistration({ tournamentId, players }: Props) {
       setError("登録に失敗しました");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const startEdit = (player: Player) => {
+    setEditingId(player.id);
+    setEditingName(player.name);
+    setError("");
+  };
+
+  const handleRename = async () => {
+    const trimmed = editingName.trim();
+    if (!trimmed) { setError("名前を入力してください"); return; }
+    if (players.some((p) => p.name === trimmed && p.id !== editingId)) {
+      setError("同じ名前のプレイヤーが既に存在します"); return;
+    }
+    setRenaming(true);
+    setError("");
+    try {
+      await renamePlayer(tournamentId, editingId!, trimmed);
+      setEditingId(null);
+    } catch {
+      setError("変更に失敗しました");
+    } finally {
+      setRenaming(false);
     }
   };
 
@@ -53,12 +80,48 @@ export default function PlayerRegistration({ tournamentId, players }: Props) {
         </button>
       </div>
       {error && <p style={{ color: "var(--error)" }}>{error}</p>}
-      <ul className="flex flex-wrap gap-2">
-        {players.map((p) => (
-          <li key={p.id} className="rounded-full px-4 py-2 text-base" style={{ background: "var(--surface-strong)", color: "var(--body)" }}>
-            {p.name}
-          </li>
-        ))}
+      <ul className="flex flex-col gap-2">
+        {players.map((p) =>
+          editingId === p.id ? (
+            <li key={p.id} className="flex gap-2 items-center">
+              <input
+                type="text"
+                value={editingName}
+                onChange={(e) => setEditingName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleRename()}
+                autoFocus
+                className="rounded-lg px-3 py-2 text-base flex-1"
+                style={{ border: "1px solid var(--primary)", background: "var(--canvas)" }}
+              />
+              <button
+                onClick={handleRename}
+                disabled={renaming}
+                className="rounded-lg px-3 py-2 text-sm font-semibold active:opacity-80 disabled:opacity-50"
+                style={{ background: "var(--primary)", color: "#fff" }}
+              >
+                {renaming ? "保存中..." : "保存"}
+              </button>
+              <button
+                onClick={() => setEditingId(null)}
+                className="rounded-lg px-3 py-2 text-sm active:opacity-70"
+                style={{ color: "var(--muted)", border: "1px solid var(--hairline)" }}
+              >
+                キャンセル
+              </button>
+            </li>
+          ) : (
+            <li key={p.id} className="flex items-center justify-between rounded-full px-4 py-2 text-base" style={{ background: "var(--surface-strong)", color: "var(--body)" }}>
+              <span>{p.name}</span>
+              <button
+                onClick={() => startEdit(p)}
+                className="text-xs active:opacity-70 ml-2"
+                style={{ color: "var(--muted)" }}
+              >
+                編集
+              </button>
+            </li>
+          )
+        )}
       </ul>
     </div>
   );

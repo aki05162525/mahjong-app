@@ -10,6 +10,7 @@ import {
   serverTimestamp,
   query,
   orderBy,
+  writeBatch,
   Timestamp,
   type Unsubscribe,
 } from "firebase/firestore";
@@ -138,6 +139,23 @@ export function subscribePlayers(
   );
 }
 
+export async function renamePlayer(tournamentId: string, playerId: string, newName: string): Promise<void> {
+  const matchesSnap = await getDocs(
+    query(collection(db, "tournaments", tournamentId, "matches"), orderBy("createdAt"))
+  );
+  const batch = writeBatch(db);
+  batch.update(doc(db, "tournaments", tournamentId, "players", playerId), { name: newName });
+  for (const matchDoc of matchesSnap.docs) {
+    const results = matchDoc.data().results as MatchResult[];
+    if (results.some((r) => r.playerId === playerId)) {
+      batch.update(matchDoc.ref, {
+        results: results.map((r) => r.playerId === playerId ? { ...r, playerName: newName } : r),
+      });
+    }
+  }
+  await batch.commit();
+}
+
 // ========================================
 // Tables
 // ========================================
@@ -169,6 +187,22 @@ export function subscribeTables(
       );
     }
   );
+}
+
+export async function renameTable(tournamentId: string, tableId: string, newName: string): Promise<void> {
+  const tableSnap = await getDoc(doc(db, "tournaments", tournamentId, "tables", tableId));
+  const oldName = tableSnap.data()?.name as string;
+  const matchesSnap = await getDocs(
+    query(collection(db, "tournaments", tournamentId, "matches"), orderBy("createdAt"))
+  );
+  const batch = writeBatch(db);
+  batch.update(doc(db, "tournaments", tournamentId, "tables", tableId), { name: newName });
+  for (const matchDoc of matchesSnap.docs) {
+    if (matchDoc.data().tableName === oldName) {
+      batch.update(matchDoc.ref, { tableName: newName });
+    }
+  }
+  await batch.commit();
 }
 
 // ========================================
