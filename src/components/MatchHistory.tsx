@@ -31,9 +31,7 @@ export default function MatchHistory({ tournamentId, matches }: Props) {
     );
   }
 
-  const sorted = [...matches].sort((a, b) =>
-    a.roundNumber !== b.roundNumber ? a.roundNumber - b.roundNumber : a.tableName.localeCompare(b.tableName)
-  );
+  const sorted = [...matches].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
   return (
     <div className="flex flex-col gap-4">
