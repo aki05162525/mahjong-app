@@ -4,7 +4,10 @@ import type { RankingEntry } from "@/lib/firestore";
 
 type Props = { ranking: RankingEntry[] };
 
-const pt = (n: number) => (n > 0 ? `+${n}` : `${n}`);
+const fmtPt = (n: number) => {
+  const v = Math.round(n * 10) / 10;
+  return (v > 0 ? "+" : "") + v;
+};
 
 export default function Ranking({ ranking }: Props) {
   if (ranking.length === 0) {
@@ -44,7 +47,7 @@ export default function Ranking({ ranking }: Props) {
                 <td className="py-3 pr-3 text-right font-mono font-bold text-base" style={{
                   color: entry.totalPoint > 0 ? "var(--primary)" : entry.totalPoint < 0 ? "var(--error)" : "var(--body)"
                 }}>
-                  {pt(entry.totalPoint)}
+                  {fmtPt(entry.totalPoint)}
                 </td>
                 <td className="py-3 pr-3 text-right font-mono" style={{ color: "var(--body)" }}>
                   {entry.avgScore.toLocaleString()}

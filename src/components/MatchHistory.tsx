@@ -6,6 +6,11 @@ import type { Match } from "@/lib/firestore";
 
 type Props = { tournamentId: string; matches: Match[] };
 
+const fmtPt = (n: number) => {
+  const v = Math.round(n * 10) / 10;
+  return (v > 0 ? "+" : "") + v;
+};
+
 export default function MatchHistory({ tournamentId, matches }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -78,15 +83,15 @@ export default function MatchHistory({ tournamentId, matches }: Props) {
                       <td className="py-2 pr-2 font-medium" style={{ color: "var(--ink)" }}>{r.playerName}</td>
                       <td className="py-2 pr-2 text-right font-mono" style={{ color: "var(--body)" }}>{r.score.toLocaleString()}</td>
                       <td className="py-2 pr-2 text-right font-mono" style={{ color: "var(--muted)" }}>
-                        {r.basePoint > 0 ? `+${r.basePoint}` : r.basePoint}
+                        {fmtPt(r.basePoint)}
                       </td>
                       <td className="py-2 pr-2 text-right font-mono" style={{ color: "var(--muted)" }}>
-                        {r.umaPoint > 0 ? `+${r.umaPoint}` : r.umaPoint}
+                        {fmtPt(r.umaPoint)}
                       </td>
                       <td className="py-2 text-right font-mono font-semibold" style={{
                         color: r.totalPoint > 0 ? "var(--primary)" : r.totalPoint < 0 ? "var(--error)" : "var(--body)"
                       }}>
-                        {r.totalPoint > 0 ? `+${r.totalPoint}` : r.totalPoint}
+                        {fmtPt(r.totalPoint)}
                       </td>
                     </tr>
                   ))}

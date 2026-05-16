@@ -179,7 +179,7 @@ export default function MatchForm({ tournamentId, players, tables, matchCounts, 
                   : "transparent",
               }}>
                 {previewPoints
-                  ? previewPoints[i] > 0 ? `+${previewPoints[i]}` : `${previewPoints[i]}`
+                  ? (() => { const v = Math.round(previewPoints[i] * 10) / 10; return (v > 0 ? "+" : "") + v; })()
                   : "0"}
               </span>
             </div>
