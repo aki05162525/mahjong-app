@@ -1,20 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import {
-  getTournament,
-  subscribePlayers,
-  subscribeMatches,
-  subscribeTables,
-  buildRanking,
-  type Tournament,
-  type Player,
-  type Match,
-  type RankingEntry,
-  type Table,
-} from "@/lib/firestore";
+import { useTournament } from "@/hooks/useTournament";
+import { usePlayers } from "@/hooks/usePlayers";
+import { useTables } from "@/hooks/useTables";
+import { useMatches } from "@/hooks/useMatches";
 import MatchForm from "@/components/MatchForm";
 import MatchHistory from "@/components/MatchHistory";
 import Ranking from "@/components/Ranking";
@@ -23,43 +15,17 @@ type Tab = "ranking" | "input" | "history";
 
 export default function TournamentPage() {
   const { tournamentId } = useParams<{ tournamentId: string }>();
-  const [tournament, setTournament] = useState<Tournament | null>(null);
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [tables, setTables] = useState<Table[]>([]);
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [ranking, setRanking] = useState<RankingEntry[]>([]);
-  const [notFound, setNotFound] = useState(false);
+  const { tournament, notFound } = useTournament(tournamentId);
+  const players = usePlayers(tournamentId);
+  const tables = useTables(tournamentId);
+  const { matches, ranking } = useMatches(tournamentId);
+
   const [tab, setTab] = useState<Tab>("input");
   const [copied, setCopied] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
-
-  useEffect(() => {
-    getTournament(tournamentId).then((t) => {
-      if (!t) setNotFound(true);
-      else setTournament(t);
-    });
-  }, [tournamentId]);
-
-  useEffect(() => {
-    const unsub = subscribePlayers(tournamentId, setPlayers);
-    return unsub;
-  }, [tournamentId]);
-
-  useEffect(() => {
-    const unsub = subscribeTables(tournamentId, setTables);
-    return unsub;
-  }, [tournamentId]);
-
-  useEffect(() => {
-    const unsub = subscribeMatches(tournamentId, (m) => {
-      setMatches(m);
-      setRanking(buildRanking(m));
-    });
-    return unsub;
-  }, [tournamentId]);
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -113,6 +79,9 @@ export default function TournamentPage() {
     { key: "ranking", label: "ランキング" },
     { key: "history", label: "履歴" },
   ];
+
+  const matchCounts = Object.fromEntries(ranking.map((r) => [r.playerId, r.matchCount]));
+  const maxRound = matches.reduce((max, m) => Math.max(max, m.roundNumber), 0);
 
   return (
     <div className="max-w-2xl mx-auto flex flex-col min-h-screen overflow-x-hidden">
@@ -214,8 +183,8 @@ export default function TournamentPage() {
               tournamentId={tournamentId}
               players={players}
               tables={tables}
-              matchCounts={Object.fromEntries(ranking.map((r) => [r.playerId, r.matchCount]))}
-              maxRound={matches.reduce((max, m) => Math.max(max, m.roundNumber), 0)}
+              matchCounts={matchCounts}
+              maxRound={maxRound}
             />
           ) : (
             <div className="flex flex-col gap-3 mt-4">

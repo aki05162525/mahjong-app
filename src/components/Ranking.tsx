@@ -1,13 +1,9 @@
 "use client";
 
 import type { RankingEntry } from "@/lib/firestore";
+import { fmtPt } from "@/lib/utils";
 
 type Props = { ranking: RankingEntry[] };
-
-const fmtPt = (n: number) => {
-  const v = Math.round(n * 10) / 10;
-  return (v > 0 ? "+" : "") + v;
-};
 
 export default function Ranking({ ranking }: Props) {
   if (ranking.length === 0) {

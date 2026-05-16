@@ -3,13 +3,9 @@
 import { useState } from "react";
 import { deleteMatch } from "@/lib/firestore";
 import type { Match } from "@/lib/firestore";
+import { fmtPt } from "@/lib/utils";
 
 type Props = { tournamentId: string; matches: Match[] };
-
-const fmtPt = (n: number) => {
-  const v = Math.round(n * 10) / 10;
-  return (v > 0 ? "+" : "") + v;
-};
 
 export default function MatchHistory({ tournamentId, matches }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null);

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { saveMatch } from "@/lib/firestore";
 import { calculateBasePoint, calculateUmaPoints } from "@/lib/scoring";
+import { fmtPt } from "@/lib/utils";
 import type { Player, Table } from "@/lib/firestore";
 
 type Props = {
@@ -28,15 +29,17 @@ const calcLastScore = (slots: PlayerSlot[]): string => {
   return String((100000 - sum) / 100);
 };
 
+const newSlots = () => [EMPTY_SLOT, EMPTY_SLOT, EMPTY_SLOT, EMPTY_SLOT].map((s) => ({ ...s }));
+
 export default function MatchForm({ tournamentId, players, tables, matchCounts, maxRound }: Props) {
   const [roundNumber, setRoundNumber] = useState("");
   const [tableName, setTableName] = useState("");
-  const [slots, setSlots] = useState<PlayerSlot[]>([EMPTY_SLOT, EMPTY_SLOT, EMPTY_SLOT, EMPTY_SLOT].map(s => ({ ...s })));
+  const [slots, setSlots] = useState<PlayerSlot[]>(newSlots);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const updateSlot = (index: number, field: keyof PlayerSlot, value: string) => {
+  const updateSlot = useCallback((index: number, field: keyof PlayerSlot, value: string) => {
     setSlots((prev) => {
       const next = prev.map((s, i) => (i === index ? { ...s, [field]: value } : s));
       if (field === "score" && index < 3) {
@@ -45,7 +48,19 @@ export default function MatchForm({ tournamentId, players, tables, matchCounts, 
       }
       return next;
     });
-  };
+  }, []);
+
+  const selectedIds = useMemo(() => slots.map((s) => s.playerId).filter(Boolean), [slots]);
+  const autoLastScore = useMemo(() => calcLastScore(slots), [slots]);
+
+  const previewPoints = useMemo<number[] | null>(() => {
+    const allValid = slots.every((s) => s.score !== "" && !isNaN(Number(s.score)));
+    if (!allValid) return null;
+    const scores = slots.map((s) => toActualScore(s.score));
+    if (scores.reduce((sum, s) => sum + s, 0) !== 100000) return null;
+    const uma = calculateUmaPoints(scores);
+    return scores.map((score, i) => calculateBasePoint(score) + uma[i]);
+  }, [slots]);
 
   const validate = (): string | null => {
     if (!roundNumber.trim()) return "回戦番号を入力してください";
@@ -76,7 +91,7 @@ export default function MatchForm({ tournamentId, players, tables, matchCounts, 
         return { playerId: s.playerId, playerName: player.name, score: toActualScore(s.score) };
       });
       await saveMatch(tournamentId, Number(roundNumber), tableName.trim(), inputs);
-      setSlots([EMPTY_SLOT, EMPTY_SLOT, EMPTY_SLOT, EMPTY_SLOT].map(s => ({ ...s })));
+      setSlots(newSlots());
       setRoundNumber("");
       setTableName("");
       setSuccess(true);
@@ -87,20 +102,6 @@ export default function MatchForm({ tournamentId, players, tables, matchCounts, 
       setSaving(false);
     }
   };
-
-  const selectedIds = slots.map((s) => s.playerId).filter(Boolean);
-  const autoLastScore = calcLastScore(slots);
-
-  const allScoresValid = slots.every((s) => s.score !== "" && !isNaN(Number(s.score)));
-  const scoresTotal = allScoresValid ? slots.reduce((sum, s) => sum + toActualScore(s.score), 0) : 0;
-  const previewPoints: number[] | null =
-    allScoresValid && scoresTotal === 100000
-      ? (() => {
-          const scores = slots.map((s) => toActualScore(s.score));
-          const uma = calculateUmaPoints(scores);
-          return scores.map((score, i) => calculateBasePoint(score) + uma[i]);
-        })()
-      : null;
 
   const inputStyle = { border: "1px solid var(--hairline)", background: "var(--canvas)" };
   const selectStyle = { border: "1px solid var(--hairline)", background: "var(--canvas)" };
@@ -178,9 +179,7 @@ export default function MatchForm({ tournamentId, players, tables, matchCounts, 
                   ? previewPoints[i] > 0 ? "var(--primary)" : previewPoints[i] < 0 ? "var(--error)" : "var(--muted)"
                   : "transparent",
               }}>
-                {previewPoints
-                  ? (() => { const v = Math.round(previewPoints[i] * 10) / 10; return (v > 0 ? "+" : "") + v; })()
-                  : "0"}
+                {previewPoints ? fmtPt(previewPoints[i]) : "0"}
               </span>
             </div>
           </div>
