@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { saveMatch } from "@/lib/firestore";
+import { calculateBasePoint, calculateUmaPoints } from "@/lib/scoring";
 import type { Player } from "@/lib/firestore";
 
 type Props = {
@@ -89,6 +90,17 @@ export default function MatchForm({ tournamentId, players, matchCounts, maxRound
   const selectedIds = slots.map((s) => s.playerId).filter(Boolean);
   const autoLastScore = calcLastScore(slots);
 
+  const allScoresValid = slots.every((s) => s.score !== "" && !isNaN(Number(s.score)));
+  const scoresTotal = allScoresValid ? slots.reduce((sum, s) => sum + toActualScore(s.score), 0) : 0;
+  const previewPoints: number[] | null =
+    allScoresValid && scoresTotal === 100000
+      ? (() => {
+          const scores = slots.map((s) => toActualScore(s.score));
+          const uma = calculateUmaPoints(scores);
+          return scores.map((score, i) => calculateBasePoint(score) + uma[i]);
+        })()
+      : null;
+
   const inputStyle = { border: "1px solid var(--hairline)", background: "var(--canvas)" };
   const selectStyle = { border: "1px solid var(--hairline)", background: "var(--canvas)" };
 
@@ -157,6 +169,15 @@ export default function MatchForm({ tournamentId, players, matchCounts, maxRound
                 }}
               />
               <span className="text-lg font-semibold select-none" style={{ color: "var(--muted)" }}>00</span>
+              <span className="text-base font-mono font-semibold w-12 text-right" style={{
+                color: previewPoints
+                  ? previewPoints[i] > 0 ? "var(--primary)" : previewPoints[i] < 0 ? "var(--error)" : "var(--muted)"
+                  : "transparent",
+              }}>
+                {previewPoints
+                  ? previewPoints[i] > 0 ? `+${previewPoints[i]}` : `${previewPoints[i]}`
+                  : "0"}
+              </span>
             </div>
           </div>
         );
