@@ -26,7 +26,7 @@ export default function Ranking({ ranking }: Props) {
               <th className="py-2 pr-3 text-left">名前</th>
               <th className="py-2 pr-3 text-right">合計</th>
               <th className="py-2 pr-3 text-right">平均打点</th>
-              <th className="py-2 pr-3 text-right">最高打点</th>
+              <th className="py-2 pr-3 text-right">最高スコア</th>
               <th className="py-2 pr-3 text-right">平均着順</th>
               <th className="py-2 pr-3 text-right">トップ率</th>
               <th className="py-2 pr-3 text-right">連対率</th>
