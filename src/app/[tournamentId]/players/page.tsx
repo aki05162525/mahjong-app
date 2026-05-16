@@ -1,0 +1,37 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import { getTournament, subscribePlayers, type Player } from "@/lib/firestore";
+import PlayerRegistration from "@/components/PlayerRegistration";
+
+export default function PlayersPage() {
+  const { tournamentId } = useParams<{ tournamentId: string }>();
+  const [tournamentName, setTournamentName] = useState("");
+  const [players, setPlayers] = useState<Player[]>([]);
+
+  useEffect(() => {
+    getTournament(tournamentId).then((t) => {
+      if (t) setTournamentName(t.name);
+    });
+  }, [tournamentId]);
+
+  useEffect(() => {
+    const unsub = subscribePlayers(tournamentId, setPlayers);
+    return unsub;
+  }, [tournamentId]);
+
+  return (
+    <main className="max-w-2xl mx-auto px-4 py-6 flex flex-col gap-6">
+      <div className="flex flex-col gap-1">
+        <Link href={`/${tournamentId}`} className="text-blue-600 text-sm">
+          ← 大会ページへ戻る
+        </Link>
+        <h1 className="text-2xl font-bold">{tournamentName}</h1>
+      </div>
+
+      <PlayerRegistration tournamentId={tournamentId} players={players} />
+    </main>
+  );
+}
