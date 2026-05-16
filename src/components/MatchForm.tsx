@@ -163,6 +163,7 @@ export default function MatchForm({ tournamentId, players, tables, matchCounts, 
             <div className="flex items-center gap-1">
               <input
                 type="number"
+                inputMode="decimal"
                 value={slot.score}
                 onChange={(e) => updateSlot(i, "score", e.target.value)}
                 placeholder={i === 3 && autoLastScore !== "" ? autoLastScore : "250"}
