@@ -1,15 +1,16 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { saveMatch } from "@/lib/firestore";
+import { saveMatch, getUsedPlayerIds } from "@/lib/firestore";
 import { calculateBasePoint, calculateUmaPoints } from "@/lib/scoring";
 import { fmtPt } from "@/lib/utils";
-import type { Player, Table } from "@/lib/firestore";
+import type { Player, Table, Match } from "@/lib/firestore";
 
 type Props = {
   tournamentId: string;
   players: Player[];
   tables: Table[];
+  matches: Match[];
   matchCounts: Record<string, number>;
   maxRound: number;
 };
@@ -31,7 +32,7 @@ const calcLastScore = (slots: PlayerSlot[]): string => {
 
 const newSlots = () => [EMPTY_SLOT, EMPTY_SLOT, EMPTY_SLOT, EMPTY_SLOT].map((s) => ({ ...s }));
 
-export default function MatchForm({ tournamentId, players, tables, matchCounts, maxRound }: Props) {
+export default function MatchForm({ tournamentId, players, tables, matches, matchCounts, maxRound }: Props) {
   const [roundNumber, setRoundNumber] = useState("");
   const [tableName, setTableName] = useState("");
   const [slots, setSlots] = useState<PlayerSlot[]>(newSlots);
@@ -51,6 +52,10 @@ export default function MatchForm({ tournamentId, players, tables, matchCounts, 
   }, []);
 
   const selectedIds = useMemo(() => slots.map((s) => s.playerId).filter(Boolean), [slots]);
+  const usedPlayerIds = useMemo(
+    () => roundNumber ? getUsedPlayerIds(matches, Number(roundNumber)) : new Set<string>(),
+    [matches, roundNumber]
+  );
   const autoLastScore = useMemo(() => calcLastScore(slots), [slots]);
 
   const previewPoints = useMemo<number[] | null>(() => {
@@ -154,7 +159,7 @@ export default function MatchForm({ tournamentId, players, tables, matchCounts, 
             >
               <option value="">プレイヤーを選択</option>
               {players
-                .filter((p) => !selectedIds.includes(p.id) || p.id === slot.playerId)
+                .filter((p) => p.id === slot.playerId || (!selectedIds.includes(p.id) && !usedPlayerIds.has(p.id)))
                 .map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}（{matchCounts[p.id] ?? 0}）

@@ -183,6 +183,7 @@ export default function TournamentPage() {
               tournamentId={tournamentId}
               players={players}
               tables={tables}
+              matches={matches}
               matchCounts={matchCounts}
               maxRound={maxRound}
             />
