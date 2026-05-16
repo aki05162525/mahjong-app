@@ -166,7 +166,7 @@ export default function MatchForm({ tournamentId, players, tables, matchCounts, 
                 value={slot.score}
                 onChange={(e) => updateSlot(i, "score", e.target.value)}
                 placeholder={i === 3 && autoLastScore !== "" ? autoLastScore : "250"}
-                className="rounded-lg px-3 py-3 text-lg w-24 text-right"
+                className="rounded-lg px-3 py-3 text-lg w-20 text-right"
                 style={{
                   border: `1px solid ${isAutoFilled ? "var(--accent-teal)" : "var(--hairline)"}`,
                   background: isAutoFilled ? "#f0faf8" : "var(--canvas)",
