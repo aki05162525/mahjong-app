@@ -1,21 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { initializeApp, getApps, cert } from "firebase-admin/app";
-import { getFirestore, FieldValue } from "firebase-admin/firestore";
-
-function getAdminDb() {
-  if (!getApps().length) {
-    initializeApp({
-      credential: cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-      }),
-    });
-  }
-  return getFirestore();
-}
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
+  if (!checkRateLimit(ip).ok) {
+    return NextResponse.json({ error: "リクエストが多すぎます。しばらくしてから再試行してください" }, { status: 429 });
+  }
+
   const { name, customId, password } = await req.json();
 
   if (password !== process.env.ADMIN_PASSWORD) {
@@ -26,24 +18,40 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "大会名を入力してください" }, { status: 400 });
   }
 
-  const db = getAdminDb();
+  if (name.trim().length > 50) {
+    return NextResponse.json({ error: "大会名は50文字以内で入力してください" }, { status: 400 });
+  }
 
   if (customId) {
     if (!/^[a-zA-Z0-9_-]+$/.test(customId)) {
       return NextResponse.json({ error: "IDは英数字・ハイフン・アンダースコアのみ使えます" }, { status: 400 });
     }
-    const ref = db.collection("tournaments").doc(customId);
-    const existing = await ref.get();
-    if (existing.exists) {
-      return NextResponse.json({ error: `「${customId}」はすでに使われています` }, { status: 409 });
+
+    const { data, error } = await supabaseAdmin
+      .from("tournaments")
+      .insert({ id: customId, name: name.trim() })
+      .select("id")
+      .single();
+
+    if (error) {
+      if (error.code === "23505") {
+        return NextResponse.json({ error: `「${customId}」はすでに使われています` }, { status: 409 });
+      }
+      return NextResponse.json({ error: "大会の作成に失敗しました" }, { status: 500 });
     }
-    await ref.set({ name: name.trim(), createdAt: FieldValue.serverTimestamp() });
-    return NextResponse.json({ id: customId });
+
+    return NextResponse.json({ id: data.id });
   }
 
-  const ref = await db.collection("tournaments").add({
-    name: name.trim(),
-    createdAt: FieldValue.serverTimestamp(),
-  });
-  return NextResponse.json({ id: ref.id });
+  const { data, error } = await supabaseAdmin
+    .from("tournaments")
+    .insert({ name: name.trim() })
+    .select("id")
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: "大会の作成に失敗しました" }, { status: 500 });
+  }
+
+  return NextResponse.json({ id: data.id });
 }

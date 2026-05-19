@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { addPlayer, renamePlayer } from "@/lib/firestore";
 import type { Player } from "@/lib/firestore";
 
 type Props = {
@@ -24,7 +23,12 @@ export default function PlayerRegistration({ tournamentId, players }: Props) {
     setSaving(true);
     setError("");
     try {
-      await addPlayer(tournamentId, trimmed);
+      const res = await fetch("/api/players", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tournamentId, name: trimmed }),
+      });
+      if (!res.ok) { setError((await res.json()).error ?? "登録に失敗しました"); return; }
       setName("");
     } catch {
       setError("登録に失敗しました");
@@ -48,7 +52,12 @@ export default function PlayerRegistration({ tournamentId, players }: Props) {
     setRenaming(true);
     setError("");
     try {
-      await renamePlayer(tournamentId, editingId!, trimmed);
+      const res = await fetch(`/api/players/${editingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmed }),
+      });
+      if (!res.ok) { setError((await res.json()).error ?? "変更に失敗しました"); return; }
       setEditingId(null);
     } catch {
       setError("変更に失敗しました");

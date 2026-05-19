@@ -1,20 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { deleteMatch } from "@/lib/firestore";
 import type { Match } from "@/lib/firestore";
 import { fmtPt } from "@/lib/utils";
 
 type Props = { tournamentId: string; matches: Match[] };
 
-export default function MatchHistory({ tournamentId, matches }: Props) {
+export default function MatchHistory({ tournamentId: _tournamentId, matches }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleDelete = async (matchId: string) => {
     if (!confirm("この対局結果を削除しますか？")) return;
     setDeletingId(matchId);
     try {
-      await deleteMatch(tournamentId, matchId);
+      const res = await fetch(`/api/matches/${matchId}`, { method: "DELETE" });
+      if (!res.ok) alert("削除に失敗しました");
     } catch {
       alert("削除に失敗しました");
     } finally {
