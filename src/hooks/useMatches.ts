@@ -7,7 +7,7 @@ const MATCH_SELECT = `
   id,
   round_number,
   created_at,
-  tables(name),
+  tables!matches_table_id_fkey(name),
   match_results(
     player_id,
     score,
@@ -23,7 +23,7 @@ type SupabaseMatch = {
   id: string;
   round_number: number;
   created_at: string;
-  tables: { name: string } | null;
+  "tables!matches_table_id_fkey": { name: string } | null;
   match_results: Array<{
     player_id: string;
     score: number;
@@ -39,7 +39,7 @@ function toMatch(row: SupabaseMatch): Match {
   return {
     id: row.id,
     roundNumber: row.round_number,
-    tableName: row.tables?.name ?? "",
+    tableName: row["tables!matches_table_id_fkey"]?.name ?? "",
     createdAt: new Date(row.created_at),
     results: (row.match_results ?? []).map((r) => ({
       playerId: r.player_id,
