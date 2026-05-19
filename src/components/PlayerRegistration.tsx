@@ -18,8 +18,14 @@ export default function PlayerRegistration({ tournamentId, players }: Props) {
 
   const handleAdd = async () => {
     const trimmed = name.trim();
-    if (!trimmed) { setError("名前を入力してください"); return; }
-    if (players.some((p) => p.name === trimmed)) { setError("同じ名前のプレイヤーが既に存在します"); return; }
+    if (!trimmed) {
+      setError("名前を入力してください");
+      return;
+    }
+    if (players.some((p) => p.name === trimmed)) {
+      setError("同じ名前のプレイヤーが既に存在します");
+      return;
+    }
     setSaving(true);
     setError("");
     try {
@@ -28,7 +34,10 @@ export default function PlayerRegistration({ tournamentId, players }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tournamentId, name: trimmed }),
       });
-      if (!res.ok) { setError((await res.json()).error ?? "登録に失敗しました"); return; }
+      if (!res.ok) {
+        setError((await res.json()).error ?? "登録に失敗しました");
+        return;
+      }
       setName("");
     } catch {
       setError("登録に失敗しました");
@@ -45,9 +54,13 @@ export default function PlayerRegistration({ tournamentId, players }: Props) {
 
   const handleRename = async () => {
     const trimmed = editingName.trim();
-    if (!trimmed) { setError("名前を入力してください"); return; }
+    if (!trimmed) {
+      setError("名前を入力してください");
+      return;
+    }
     if (players.some((p) => p.name === trimmed && p.id !== editingId)) {
-      setError("同じ名前のプレイヤーが既に存在します"); return;
+      setError("同じ名前のプレイヤーが既に存在します");
+      return;
     }
     setRenaming(true);
     setError("");
@@ -57,7 +70,10 @@ export default function PlayerRegistration({ tournamentId, players }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: trimmed }),
       });
-      if (!res.ok) { setError((await res.json()).error ?? "変更に失敗しました"); return; }
+      if (!res.ok) {
+        setError((await res.json()).error ?? "変更に失敗しました");
+        return;
+      }
       setEditingId(null);
     } catch {
       setError("変更に失敗しました");
@@ -68,7 +84,9 @@ export default function PlayerRegistration({ tournamentId, players }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="text-xl font-semibold" style={{ color: "var(--body)" }}>プレイヤー登録</h2>
+      <h2 className="text-xl font-semibold" style={{ color: "var(--body)" }}>
+        プレイヤー登録
+      </h2>
       <div className="flex gap-2">
         <input
           type="text"
@@ -119,7 +137,11 @@ export default function PlayerRegistration({ tournamentId, players }: Props) {
               </button>
             </li>
           ) : (
-            <li key={p.id} className="flex items-center justify-between rounded-full px-4 py-2 text-base" style={{ background: "var(--surface-strong)", color: "var(--body)" }}>
+            <li
+              key={p.id}
+              className="flex items-center justify-between rounded-full px-4 py-2 text-base"
+              style={{ background: "var(--surface-strong)", color: "var(--body)" }}
+            >
               <span>{p.name}</span>
               <button
                 onClick={() => startEdit(p)}

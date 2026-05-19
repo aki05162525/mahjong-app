@@ -5,7 +5,7 @@ import { calculateMatchResults } from "@/lib/scoring";
 type InputItem = { playerId: string; score: number };
 
 export async function POST(req: NextRequest) {
-  const { tournamentId, tableId, roundNumber, inputs } = await req.json() as {
+  const { tournamentId, tableId, roundNumber, inputs } = (await req.json()) as {
     tournamentId: string;
     tableId: string;
     roundNumber: number;
@@ -32,7 +32,10 @@ export async function POST(req: NextRequest) {
   // スコアの合計を DB クエリより先に検証する（無駄な往復を避けるため）
   const total = inputs.reduce((s, i) => s + i.score, 0);
   if (total !== 100000) {
-    return NextResponse.json({ error: `点数合計が ${total.toLocaleString()} 点です（合計100,000点にしてください）` }, { status: 400 });
+    return NextResponse.json(
+      { error: `点数合計が ${total.toLocaleString()} 点です（合計100,000点にしてください）` },
+      { status: 400 }
+    );
   }
 
   // tableId が当該大会に存在するか確認

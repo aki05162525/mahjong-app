@@ -5,7 +5,10 @@ import { checkRateLimit } from "@/lib/rate-limit";
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
   if (!checkRateLimit(ip).ok) {
-    return NextResponse.json({ error: "リクエストが多すぎます。しばらくしてから再試行してください" }, { status: 429 });
+    return NextResponse.json(
+      { error: "リクエストが多すぎます。しばらくしてから再試行してください" },
+      { status: 429 }
+    );
   }
 
   const { name, customId, password } = await req.json();
@@ -24,7 +27,10 @@ export async function POST(req: NextRequest) {
 
   if (customId) {
     if (!/^[a-zA-Z0-9_-]+$/.test(customId)) {
-      return NextResponse.json({ error: "IDは英数字・ハイフン・アンダースコアのみ使えます" }, { status: 400 });
+      return NextResponse.json(
+        { error: "IDは英数字・ハイフン・アンダースコアのみ使えます" },
+        { status: 400 }
+      );
     }
 
     const { data, error } = await supabaseAdmin
@@ -35,7 +41,10 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       if (error.code === "23505") {
-        return NextResponse.json({ error: `「${customId}」はすでに使われています` }, { status: 409 });
+        return NextResponse.json(
+          { error: `「${customId}」はすでに使われています` },
+          { status: 409 }
+        );
       }
       return NextResponse.json({ error: "大会の作成に失敗しました" }, { status: 500 });
     }

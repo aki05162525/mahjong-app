@@ -14,23 +14,40 @@ export default function TopPage() {
 
   const handleJoin = () => {
     const id = joinId.trim();
-    if (!id) { setError("大会IDを入力してください"); return; }
+    if (!id) {
+      setError("大会IDを入力してください");
+      return;
+    }
     router.push(`/${id}`);
   };
 
   const handleCreate = async () => {
-    if (!newName.trim()) { setError("大会名を入力してください"); return; }
-    if (!password) { setError("パスワードを入力してください"); return; }
+    if (!newName.trim()) {
+      setError("大会名を入力してください");
+      return;
+    }
+    if (!password) {
+      setError("パスワードを入力してください");
+      return;
+    }
     setCreating(true);
     setError("");
     try {
       const res = await fetch("/api/create-tournament", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newName.trim(), customId: customId.trim() || undefined, password }),
+        body: JSON.stringify({
+          name: newName.trim(),
+          customId: customId.trim() || undefined,
+          password,
+        }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "大会の作成に失敗しました"); setCreating(false); return; }
+      if (!res.ok) {
+        setError(data.error ?? "大会の作成に失敗しました");
+        setCreating(false);
+        return;
+      }
       router.push(`/${data.id}`);
     } catch {
       setError("大会の作成に失敗しました");
@@ -44,11 +61,20 @@ export default function TopPage() {
         🀄 小次郎麻雀大会スコア
       </h1>
 
-      {error && <p className="font-medium" style={{ color: "var(--error)" }}>{error}</p>}
+      {error && (
+        <p className="font-medium" style={{ color: "var(--error)" }}>
+          {error}
+        </p>
+      )}
 
       {/* 大会に参加 */}
-      <section className="w-full max-w-sm flex flex-col gap-3 rounded-xl p-6 shadow-sm" style={{ background: "var(--surface-card)", border: "1px solid var(--hairline)" }}>
-        <h2 className="text-xl font-semibold" style={{ color: "var(--body)" }}>大会IDで参加</h2>
+      <section
+        className="w-full max-w-sm flex flex-col gap-3 rounded-xl p-6 shadow-sm"
+        style={{ background: "var(--surface-card)", border: "1px solid var(--hairline)" }}
+      >
+        <h2 className="text-xl font-semibold" style={{ color: "var(--body)" }}>
+          大会IDで参加
+        </h2>
         <input
           type="text"
           value={joinId}
@@ -68,8 +94,13 @@ export default function TopPage() {
       </section>
 
       {/* 新しい大会を作成 */}
-      <section className="w-full max-w-sm flex flex-col gap-3 rounded-xl p-6 shadow-sm" style={{ background: "var(--surface-card)", border: "1px solid var(--hairline)" }}>
-        <h2 className="text-xl font-semibold" style={{ color: "var(--body)" }}>新しい大会を作成</h2>
+      <section
+        className="w-full max-w-sm flex flex-col gap-3 rounded-xl p-6 shadow-sm"
+        style={{ background: "var(--surface-card)", border: "1px solid var(--hairline)" }}
+      >
+        <h2 className="text-xl font-semibold" style={{ color: "var(--body)" }}>
+          新しい大会を作成
+        </h2>
         <input
           type="text"
           value={newName}
@@ -87,7 +118,9 @@ export default function TopPage() {
             className="rounded-lg px-4 py-3 text-lg w-full"
             style={{ border: "1px solid var(--hairline)", background: "var(--canvas)" }}
           />
-          <p className="text-xs" style={{ color: "var(--muted)" }}>空欄の場合は自動生成。英数字・ハイフン・アンダースコアのみ</p>
+          <p className="text-xs" style={{ color: "var(--muted)" }}>
+            空欄の場合は自動生成。英数字・ハイフン・アンダースコアのみ
+          </p>
         </div>
         <input
           type="password"

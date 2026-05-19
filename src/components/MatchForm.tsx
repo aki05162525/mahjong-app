@@ -32,7 +32,14 @@ const calcLastScore = (slots: PlayerSlot[]): string => {
 
 const newSlots = () => [EMPTY_SLOT, EMPTY_SLOT, EMPTY_SLOT, EMPTY_SLOT].map((s) => ({ ...s }));
 
-export default function MatchForm({ tournamentId, players, tables, matches, matchCounts, maxRound }: Props) {
+export default function MatchForm({
+  tournamentId,
+  players,
+  tables,
+  matches,
+  matchCounts,
+  maxRound,
+}: Props) {
   const [roundNumber, setRoundNumber] = useState("");
   const [tableId, setTableId] = useState("");
   const [slots, setSlots] = useState<PlayerSlot[]>(newSlots);
@@ -53,7 +60,7 @@ export default function MatchForm({ tournamentId, players, tables, matches, matc
 
   const selectedIds = useMemo(() => slots.map((s) => s.playerId).filter(Boolean), [slots]);
   const usedPlayerIds = useMemo(
-    () => roundNumber ? getUsedPlayerIds(matches, Number(roundNumber)) : new Set<string>(),
+    () => (roundNumber ? getUsedPlayerIds(matches, Number(roundNumber)) : new Set<string>()),
     [matches, roundNumber]
   );
   const autoLastScore = useMemo(() => calcLastScore(slots), [slots]);
@@ -75,7 +82,8 @@ export default function MatchForm({ tournamentId, players, tables, matches, matc
       if (slots[i].score === "") return `${i + 1}人目の点数を入力してください`;
       if (isNaN(Number(slots[i].score))) return `${i + 1}人目の点数は数値で入力してください`;
     }
-    if (new Set(slots.map((s) => s.playerId)).size !== 4) return "同じプレイヤーを重複して選択できません";
+    if (new Set(slots.map((s) => s.playerId)).size !== 4)
+      return "同じプレイヤーを重複して選択できません";
     return null;
   };
 
@@ -83,10 +91,15 @@ export default function MatchForm({ tournamentId, players, tables, matches, matc
     setError("");
     setSuccess(false);
     const validationError = validate();
-    if (validationError) { setError(validationError); return; }
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     const total = slots.reduce((sum, s) => sum + toActualScore(s.score), 0);
     if (total !== 100000) {
-      setError(`点数合計が ${total.toLocaleString()} 点です（合計100,000点になるように修正してください）`);
+      setError(
+        `点数合計が ${total.toLocaleString()} 点です（合計100,000点になるように修正してください）`
+      );
       return;
     }
     setSaving(true);
@@ -97,7 +110,10 @@ export default function MatchForm({ tournamentId, players, tables, matches, matc
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tournamentId, tableId, roundNumber: Number(roundNumber), inputs }),
       });
-      if (!res.ok) { setError((await res.json()).error ?? "保存に失敗しました"); return; }
+      if (!res.ok) {
+        setError((await res.json()).error ?? "保存に失敗しました");
+        return;
+      }
       setSlots(newSlots());
       setRoundNumber("");
       setTableId("");
@@ -114,11 +130,15 @@ export default function MatchForm({ tournamentId, players, tables, matches, matc
 
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="text-xl font-semibold" style={{ color: "var(--body)" }}>対局結果入力</h2>
+      <h2 className="text-xl font-semibold" style={{ color: "var(--body)" }}>
+        対局結果入力
+      </h2>
 
       <div className="flex gap-3">
         <div className="flex flex-col gap-1 flex-1">
-          <label className="text-sm font-medium" style={{ color: "var(--muted)" }}>回戦</label>
+          <label className="text-sm font-medium" style={{ color: "var(--muted)" }}>
+            回戦
+          </label>
           <select
             value={roundNumber}
             onChange={(e) => setRoundNumber(e.target.value)}
@@ -127,12 +147,16 @@ export default function MatchForm({ tournamentId, players, tables, matches, matc
           >
             <option value="">選択</option>
             {Array.from({ length: maxRound + 1 }, (_, i) => maxRound + 1 - i).map((n) => (
-              <option key={n} value={n}>第{n}回戦</option>
+              <option key={n} value={n}>
+                第{n}回戦
+              </option>
             ))}
           </select>
         </div>
         <div className="flex flex-col gap-1 flex-1">
-          <label className="text-sm font-medium" style={{ color: "var(--muted)" }}>卓名</label>
+          <label className="text-sm font-medium" style={{ color: "var(--muted)" }}>
+            卓名
+          </label>
           <select
             value={tableId}
             onChange={(e) => setTableId(e.target.value)}
@@ -141,7 +165,9 @@ export default function MatchForm({ tournamentId, players, tables, matches, matc
           >
             <option value="">選択</option>
             {tables.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
             ))}
           </select>
         </div>
@@ -151,7 +177,9 @@ export default function MatchForm({ tournamentId, players, tables, matches, matc
         const isAutoFilled = i === 3 && autoLastScore !== "" && slot.score === autoLastScore;
         return (
           <div key={i} className="flex gap-2 items-center">
-            <span className="text-base font-medium w-6" style={{ color: "var(--muted)" }}>{i + 1}</span>
+            <span className="text-base font-medium w-6" style={{ color: "var(--muted)" }}>
+              {i + 1}
+            </span>
             <select
               value={slot.playerId}
               onChange={(e) => updateSlot(i, "playerId", e.target.value)}
@@ -160,7 +188,11 @@ export default function MatchForm({ tournamentId, players, tables, matches, matc
             >
               <option value="">プレイヤーを選択</option>
               {players
-                .filter((p) => p.id === slot.playerId || (!selectedIds.includes(p.id) && !usedPlayerIds.has(p.id)))
+                .filter(
+                  (p) =>
+                    p.id === slot.playerId ||
+                    (!selectedIds.includes(p.id) && !usedPlayerIds.has(p.id))
+                )
                 .map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}（{matchCounts[p.id] ?? 0}）
@@ -179,12 +211,21 @@ export default function MatchForm({ tournamentId, players, tables, matches, matc
                   background: isAutoFilled ? "#f0faf8" : "var(--canvas)",
                 }}
               />
-              <span className="text-lg font-semibold select-none" style={{ color: "var(--muted)" }}>00</span>
-              <span className="text-base font-mono font-semibold w-12 text-right" style={{
-                color: previewPoints
-                  ? previewPoints[i] > 0 ? "var(--primary)" : previewPoints[i] < 0 ? "var(--error)" : "var(--muted)"
-                  : "transparent",
-              }}>
+              <span className="text-lg font-semibold select-none" style={{ color: "var(--muted)" }}>
+                00
+              </span>
+              <span
+                className="text-base font-mono font-semibold w-12 text-right"
+                style={{
+                  color: previewPoints
+                    ? previewPoints[i] > 0
+                      ? "var(--primary)"
+                      : previewPoints[i] < 0
+                        ? "var(--error)"
+                        : "var(--muted)"
+                    : "transparent",
+                }}
+              >
                 {previewPoints ? fmtPt(previewPoints[i]) : "0"}
               </span>
             </div>
@@ -192,8 +233,16 @@ export default function MatchForm({ tournamentId, players, tables, matches, matc
         );
       })}
 
-      {error && <p className="font-medium" style={{ color: "var(--error)" }}>{error}</p>}
-      {success && <p className="font-medium" style={{ color: "var(--success)" }}>保存しました！</p>}
+      {error && (
+        <p className="font-medium" style={{ color: "var(--error)" }}>
+          {error}
+        </p>
+      )}
+      {success && (
+        <p className="font-medium" style={{ color: "var(--success)" }}>
+          保存しました！
+        </p>
+      )}
 
       <button
         onClick={handleSave}

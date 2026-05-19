@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { name } = await req.json();
 
@@ -37,10 +34,7 @@ export async function PATCH(
     return NextResponse.json({ error: "同じ名前のプレイヤーが既に存在します" }, { status: 409 });
   }
 
-  const { error } = await supabaseAdmin
-    .from("players")
-    .update({ name: trimmed })
-    .eq("id", id);
+  const { error } = await supabaseAdmin.from("players").update({ name: trimmed }).eq("id", id);
 
   if (error) {
     return NextResponse.json({ error: "変更に失敗しました" }, { status: 500 });
