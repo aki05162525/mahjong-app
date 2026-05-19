@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import type { Table } from "@/lib/firestore";
+import type { Table } from "@/lib/types";
 
 export function useTables(tournamentId: string): Table[] {
   const [tables, setTables] = useState<Table[]>([]);

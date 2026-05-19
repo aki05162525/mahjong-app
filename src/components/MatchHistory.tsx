@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Match } from "@/lib/firestore";
+import type { Match } from "@/lib/types";
 import { fmtPt } from "@/lib/utils";
 
 type Props = { tournamentId: string; matches: Match[] };

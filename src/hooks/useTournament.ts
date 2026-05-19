@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import type { Tournament } from "@/lib/firestore";
+import type { Tournament } from "@/lib/types";
 
 export function useTournament(tournamentId: string) {
   const [tournament, setTournament] = useState<Tournament | null>(null);

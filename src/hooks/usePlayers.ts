@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import type { Player } from "@/lib/firestore";
+import type { Player } from "@/lib/types";
 
 export function usePlayers(tournamentId: string): Player[] {
   const [players, setPlayers] = useState<Player[]>([]);

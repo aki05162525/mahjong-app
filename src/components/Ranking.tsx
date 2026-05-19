@@ -1,6 +1,6 @@
 "use client";
 
-import type { RankingEntry } from "@/lib/firestore";
+import type { RankingEntry } from "@/lib/types";
 import { fmtPt } from "@/lib/utils";
 
 type Props = { ranking: RankingEntry[] };
