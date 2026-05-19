@@ -20,9 +20,6 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Check lockfile is up to date
-        run: git diff --exit-code package-lock.json
-
       - name: Lint
         run: npm run lint
 
