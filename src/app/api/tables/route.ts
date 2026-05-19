@@ -11,6 +11,19 @@ export async function POST(req: NextRequest) {
   if (!trimmed) {
     return NextResponse.json({ error: "卓名を入力してください" }, { status: 400 });
   }
+  if (trimmed.length > 20) {
+    return NextResponse.json({ error: "卓名は20文字以内で入力してください" }, { status: 400 });
+  }
+
+  const { count } = await supabaseAdmin
+    .from("tables")
+    .select("id", { count: "exact", head: true })
+    .eq("tournament_id", tournamentId)
+    .eq("name", trimmed);
+
+  if (count && count > 0) {
+    return NextResponse.json({ error: "同じ名前の卓が既に存在します" }, { status: 409 });
+  }
 
   const { data, error } = await supabaseAdmin
     .from("tables")

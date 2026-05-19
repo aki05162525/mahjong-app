@@ -12,11 +12,46 @@ export async function POST(req: NextRequest) {
     inputs: InputItem[];
   };
 
-  if (!tournamentId || !tableId || !roundNumber || !inputs?.length) {
+  if (!tournamentId || !tableId || !roundNumber || !Array.isArray(inputs)) {
     return NextResponse.json({ error: "必須項目が不足しています" }, { status: 400 });
   }
 
-  const total = inputs.reduce((s: number, i: InputItem) => s + i.score, 0);
+  if (!Number.isInteger(roundNumber) || roundNumber < 1) {
+    return NextResponse.json({ error: "回戦番号は1以上の整数を指定してください" }, { status: 400 });
+  }
+
+  if (inputs.length !== 4) {
+    return NextResponse.json({ error: "対局結果は4件必要です" }, { status: 400 });
+  }
+
+  const playerIds = inputs.map((i) => i.playerId);
+  if (new Set(playerIds).size !== 4) {
+    return NextResponse.json({ error: "プレイヤーが重複しています" }, { status: 400 });
+  }
+
+  // tableId が当該大会に存在するか確認
+  const { count: tableCount } = await supabaseAdmin
+    .from("tables")
+    .select("id", { count: "exact", head: true })
+    .eq("id", tableId)
+    .eq("tournament_id", tournamentId);
+
+  if (!tableCount || tableCount === 0) {
+    return NextResponse.json({ error: "指定された卓が見つかりません" }, { status: 400 });
+  }
+
+  // 全 playerId が当該大会のプレイヤーか確認
+  const { count: playerCount } = await supabaseAdmin
+    .from("players")
+    .select("id", { count: "exact", head: true })
+    .eq("tournament_id", tournamentId)
+    .in("id", playerIds);
+
+  if (!playerCount || playerCount !== 4) {
+    return NextResponse.json({ error: "指定されたプレイヤーが見つかりません" }, { status: 400 });
+  }
+
+  const total = inputs.reduce((s, i) => s + i.score, 0);
   if (total !== 100000) {
     return NextResponse.json({ error: `点数合計が ${total.toLocaleString()} 点です（合計100,000点にしてください）` }, { status: 400 });
   }

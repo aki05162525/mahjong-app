@@ -12,6 +12,30 @@ export async function PATCH(
   if (!trimmed) {
     return NextResponse.json({ error: "名前を入力してください" }, { status: 400 });
   }
+  if (trimmed.length > 20) {
+    return NextResponse.json({ error: "名前は20文字以内で入力してください" }, { status: 400 });
+  }
+
+  const { data: player } = await supabaseAdmin
+    .from("players")
+    .select("tournament_id")
+    .eq("id", id)
+    .single();
+
+  if (!player) {
+    return NextResponse.json({ error: "プレイヤーが見つかりません" }, { status: 404 });
+  }
+
+  const { count } = await supabaseAdmin
+    .from("players")
+    .select("id", { count: "exact", head: true })
+    .eq("tournament_id", player.tournament_id)
+    .eq("name", trimmed)
+    .neq("id", id);
+
+  if (count && count > 0) {
+    return NextResponse.json({ error: "同じ名前のプレイヤーが既に存在します" }, { status: 409 });
+  }
 
   const { error } = await supabaseAdmin
     .from("players")
