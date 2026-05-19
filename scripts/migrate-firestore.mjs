@@ -58,8 +58,11 @@ async function migrate() {
     // ── players ─────────────────────────────────────────────────────────
     const playerIdMap = new Map(); // firestoreId → supabase uuid
     const playersSnap = await firestore
-      .collection("tournaments").doc(tid)
-      .collection("players").orderBy("createdAt").get();
+      .collection("tournaments")
+      .doc(tid)
+      .collection("players")
+      .orderBy("createdAt")
+      .get();
 
     for (const pDoc of playersSnap.docs) {
       const newId = randomUUID();
@@ -76,8 +79,11 @@ async function migrate() {
     // ── tables ──────────────────────────────────────────────────────────
     const tableNameToId = new Map(); // tableName → supabase uuid
     const tablesSnap = await firestore
-      .collection("tournaments").doc(tid)
-      .collection("tables").orderBy("createdAt").get();
+      .collection("tournaments")
+      .doc(tid)
+      .collection("tables")
+      .orderBy("createdAt")
+      .get();
 
     for (const tbDoc of tablesSnap.docs) {
       const newId = randomUUID();
@@ -93,8 +99,11 @@ async function migrate() {
 
     // ── matches & match_results ──────────────────────────────────────────
     const matchesSnap = await firestore
-      .collection("tournaments").doc(tid)
-      .collection("matches").orderBy("createdAt").get();
+      .collection("tournaments")
+      .doc(tid)
+      .collection("matches")
+      .orderBy("createdAt")
+      .get();
 
     for (const mDoc of matchesSnap.docs) {
       const mData = mDoc.data();
@@ -135,7 +144,9 @@ async function migrate() {
       }
       if (matchResultRows.length > 0) await insert("match_results", matchResultRows);
 
-      console.log(`  対局: 第${mData.roundNumber}回戦 卓「${mData.tableName}」(${results.length}件)`);
+      console.log(
+        `  対局: 第${mData.roundNumber}回戦 卓「${mData.tableName}」(${results.length}件)`
+      );
     }
   }
 

@@ -9,7 +9,9 @@ export default function Ranking({ ranking }: Props) {
   if (ranking.length === 0) {
     return (
       <div className="flex flex-col gap-4">
-        <h2 className="text-xl font-semibold" style={{ color: "var(--body)" }}>総合ランキング</h2>
+        <h2 className="text-xl font-semibold" style={{ color: "var(--body)" }}>
+          総合ランキング
+        </h2>
         <p style={{ color: "var(--muted)" }}>まだ対局結果がありません</p>
       </div>
     );
@@ -17,11 +19,16 @@ export default function Ranking({ ranking }: Props) {
 
   return (
     <div className="flex flex-col gap-3">
-      <h2 className="text-xl font-semibold" style={{ color: "var(--body)" }}>総合ランキング</h2>
+      <h2 className="text-xl font-semibold" style={{ color: "var(--body)" }}>
+        総合ランキング
+      </h2>
       <div className="overflow-x-auto -mx-4 px-4">
         <table className="w-full text-sm border-collapse whitespace-nowrap">
           <thead>
-            <tr className="text-xs" style={{ borderBottom: "2px solid var(--hairline)", color: "var(--muted)" }}>
+            <tr
+              className="text-xs"
+              style={{ borderBottom: "2px solid var(--hairline)", color: "var(--muted)" }}
+            >
               <th className="py-2 pr-2 text-left w-6">順</th>
               <th className="py-2 pr-3 text-left">名前</th>
               <th className="py-2 pr-3 text-right">合計</th>
@@ -36,14 +43,27 @@ export default function Ranking({ ranking }: Props) {
           </thead>
           <tbody>
             {ranking.map((entry, idx) => (
-              <tr key={entry.playerId} style={{ background: idx % 2 === 0 ? "var(--surface-soft)" : "var(--canvas)" }}>
+              <tr
+                key={entry.playerId}
+                style={{ background: idx % 2 === 0 ? "var(--surface-soft)" : "var(--canvas)" }}
+              >
                 <td className="py-3 pr-2 text-center text-base" style={{ color: "var(--muted)" }}>
                   {entry.rank}
                 </td>
-                <td className="py-3 pr-3 font-semibold text-base" style={{ color: "var(--ink)" }}>{entry.playerName}</td>
-                <td className={`py-3 pr-3 text-right font-mono text-base ${entry.totalPoint > 0 ? "font-bold" : ""}`} style={{
-                  color: entry.totalPoint > 0 ? "var(--primary)" : entry.totalPoint < 0 ? "var(--error)" : "var(--body)"
-                }}>
+                <td className="py-3 pr-3 font-semibold text-base" style={{ color: "var(--ink)" }}>
+                  {entry.playerName}
+                </td>
+                <td
+                  className={`py-3 pr-3 text-right font-mono text-base ${entry.totalPoint > 0 ? "font-bold" : ""}`}
+                  style={{
+                    color:
+                      entry.totalPoint > 0
+                        ? "var(--primary)"
+                        : entry.totalPoint < 0
+                          ? "var(--error)"
+                          : "var(--body)",
+                  }}
+                >
                   {fmtPt(entry.totalPoint)}
                 </td>
                 <td className="py-3 pr-3 text-right font-mono" style={{ color: "var(--body)" }}>
@@ -52,11 +72,21 @@ export default function Ranking({ ranking }: Props) {
                 <td className="py-3 pr-3 text-right font-mono" style={{ color: "var(--body)" }}>
                   {entry.maxScore.toLocaleString()}
                 </td>
-                <td className="py-3 pr-3 text-right font-mono" style={{ color: "var(--body)" }}>{entry.avgRank.toFixed(2)}</td>
-                <td className="py-3 pr-3 text-right font-mono" style={{ color: "var(--body)" }}>{(entry.topRate / 100).toFixed(2)}</td>
-                <td className="py-3 pr-3 text-right font-mono" style={{ color: "var(--body)" }}>{(entry.inTheMoneyRate / 100).toFixed(2)}</td>
-                <td className="py-3 pr-3 text-right font-mono" style={{ color: "var(--body)" }}>{(entry.lastAvoidRate / 100).toFixed(2)}</td>
-                <td className="py-3 text-right" style={{ color: "var(--muted)" }}>{entry.matchCount}</td>
+                <td className="py-3 pr-3 text-right font-mono" style={{ color: "var(--body)" }}>
+                  {entry.avgRank.toFixed(2)}
+                </td>
+                <td className="py-3 pr-3 text-right font-mono" style={{ color: "var(--body)" }}>
+                  {(entry.topRate / 100).toFixed(2)}
+                </td>
+                <td className="py-3 pr-3 text-right font-mono" style={{ color: "var(--body)" }}>
+                  {(entry.inTheMoneyRate / 100).toFixed(2)}
+                </td>
+                <td className="py-3 pr-3 text-right font-mono" style={{ color: "var(--body)" }}>
+                  {(entry.lastAvoidRate / 100).toFixed(2)}
+                </td>
+                <td className="py-3 text-right" style={{ color: "var(--muted)" }}>
+                  {entry.matchCount}
+                </td>
               </tr>
             ))}
           </tbody>

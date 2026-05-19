@@ -16,8 +16,9 @@ function makeChain(result: object) {
   for (const m of ["select", "insert", "update", "delete", "eq", "neq", "in", "single"]) {
     chain[m] = vi.fn().mockReturnValue(chain);
   }
-  (chain as unknown as { then: (r: (v: unknown) => unknown) => Promise<unknown> }).then =
-    (resolve: (v: unknown) => unknown) => Promise.resolve(result).then(resolve);
+  (chain as unknown as { then: (r: (v: unknown) => unknown) => Promise<unknown> }).then = (
+    resolve: (v: unknown) => unknown
+  ) => Promise.resolve(result).then(resolve);
   return chain;
 }
 

@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  calculateBasePoint,
-  calculateUmaPoints,
-  calculateMatchResults,
-} from "./scoring";
+import { calculateBasePoint, calculateUmaPoints, calculateMatchResults } from "./scoring";
 
 // ========================================
 // calculateBasePoint
@@ -58,9 +54,9 @@ describe("calculateUmaPoints", () => {
   it("2着同点: 2位と3位の順位点を平均する (+10 + -10) / 2 = 0", () => {
     const scores = [40000, 25000, 25000, 10000];
     const result = calculateUmaPoints(scores);
-    expect(result[0]).toBe(30);  // 1位
-    expect(result[1]).toBe(0);   // 2位同点
-    expect(result[2]).toBe(0);   // 2位同点
+    expect(result[0]).toBe(30); // 1位
+    expect(result[1]).toBe(0); // 2位同点
+    expect(result[2]).toBe(0); // 2位同点
     expect(result[3]).toBe(-30); // 4位
   });
 
@@ -68,8 +64,8 @@ describe("calculateUmaPoints", () => {
   it("1着同点: 1位と2位の順位点を平均する (+30 + +10) / 2 = +20", () => {
     const scores = [35000, 35000, 20000, 10000];
     const result = calculateUmaPoints(scores);
-    expect(result[0]).toBe(20);  // 1位同点
-    expect(result[1]).toBe(20);  // 1位同点
+    expect(result[0]).toBe(20); // 1位同点
+    expect(result[1]).toBe(20); // 1位同点
     expect(result[2]).toBe(-10); // 3位
     expect(result[3]).toBe(-30); // 4位
   });
@@ -97,9 +93,9 @@ describe("calculateMatchResults", () => {
   it("通常ケース: 各プレイヤーの合計ptを正しく計算する", () => {
     const inputs = [
       { playerId: "p1", playerName: "Alice", score: 42000 },
-      { playerId: "p2", playerName: "Bob",   score: 31000 },
+      { playerId: "p2", playerName: "Bob", score: 31000 },
       { playerId: "p3", playerName: "Carol", score: 18000 },
-      { playerId: "p4", playerName: "Dave",  score: 9000 },
+      { playerId: "p4", playerName: "Dave", score: 9000 },
     ];
     const results = calculateMatchResults(inputs);
 
@@ -135,16 +131,16 @@ describe("calculateMatchResults", () => {
   it("2着同点: 同点の2人の順位は同じで、順位点は按分される", () => {
     const inputs = [
       { playerId: "p1", playerName: "Alice", score: 40000 },
-      { playerId: "p2", playerName: "Bob",   score: 25000 },
+      { playerId: "p2", playerName: "Bob", score: 25000 },
       { playerId: "p3", playerName: "Carol", score: 25000 },
-      { playerId: "p4", playerName: "Dave",  score: 10000 },
+      { playerId: "p4", playerName: "Dave", score: 10000 },
     ];
     const results = calculateMatchResults(inputs);
 
-    const alice = results.find(r => r.playerId === "p1")!;
-    const bob   = results.find(r => r.playerId === "p2")!;
-    const carol = results.find(r => r.playerId === "p3")!;
-    const dave  = results.find(r => r.playerId === "p4")!;
+    const alice = results.find((r) => r.playerId === "p1")!;
+    const bob = results.find((r) => r.playerId === "p2")!;
+    const carol = results.find((r) => r.playerId === "p3")!;
+    const dave = results.find((r) => r.playerId === "p4")!;
 
     expect(alice.rank).toBe(1);
     expect(bob.rank).toBe(2);
@@ -159,14 +155,14 @@ describe("calculateMatchResults", () => {
     const inputs = [
       { playerId: "p3", playerName: "Carol", score: 18000 },
       { playerId: "p1", playerName: "Alice", score: 42000 },
-      { playerId: "p4", playerName: "Dave",  score: 9000 },
-      { playerId: "p2", playerName: "Bob",   score: 31000 },
+      { playerId: "p4", playerName: "Dave", score: 9000 },
+      { playerId: "p2", playerName: "Bob", score: 31000 },
     ];
     const results = calculateMatchResults(inputs);
 
-    expect(results.find(r => r.playerId === "p1")!.rank).toBe(1);
-    expect(results.find(r => r.playerId === "p2")!.rank).toBe(2);
-    expect(results.find(r => r.playerId === "p3")!.rank).toBe(3);
-    expect(results.find(r => r.playerId === "p4")!.rank).toBe(4);
+    expect(results.find((r) => r.playerId === "p1")!.rank).toBe(1);
+    expect(results.find((r) => r.playerId === "p2")!.rank).toBe(2);
+    expect(results.find((r) => r.playerId === "p3")!.rank).toBe(3);
+    expect(results.find((r) => r.playerId === "p4")!.rank).toBe(4);
   });
 });

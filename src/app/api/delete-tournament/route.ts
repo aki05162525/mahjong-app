@@ -5,7 +5,10 @@ import { checkRateLimit } from "@/lib/rate-limit";
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
   if (!checkRateLimit(ip).ok) {
-    return NextResponse.json({ error: "リクエストが多すぎます。しばらくしてから再試行してください" }, { status: 429 });
+    return NextResponse.json(
+      { error: "リクエストが多すぎます。しばらくしてから再試行してください" },
+      { status: 429 }
+    );
   }
 
   const { tournamentId, password } = await req.json();
@@ -18,10 +21,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "大会IDが必要です" }, { status: 400 });
   }
 
-  const { error } = await supabaseAdmin
-    .from("tournaments")
-    .delete()
-    .eq("id", tournamentId);
+  const { error } = await supabaseAdmin.from("tournaments").delete().eq("id", tournamentId);
 
   if (error) {
     return NextResponse.json({ error: "大会の削除に失敗しました" }, { status: 500 });

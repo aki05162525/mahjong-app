@@ -13,7 +13,10 @@ export function useTournament(tournamentId: string) {
       .eq("id", tournamentId)
       .single()
       .then(({ data, error }) => {
-        if (error || !data) { setNotFound(true); return; }
+        if (error || !data) {
+          setNotFound(true);
+          return;
+        }
         setTournament({ id: data.id, name: data.name, createdAt: new Date(data.created_at) });
       });
   }, [tournamentId]);
