@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     inputs: InputItem[];
   };
 
-  if (!tournamentId || !tableId || !roundNumber || !Array.isArray(inputs)) {
+  if (!tournamentId || !tableId || roundNumber == null || !Array.isArray(inputs)) {
     return NextResponse.json({ error: "必須項目が不足しています" }, { status: 400 });
   }
 
@@ -27,6 +27,12 @@ export async function POST(req: NextRequest) {
   const playerIds = inputs.map((i) => i.playerId);
   if (new Set(playerIds).size !== 4) {
     return NextResponse.json({ error: "プレイヤーが重複しています" }, { status: 400 });
+  }
+
+  // スコアの合計を DB クエリより先に検証する（無駄な往復を避けるため）
+  const total = inputs.reduce((s, i) => s + i.score, 0);
+  if (total !== 100000) {
+    return NextResponse.json({ error: `点数合計が ${total.toLocaleString()} 点です（合計100,000点にしてください）` }, { status: 400 });
   }
 
   // tableId が当該大会に存在するか確認
@@ -49,11 +55,6 @@ export async function POST(req: NextRequest) {
 
   if (!playerCount || playerCount !== 4) {
     return NextResponse.json({ error: "指定されたプレイヤーが見つかりません" }, { status: 400 });
-  }
-
-  const total = inputs.reduce((s, i) => s + i.score, 0);
-  if (total !== 100000) {
-    return NextResponse.json({ error: `点数合計が ${total.toLocaleString()} 点です（合計100,000点にしてください）` }, { status: 400 });
   }
 
   const results = calculateMatchResults(
