@@ -58,7 +58,9 @@ export default function TournamentPage() {
   if (notFound) {
     return (
       <main className="flex flex-col items-center justify-center min-h-screen p-6 gap-6">
-        <p className="text-xl" style={{ color: "var(--body)" }}>大会が見つかりませんでした</p>
+        <p className="text-xl" style={{ color: "var(--body)" }}>
+          大会が見つかりませんでした
+        </p>
         <Link href="/" className="underline text-lg" style={{ color: "var(--primary)" }}>
           トップへ戻る
         </Link>
@@ -69,13 +71,15 @@ export default function TournamentPage() {
   if (!tournament) {
     return (
       <main className="flex flex-col items-center justify-center min-h-screen p-6">
-        <p className="text-lg" style={{ color: "var(--muted)" }}>読み込み中...</p>
+        <p className="text-lg" style={{ color: "var(--muted)" }}>
+          読み込み中...
+        </p>
       </main>
     );
   }
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: "input",   label: "入力" },
+    { key: "input", label: "入力" },
     { key: "ranking", label: "ランキング" },
     { key: "history", label: "履歴" },
   ];
@@ -88,7 +92,9 @@ export default function TournamentPage() {
       {/* ヘッダー */}
       <div className="px-4 pt-4 pb-2 flex flex-col gap-1">
         <div className="flex items-start justify-between gap-2">
-          <Link href="/" className="text-sm shrink-0 pt-1" style={{ color: "var(--primary)" }}>← トップ</Link>
+          <Link href="/" className="text-sm shrink-0 pt-1" style={{ color: "var(--primary)" }}>
+            ← トップ
+          </Link>
           <div className="flex flex-wrap gap-2 justify-end">
             <button
               onClick={handleCopyUrl}
@@ -105,7 +111,11 @@ export default function TournamentPage() {
               選手管理 ({players.length})
             </Link>
             <button
-              onClick={() => { setShowDeleteModal(true); setDeleteError(""); setDeletePassword(""); }}
+              onClick={() => {
+                setShowDeleteModal(true);
+                setDeleteError("");
+                setDeletePassword("");
+              }}
               className="text-sm rounded-lg px-3 py-1 active:opacity-70"
               style={{ color: "var(--error)", border: "1px solid var(--error)" }}
             >
@@ -113,14 +123,21 @@ export default function TournamentPage() {
             </button>
           </div>
         </div>
-        <h1 className="text-xl font-bold" style={{ color: "var(--ink)" }}>{tournament.name}</h1>
+        <h1 className="text-xl font-bold" style={{ color: "var(--ink)" }}>
+          {tournament.name}
+        </h1>
       </div>
 
       {/* 削除モーダル */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-6">
-          <div className="rounded-xl p-6 w-full max-w-sm flex flex-col gap-4" style={{ background: "var(--surface-card)", border: "1px solid var(--hairline)" }}>
-            <h2 className="text-lg font-bold" style={{ color: "var(--ink)" }}>大会を削除</h2>
+          <div
+            className="rounded-xl p-6 w-full max-w-sm flex flex-col gap-4"
+            style={{ background: "var(--surface-card)", border: "1px solid var(--hairline)" }}
+          >
+            <h2 className="text-lg font-bold" style={{ color: "var(--ink)" }}>
+              大会を削除
+            </h2>
             <p className="text-sm" style={{ color: "var(--body)" }}>
               「{tournament.name}」を削除します。プレイヤー・対局履歴も全て消えます。
             </p>
@@ -134,7 +151,11 @@ export default function TournamentPage() {
               style={{ border: "1px solid var(--hairline)", background: "var(--canvas)" }}
               autoFocus
             />
-            {deleteError && <p className="text-sm" style={{ color: "var(--error)" }}>{deleteError}</p>}
+            {deleteError && (
+              <p className="text-sm" style={{ color: "var(--error)" }}>
+                {deleteError}
+              </p>
+            )}
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteModal(false)}
@@ -157,7 +178,10 @@ export default function TournamentPage() {
       )}
 
       {/* タブ */}
-      <div className="flex sticky top-0 z-10" style={{ borderBottom: "1px solid var(--hairline)", background: "var(--canvas)" }}>
+      <div
+        className="flex sticky top-0 z-10"
+        style={{ borderBottom: "1px solid var(--hairline)", background: "var(--canvas)" }}
+      >
         {tabs.map(({ key, label }) => (
           <button
             key={key}
@@ -177,8 +201,8 @@ export default function TournamentPage() {
       <div className="px-4 py-6 flex-1">
         {tab === "ranking" && <Ranking ranking={ranking} />}
 
-        {tab === "input" && (
-          players.length >= 4 ? (
+        {tab === "input" &&
+          (players.length >= 4 ? (
             <MatchForm
               tournamentId={tournamentId}
               players={players}
@@ -200,12 +224,9 @@ export default function TournamentPage() {
                 選手を登録する
               </Link>
             </div>
-          )
-        )}
+          ))}
 
-        {tab === "history" && (
-          <MatchHistory tournamentId={tournamentId} matches={matches} />
-        )}
+        {tab === "history" && <MatchHistory matches={matches} />}
       </div>
     </div>
   );
