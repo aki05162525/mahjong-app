@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { getUsedPlayerIds } from "@/lib/firestore";
+import { getUsedPlayerIds } from "@/lib/types";
 import { calculateBasePoint, calculateUmaPoints } from "@/lib/scoring";
 import { fmtPt } from "@/lib/utils";
-import type { Player, Table, Match } from "@/lib/firestore";
+import type { Player, Table, Match } from "@/lib/types";
 
 type Props = {
   tournamentId: string;

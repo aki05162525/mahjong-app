@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Table } from "@/lib/firestore";
+import type { Table } from "@/lib/types";
 
 type Props = {
   tournamentId: string;

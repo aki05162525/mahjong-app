@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildRanking, type Match } from "./firestore";
+import { buildRanking, type Match } from "./types";
 
 const makeMatch = (id: string, results: Match["results"]): Match => ({
   id,
