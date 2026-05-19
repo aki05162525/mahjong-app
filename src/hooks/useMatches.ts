@@ -80,15 +80,23 @@ export function useMatches(tournamentId: string): { matches: Match[]; ranking: R
       .on("postgres_changes", { event: "*", schema: "public", table: "matches", filter: `tournament_id=eq.${tournamentId}` }, fetchMatches)
       .subscribe();
 
-    // Subscribe to match_results changes (no tournament_id filter available); refetch handles it
+    // Subscribe to match_results INSERT (no tournament_id column; refetch resolves names)
     const resultsChannel = supabase
       .channel("match_results:" + tournamentId)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "match_results" }, fetchMatches)
       .subscribe();
 
+    // Refresh materialized playerName / tableName when a rename happens in this tournament
+    const namesChannel = supabase
+      .channel("match_names:" + tournamentId)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "players", filter: `tournament_id=eq.${tournamentId}` }, fetchMatches)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "tables", filter: `tournament_id=eq.${tournamentId}` }, fetchMatches)
+      .subscribe();
+
     return () => {
       supabase.removeChannel(matchChannel);
       supabase.removeChannel(resultsChannel);
+      supabase.removeChannel(namesChannel);
     };
   }, [tournamentId]);
 
