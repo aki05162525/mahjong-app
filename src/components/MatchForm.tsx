@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { saveMatch, getUsedPlayerIds } from "@/lib/firestore";
+import { getUsedPlayerIds } from "@/lib/firestore";
 import { calculateBasePoint, calculateUmaPoints } from "@/lib/scoring";
 import { fmtPt } from "@/lib/utils";
 import type { Player, Table, Match } from "@/lib/firestore";
@@ -34,7 +34,7 @@ const newSlots = () => [EMPTY_SLOT, EMPTY_SLOT, EMPTY_SLOT, EMPTY_SLOT].map((s) 
 
 export default function MatchForm({ tournamentId, players, tables, matches, matchCounts, maxRound }: Props) {
   const [roundNumber, setRoundNumber] = useState("");
-  const [tableName, setTableName] = useState("");
+  const [tableId, setTableId] = useState("");
   const [slots, setSlots] = useState<PlayerSlot[]>(newSlots);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -69,7 +69,7 @@ export default function MatchForm({ tournamentId, players, tables, matches, matc
 
   const validate = (): string | null => {
     if (!roundNumber.trim()) return "回戦番号を入力してください";
-    if (!tableName.trim()) return "卓名を入力してください";
+    if (!tableId) return "卓名を入力してください";
     for (let i = 0; i < 4; i++) {
       if (!slots[i].playerId) return `${i + 1}人目のプレイヤーを選択してください`;
       if (slots[i].score === "") return `${i + 1}人目の点数を入力してください`;
@@ -91,14 +91,16 @@ export default function MatchForm({ tournamentId, players, tables, matches, matc
     }
     setSaving(true);
     try {
-      const inputs = slots.map((s) => {
-        const player = players.find((p) => p.id === s.playerId)!;
-        return { playerId: s.playerId, playerName: player.name, score: toActualScore(s.score) };
+      const inputs = slots.map((s) => ({ playerId: s.playerId, score: toActualScore(s.score) }));
+      const res = await fetch("/api/matches", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tournamentId, tableId, roundNumber: Number(roundNumber), inputs }),
       });
-      await saveMatch(tournamentId, Number(roundNumber), tableName.trim(), inputs);
+      if (!res.ok) { setError((await res.json()).error ?? "保存に失敗しました"); return; }
       setSlots(newSlots());
       setRoundNumber("");
-      setTableName("");
+      setTableId("");
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch {
@@ -108,7 +110,6 @@ export default function MatchForm({ tournamentId, players, tables, matches, matc
     }
   };
 
-  const inputStyle = { border: "1px solid var(--hairline)", background: "var(--canvas)" };
   const selectStyle = { border: "1px solid var(--hairline)", background: "var(--canvas)" };
 
   return (
@@ -133,14 +134,14 @@ export default function MatchForm({ tournamentId, players, tables, matches, matc
         <div className="flex flex-col gap-1 flex-1">
           <label className="text-sm font-medium" style={{ color: "var(--muted)" }}>卓名</label>
           <select
-            value={tableName}
-            onChange={(e) => setTableName(e.target.value)}
+            value={tableId}
+            onChange={(e) => setTableId(e.target.value)}
             className="rounded-lg px-3 py-3 text-lg w-full"
             style={selectStyle}
           >
             <option value="">選択</option>
             {tables.map((t) => (
-              <option key={t.id} value={t.name}>{t.name}</option>
+              <option key={t.id} value={t.id}>{t.name}</option>
             ))}
           </select>
         </div>

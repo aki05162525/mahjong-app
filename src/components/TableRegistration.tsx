@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { addTable, renameTable } from "@/lib/firestore";
 import type { Table } from "@/lib/firestore";
 
 type Props = {
@@ -24,7 +23,12 @@ export default function TableRegistration({ tournamentId, tables }: Props) {
     setSaving(true);
     setError("");
     try {
-      await addTable(tournamentId, trimmed);
+      const res = await fetch("/api/tables", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tournamentId, name: trimmed }),
+      });
+      if (!res.ok) { setError((await res.json()).error ?? "登録に失敗しました"); return; }
       setName("");
     } catch {
       setError("登録に失敗しました");
@@ -48,7 +52,12 @@ export default function TableRegistration({ tournamentId, tables }: Props) {
     setRenaming(true);
     setError("");
     try {
-      await renameTable(tournamentId, editingId!, trimmed);
+      const res = await fetch(`/api/tables/${editingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmed }),
+      });
+      if (!res.ok) { setError((await res.json()).error ?? "変更に失敗しました"); return; }
       setEditingId(null);
     } catch {
       setError("変更に失敗しました");
