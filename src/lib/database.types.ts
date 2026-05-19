@@ -1,6 +1,6 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
-export interface Database {
+export type Database = {
   public: {
     Tables: {
       tournaments: {
@@ -19,6 +19,7 @@ export interface Database {
           name?: string;
           created_at?: string;
         };
+        Relationships: [];
       };
       players: {
         Row: {
@@ -39,6 +40,15 @@ export interface Database {
           name?: string;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "players_tournament_id_fkey";
+            columns: ["tournament_id"];
+            isOneToOne: false;
+            referencedRelation: "tournaments";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       tables: {
         Row: {
@@ -59,6 +69,15 @@ export interface Database {
           name?: string;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "tables_tournament_id_fkey";
+            columns: ["tournament_id"];
+            isOneToOne: false;
+            referencedRelation: "tournaments";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       matches: {
         Row: {
@@ -82,6 +101,22 @@ export interface Database {
           round_number?: number;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "matches_tournament_id_fkey";
+            columns: ["tournament_id"];
+            isOneToOne: false;
+            referencedRelation: "tournaments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "matches_table_id_fkey";
+            columns: ["table_id"];
+            isOneToOne: false;
+            referencedRelation: "tables";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       match_results: {
         Row: {
@@ -114,10 +149,27 @@ export interface Database {
           uma_point?: number;
           total_point?: number;
         };
+        Relationships: [
+          {
+            foreignKeyName: "match_results_match_id_fkey";
+            columns: ["match_id"];
+            isOneToOne: false;
+            referencedRelation: "matches";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "match_results_player_id_fkey";
+            columns: ["player_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["id"];
+          },
+        ];
       };
     };
-    Views: Record<string, never>;
-    Functions: Record<string, never>;
-    Enums: Record<string, never>;
+    Views: { [_ in never]?: never };
+    Functions: { [_ in never]?: never };
+    Enums: { [_ in never]?: never };
+    CompositeTypes: { [_ in never]?: never };
   };
-}
+};

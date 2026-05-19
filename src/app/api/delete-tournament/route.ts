@@ -1,21 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { initializeApp, getApps, cert } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
-
-function getAdminDb() {
-  if (!getApps().length) {
-    initializeApp({
-      credential: cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-      }),
-    });
-  }
-  return getFirestore();
-}
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
+  if (!checkRateLimit(ip).ok) {
+    return NextResponse.json({ error: "リクエストが多すぎます。しばらくしてから再試行してください" }, { status: 429 });
+  }
+
   const { tournamentId, password } = await req.json();
 
   if (password !== process.env.ADMIN_PASSWORD) {
@@ -26,9 +18,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "大会IDが必要です" }, { status: 400 });
   }
 
-  const db = getAdminDb();
-  // recursiveDelete でサブコレクション（players・matches）ごと全削除
-  await db.recursiveDelete(db.collection("tournaments").doc(tournamentId));
+  const { error } = await supabaseAdmin
+    .from("tournaments")
+    .delete()
+    .eq("id", tournamentId);
+
+  if (error) {
+    return NextResponse.json({ error: "大会の削除に失敗しました" }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true });
 }
