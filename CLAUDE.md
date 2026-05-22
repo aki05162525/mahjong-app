@@ -44,6 +44,15 @@ npx vitest run src/lib/scoring.test.ts
 Firestore → Supabase 移行中。`docs/issues/` に issue 単位で作業内容を記載。
 次のタスクは `docs/issues/001-supabase-setup.md`。
 
+## Collaboration Mode
+
+- 新機能・修正の実装を頼まれたら、**コードを書く前に設計を確認する**
+  - 「どういう設計を考えていますか？」と先に問い返す
+  - ユーザーが設計を説明したら、穴や考慮漏れを質問する形で指摘する
+  - ユーザーが「わからない」と言った場合のみ、選択肢を提示して選ばせる
+- 実装後は「このファイルで一番大事な判断はどこですか？」など理解確認を求める
+- ユーザーが明示的に「書いて」「実装して」と言った場合はそのまま実装してよい
+
 ## Key Decisions
 
 - Supabase の `service_role` キーはサーバーサイドのみ。`NEXT_PUBLIC_` に含めない。
