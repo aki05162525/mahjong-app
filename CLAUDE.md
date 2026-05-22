@@ -31,7 +31,8 @@ npx vitest run src/lib/scoring.test.ts
 ### ディレクトリ構成
 
 - `src/app/api/` — API Routes（サーバーサイド、DB書き込み・バリデーション）
-- `src/lib/` — DB クライアント・型定義・ビジネスロジック（スコア計算・ランキング）
+- `src/lib/` — 型定義・ビジネスロジック（スコア計算・ランキング・マッチフィルター）
+- `src/infra/` — インフラ層（Supabase クライアント）
 - `src/hooks/` — データ取得・リアルタイム購読のカスタムフック
 - `src/components/` — UI コンポーネント（`"use client"` 前提）
 
