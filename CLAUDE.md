@@ -7,17 +7,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev       # 開発サーバー起動
-npm run build     # 本番ビルド
-npm run lint      # ESLint
-npm run test      # テスト一度実行
-npm run test:watch # テストウォッチ
+pnpm dev          # 開発サーバー起動
+pnpm build        # 本番ビルド
+pnpm lint         # ESLint
+pnpm test         # テスト一度実行
+pnpm test:watch   # テストウォッチ
 ```
 
 単一テストファイルを実行:
 
 ```bash
-npx vitest run src/lib/scoring.test.ts
+pnpm vitest run src/lib/scoring.test.ts
 ```
 
 ## Architecture
