@@ -64,9 +64,7 @@ export function buildRanking(matches: Match[]): RankingEntry[] {
   // 同点は同順位
   for (let i = 0; i < entries.length; i++) {
     entries[i].rank =
-      i > 0 && entries[i].totalPoint === entries[i - 1].totalPoint
-        ? entries[i - 1].rank
-        : i + 1;
+      i > 0 && entries[i].totalPoint === entries[i - 1].totalPoint ? entries[i - 1].rank : i + 1;
   }
 
   return entries;

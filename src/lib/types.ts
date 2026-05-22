@@ -31,11 +31,11 @@ export type RankingEntry = {
   playerName: string;
   totalPoint: number;
   matchCount: number;
-  avgRank: number;     // 平均着順
-  avgScore: number;    // 平均打点（持ち点の平均）
-  maxScore: number;    // 最高スコア
-  topRate: number;     // トップ率（%）
-  top2Rate: number;    // 連対率（%）
+  avgRank: number; // 平均着順
+  avgScore: number; // 平均打点（持ち点の平均）
+  maxScore: number; // 最高スコア
+  topRate: number; // トップ率（%）
+  top2Rate: number; // 連対率（%）
   lastAvoidRate: number; // ラス回避率（%）
   rank: number;
 };
