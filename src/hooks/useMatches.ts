@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { buildRanking } from "@/lib/types";
+import { supabase } from "@/infra/supabase";
+import { buildRanking } from "@/lib/ranking";
 import type { Match, RankingEntry } from "@/lib/types";
 
 const MATCH_SELECT = `

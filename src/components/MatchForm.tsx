@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { getUsedPlayerIds } from "@/lib/types";
+import { getUsedPlayerIds } from "@/lib/matchFilter";
 import { calculateBasePoint, calculateUmaPoints } from "@/lib/scoring";
 import { fmtPt } from "@/lib/utils";
 import type { Player, Table, Match } from "@/lib/types";

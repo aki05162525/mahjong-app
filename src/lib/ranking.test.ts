@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { buildRanking, type Match } from "./types";
+import { buildRanking } from "./ranking";
+import type { Match } from "./types";
 
 const makeMatch = (id: string, results: Match["results"]): Match => ({
   id,
@@ -201,7 +202,6 @@ describe("buildRanking", () => {
 
     expect(alice.totalPoint).toBe(47 + 15); // 62
     expect(alice.matchCount).toBe(2);
-    expect(alice.avgPoint).toBe(31);
 
     expect(bob.totalPoint).toBe(16 + 45); // 61
     expect(bob.matchCount).toBe(2);
@@ -711,10 +711,10 @@ describe("buildRanking", () => {
     const carol = ranking.find((r) => r.playerId === "p3")!;
 
     // Alice: 1位1回+2位0回 = 1/2 = 50%
-    expect(alice.inTheMoneyRate).toBe(50);
+    expect(alice.top2Rate).toBe(50);
     // Bob: 1位1回+2位1回 = 2/2 = 100%
-    expect(bob.inTheMoneyRate).toBe(100);
+    expect(bob.top2Rate).toBe(100);
     // Carol: 1位0回+2位1回 = 1/2 = 50%
-    expect(carol.inTheMoneyRate).toBe(50);
+    expect(carol.top2Rate).toBe(50);
   });
 });

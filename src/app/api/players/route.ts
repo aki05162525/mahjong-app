@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase-admin";
+import { supabaseAdmin } from "@/infra/supabase-admin";
 
 export async function POST(req: NextRequest) {
   const { tournamentId, name } = await req.json();
