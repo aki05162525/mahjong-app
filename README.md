@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 麻雀大会管理アプリ
 
-## Getting Started
+麻雀大会の選手・卓・対局結果を管理し、ランキングをリアルタイム表示する Web アプリ。
 
-First, run the development server:
+## 技術スタック
+
+- **フロントエンド**: Next.js (App Router) + TypeScript
+- **DB / 認証**: Supabase（PostgreSQL + Supabase Auth）
+- **認証プロバイダー**: Google OAuth
+- **パッケージマネージャ**: pnpm
+
+## セットアップ
+
+### 1. 依存関係のインストール
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. 環境変数の設定
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+`.env.local` を作成し、以下を設定する。
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```env
+NEXT_PUBLIC_SUPABASE_URL=<Supabase プロジェクト URL>
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<Supabase Publishable Key>
+SUPABASE_SERVICE_ROLE_KEY=<Supabase Service Role Key>
+```
 
-## Learn More
+`SUPABASE_SERVICE_ROLE_KEY` は秘密鍵なので `NEXT_PUBLIC_` に含めず、サーバーサイドのみで使用すること。
 
-To learn more about Next.js, take a look at the following resources:
+### 3. 開発サーバーの起動
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+pnpm dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+[http://localhost:3000](http://localhost:3000) で確認できる。
 
-## Deploy on Vercel
+## 主なコマンド
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+pnpm dev          # 開発サーバー起動
+pnpm build        # 本番ビルド
+pnpm lint         # ESLint
+pnpm test         # テスト一度実行
+pnpm test:watch   # テストウォッチ
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 機能概要
+
+| 操作                 |       オーナー       | 誰でも |
+| -------------------- | :------------------: | :----: |
+| 大会作成             |   ✅（要ログイン）   |   ❌   |
+| 大会・選手・卓の削除 | ✅（自分の大会のみ） |   ❌   |
+| 対局入力             |          ✅          |   ✅   |
+| 閲覧                 |          ✅          |   ✅   |
+
+- ウマは `[30, 10, -10, -30]` 固定、同点按分あり
+- 対局結果はリアルタイムで反映（Supabase Realtime）
