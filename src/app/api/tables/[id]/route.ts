@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/infra/supabase-admin";
+import { getAuthUser } from "@/infra/supabase-server";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const user = await getAuthUser();
+  if (!user) {
+    return NextResponse.json({ error: "ログインが必要です" }, { status: 401 });
+  }
+
   const { id } = await params;
   const { name } = await req.json();
 
@@ -21,6 +27,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   if (!table) {
     return NextResponse.json({ error: "卓が見つかりません" }, { status: 404 });
+  }
+
+  const { data: tournament } = await supabaseAdmin
+    .from("tournaments")
+    .select("owner_id")
+    .eq("id", table.tournament_id)
+    .single();
+
+  if (!tournament || tournament.owner_id !== user.id) {
+    return NextResponse.json({ error: "権限がありません" }, { status: 403 });
   }
 
   const { count } = await supabaseAdmin
