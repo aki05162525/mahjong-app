@@ -20,7 +20,8 @@ export default function TopPage() {
     userId: string;
     list: Tournament[];
   } | null>(null);
-  const myTournaments = tournamentCache?.userId === user?.id ? tournamentCache.list : [];
+  const myTournaments =
+    tournamentCache !== null && tournamentCache.userId === user?.id ? tournamentCache.list : [];
 
   useEffect(() => {
     if (!user) return;
