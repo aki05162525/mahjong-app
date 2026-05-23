@@ -10,23 +10,29 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   const { id } = await params;
 
-  const { data: match } = await supabaseAdmin
+  const { data: match, error: matchError } = await supabaseAdmin
     .from("matches")
     .select("tournament_id")
     .eq("id", id)
     .single();
 
+  if (matchError && matchError.code !== "PGRST116") {
+    return NextResponse.json({ error: "内部エラー" }, { status: 500 });
+  }
   if (!match) {
     return NextResponse.json({ error: "対局が見つかりません" }, { status: 404 });
   }
 
-  const { data: tournament } = await supabaseAdmin
+  const { data: tournament, error: tournamentError } = await supabaseAdmin
     .from("tournaments")
     .select("owner_id")
     .eq("id", match.tournament_id)
     .single();
 
-  if (!tournament || tournament.owner_id !== user.id) {
+  if (tournamentError || !tournament) {
+    return NextResponse.json({ error: "内部エラー" }, { status: 500 });
+  }
+  if (tournament.owner_id !== user.id) {
     return NextResponse.json({ error: "権限がありません" }, { status: 403 });
   }
 

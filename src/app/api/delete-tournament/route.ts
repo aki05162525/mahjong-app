@@ -23,12 +23,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "大会IDが必要です" }, { status: 400 });
   }
 
-  const { data: tournament } = await supabaseAdmin
+  const { data: tournament, error: tournamentError } = await supabaseAdmin
     .from("tournaments")
     .select("owner_id")
     .eq("id", tournamentId)
     .single();
 
+  if (tournamentError && tournamentError.code !== "PGRST116") {
+    return NextResponse.json({ error: "内部エラー" }, { status: 500 });
+  }
   if (!tournament) {
     return NextResponse.json({ error: "大会が見つかりません" }, { status: 404 });
   }

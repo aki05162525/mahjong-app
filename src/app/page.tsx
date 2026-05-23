@@ -20,13 +20,14 @@ export default function TopPage() {
 
   useEffect(() => {
     if (!user) return;
+    let aborted = false;
     supabase
       .from("tournaments")
       .select("id, name, created_at, owner_id")
       .eq("owner_id", user.id)
       .order("created_at", { ascending: false })
       .then(({ data }) => {
-        if (!data) return;
+        if (aborted || !data) return;
         setMyTournaments(
           data.map((t) => ({
             id: t.id,
@@ -36,6 +37,9 @@ export default function TopPage() {
           }))
         );
       });
+    return () => {
+      aborted = true;
+    };
   }, [user]);
 
   const handleJoin = () => {

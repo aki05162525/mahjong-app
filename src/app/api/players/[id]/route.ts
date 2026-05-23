@@ -19,23 +19,29 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "名前は20文字以内で入力してください" }, { status: 400 });
   }
 
-  const { data: player } = await supabaseAdmin
+  const { data: player, error: playerError } = await supabaseAdmin
     .from("players")
     .select("tournament_id")
     .eq("id", id)
     .single();
 
+  if (playerError && playerError.code !== "PGRST116") {
+    return NextResponse.json({ error: "内部エラー" }, { status: 500 });
+  }
   if (!player) {
     return NextResponse.json({ error: "プレイヤーが見つかりません" }, { status: 404 });
   }
 
-  const { data: tournament } = await supabaseAdmin
+  const { data: tournament, error: tournamentError } = await supabaseAdmin
     .from("tournaments")
     .select("owner_id")
     .eq("id", player.tournament_id)
     .single();
 
-  if (!tournament || tournament.owner_id !== user.id) {
+  if (tournamentError || !tournament) {
+    return NextResponse.json({ error: "内部エラー" }, { status: 500 });
+  }
+  if (tournament.owner_id !== user.id) {
     return NextResponse.json({ error: "権限がありません" }, { status: 403 });
   }
 
