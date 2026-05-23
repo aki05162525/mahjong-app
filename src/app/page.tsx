@@ -16,7 +16,11 @@ export default function TopPage() {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
 
-  const [myTournaments, setMyTournaments] = useState<Tournament[]>([]);
+  const [tournamentCache, setTournamentCache] = useState<{
+    userId: string;
+    list: Tournament[];
+  } | null>(null);
+  const myTournaments = tournamentCache?.userId === user?.id ? tournamentCache.list : [];
 
   useEffect(() => {
     if (!user) return;
@@ -28,14 +32,15 @@ export default function TopPage() {
       .order("created_at", { ascending: false })
       .then(({ data }) => {
         if (aborted || !data) return;
-        setMyTournaments(
-          data.map((t) => ({
+        setTournamentCache({
+          userId: user.id,
+          list: data.map((t) => ({
             id: t.id,
             name: t.name,
             createdAt: new Date(t.created_at),
             ownerId: t.owner_id,
-          }))
-        );
+          })),
+        });
       });
     return () => {
       aborted = true;
