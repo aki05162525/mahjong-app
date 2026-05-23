@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/infra/supabase-admin";
+import { getAuthUser } from "@/infra/supabase-server";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
@@ -11,11 +12,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { name, customId, password } = await req.json();
-
-  if (password !== process.env.ADMIN_PASSWORD) {
-    return NextResponse.json({ error: "パスワードが違います" }, { status: 401 });
+  const user = await getAuthUser();
+  if (!user) {
+    return NextResponse.json({ error: "ログインが必要です" }, { status: 401 });
   }
+
+  const { name, customId } = await req.json();
 
   if (!name?.trim()) {
     return NextResponse.json({ error: "大会名を入力してください" }, { status: 400 });
@@ -35,7 +37,7 @@ export async function POST(req: NextRequest) {
 
     const { data, error } = await supabaseAdmin
       .from("tournaments")
-      .insert({ id: customId, name: name.trim() })
+      .insert({ id: customId, name: name.trim(), owner_id: user.id })
       .select("id")
       .single();
 
@@ -54,7 +56,7 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await supabaseAdmin
     .from("tournaments")
-    .insert({ name: name.trim() })
+    .insert({ name: name.trim(), owner_id: user.id })
     .select("id")
     .single();
 

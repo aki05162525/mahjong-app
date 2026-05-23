@@ -7,6 +7,7 @@ import { useTournament } from "@/hooks/useTournament";
 import { usePlayers } from "@/hooks/usePlayers";
 import { useTables } from "@/hooks/useTables";
 import { useMatches } from "@/hooks/useMatches";
+import { useAuth } from "@/hooks/useAuth";
 import MatchForm from "@/components/MatchForm";
 import MatchHistory from "@/components/MatchHistory";
 import Ranking from "@/components/Ranking";
@@ -19,11 +20,13 @@ export default function TournamentPage() {
   const players = usePlayers(tournamentId);
   const tables = useTables(tournamentId);
   const { matches, ranking } = useMatches(tournamentId);
+  const { user } = useAuth();
+
+  const isOwner = !!user && !!tournament && user.id === tournament.ownerId;
 
   const [tab, setTab] = useState<Tab>("input");
   const [copied, setCopied] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deletePassword, setDeletePassword] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
@@ -34,7 +37,7 @@ export default function TournamentPage() {
       const res = await fetch("/api/delete-tournament", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tournamentId, password: deletePassword }),
+        body: JSON.stringify({ tournamentId }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -103,24 +106,27 @@ export default function TournamentPage() {
             >
               {copied ? "コピー済み！" : "URLをコピー"}
             </button>
-            <Link
-              href={`/${tournamentId}/players`}
-              className="text-sm rounded-lg px-3 py-1 active:opacity-70"
-              style={{ color: "var(--muted)", border: "1px solid var(--hairline)" }}
-            >
-              選手管理 ({players.length})
-            </Link>
-            <button
-              onClick={() => {
-                setShowDeleteModal(true);
-                setDeleteError("");
-                setDeletePassword("");
-              }}
-              className="text-sm rounded-lg px-3 py-1 active:opacity-70"
-              style={{ color: "var(--error)", border: "1px solid var(--error)" }}
-            >
-              大会削除
-            </button>
+            {isOwner && (
+              <>
+                <Link
+                  href={`/${tournamentId}/players`}
+                  className="text-sm rounded-lg px-3 py-1 active:opacity-70"
+                  style={{ color: "var(--muted)", border: "1px solid var(--hairline)" }}
+                >
+                  選手管理 ({players.length})
+                </Link>
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(true);
+                    setDeleteError("");
+                  }}
+                  className="text-sm rounded-lg px-3 py-1 active:opacity-70"
+                  style={{ color: "var(--error)", border: "1px solid var(--error)" }}
+                >
+                  大会削除
+                </button>
+              </>
+            )}
           </div>
         </div>
         <h1 className="text-xl font-bold" style={{ color: "var(--ink)" }}>
@@ -141,16 +147,6 @@ export default function TournamentPage() {
             <p className="text-sm" style={{ color: "var(--body)" }}>
               「{tournament.name}」を削除します。プレイヤー・対局履歴も全て消えます。
             </p>
-            <input
-              type="password"
-              value={deletePassword}
-              onChange={(e) => setDeletePassword(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleDelete()}
-              placeholder="管理者パスワード"
-              className="rounded-lg px-4 py-3 text-lg w-full"
-              style={{ border: "1px solid var(--hairline)", background: "var(--canvas)" }}
-              autoFocus
-            />
             {deleteError && (
               <p className="text-sm" style={{ color: "var(--error)" }}>
                 {deleteError}
@@ -216,17 +212,19 @@ export default function TournamentPage() {
               <p style={{ color: "var(--muted)" }}>
                 4人以上の選手を登録すると入力できます（現在 {players.length} 人）
               </p>
-              <Link
-                href={`/${tournamentId}/players`}
-                className="rounded-lg px-4 py-3 text-lg font-semibold text-center active:opacity-80"
-                style={{ background: "var(--primary)", color: "#fff" }}
-              >
-                選手を登録する
-              </Link>
+              {isOwner && (
+                <Link
+                  href={`/${tournamentId}/players`}
+                  className="rounded-lg px-4 py-3 text-lg font-semibold text-center active:opacity-80"
+                  style={{ background: "var(--primary)", color: "#fff" }}
+                >
+                  選手を登録する
+                </Link>
+              )}
             </div>
           ))}
 
-        {tab === "history" && <MatchHistory matches={matches} />}
+        {tab === "history" && <MatchHistory matches={matches} isOwner={isOwner} />}
       </div>
     </div>
   );
