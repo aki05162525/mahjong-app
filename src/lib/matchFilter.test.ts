@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getUsedPlayerIds } from "./types";
+import { getUsedPlayerIds } from "./matchFilter";
 import type { Match } from "./types";
 
 const makeMatch = (id: string, roundNumber: number, playerIds: string[]): Match => ({

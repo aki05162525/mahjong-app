@@ -79,7 +79,7 @@ export default function Ranking({ ranking }: Props) {
                   {(entry.topRate / 100).toFixed(2)}
                 </td>
                 <td className="py-3 pr-3 text-right font-mono" style={{ color: "var(--body)" }}>
-                  {(entry.inTheMoneyRate / 100).toFixed(2)}
+                  {(entry.top2Rate / 100).toFixed(2)}
                 </td>
                 <td className="py-3 pr-3 text-right font-mono" style={{ color: "var(--body)" }}>
                   {(entry.lastAvoidRate / 100).toFixed(2)}

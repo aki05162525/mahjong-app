@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/infra/supabase";
 import type { Player } from "@/lib/types";
 
 export function usePlayers(tournamentId: string): Player[] {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase-admin";
+import { supabaseAdmin } from "@/infra/supabase-admin";
 import { calculateMatchResults } from "@/lib/scoring";
 
 type InputItem = { playerId: string; score: number };
