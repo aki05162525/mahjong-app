@@ -9,7 +9,7 @@ export function useTournament(tournamentId: string) {
   useEffect(() => {
     supabase
       .from("tournaments")
-      .select("id, name, created_at")
+      .select("id, name, created_at, owner_id")
       .eq("id", tournamentId)
       .single()
       .then(({ data, error }) => {
@@ -17,7 +17,12 @@ export function useTournament(tournamentId: string) {
           setNotFound(true);
           return;
         }
-        setTournament({ id: data.id, name: data.name, createdAt: new Date(data.created_at) });
+        setTournament({
+          id: data.id,
+          name: data.name,
+          createdAt: new Date(data.created_at),
+          ownerId: data.owner_id,
+        });
       });
   }, [tournamentId]);
 

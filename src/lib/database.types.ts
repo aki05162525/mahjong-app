@@ -8,16 +8,19 @@ export type Database = {
           id: string;
           name: string;
           created_at: string;
+          owner_id: string;
         };
         Insert: {
           id?: string;
           name: string;
           created_at?: string;
+          owner_id: string;
         };
         Update: {
           id?: string;
           name?: string;
           created_at?: string;
+          owner_id?: string;
         };
         Relationships: [];
       };

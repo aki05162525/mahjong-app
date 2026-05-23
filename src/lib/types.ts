@@ -4,6 +4,7 @@ export type Tournament = {
   id: string;
   name: string;
   createdAt: Date;
+  ownerId: string;
 };
 
 export type Player = {
