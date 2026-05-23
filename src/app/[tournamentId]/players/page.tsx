@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useTournament } from "@/hooks/useTournament";
 import { usePlayers } from "@/hooks/usePlayers";
 import { useTables } from "@/hooks/useTables";
+import { useAuth } from "@/hooks/useAuth";
 import PlayerRegistration from "@/components/PlayerRegistration";
 import TableRegistration from "@/components/TableRegistration";
 
@@ -13,6 +14,9 @@ export default function PlayersPage() {
   const { tournament } = useTournament(tournamentId);
   const players = usePlayers(tournamentId);
   const tables = useTables(tournamentId);
+  const { user } = useAuth();
+
+  const isOwner = !!user && !!tournament && user.id === tournament.ownerId;
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-6 flex flex-col gap-6">
@@ -25,10 +29,10 @@ export default function PlayersPage() {
         </h1>
       </div>
 
-      <PlayerRegistration tournamentId={tournamentId} players={players} />
+      <PlayerRegistration tournamentId={tournamentId} players={players} isOwner={isOwner} />
 
       <div style={{ borderTop: "1px solid var(--hairline)", paddingTop: "1.5rem" }}>
-        <TableRegistration tournamentId={tournamentId} tables={tables} />
+        <TableRegistration tournamentId={tournamentId} tables={tables} isOwner={isOwner} />
       </div>
     </main>
   );

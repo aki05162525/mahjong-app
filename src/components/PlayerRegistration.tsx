@@ -6,9 +6,10 @@ import type { Player } from "@/lib/types";
 type Props = {
   tournamentId: string;
   players: Player[];
+  isOwner?: boolean;
 };
 
-export default function PlayerRegistration({ tournamentId, players }: Props) {
+export default function PlayerRegistration({ tournamentId, players, isOwner = false }: Props) {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -87,29 +88,31 @@ export default function PlayerRegistration({ tournamentId, players }: Props) {
       <h2 className="text-xl font-semibold" style={{ color: "var(--body)" }}>
         プレイヤー登録
       </h2>
-      <div className="flex gap-2">
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-          placeholder="プレイヤー名"
-          className="rounded-lg px-4 py-3 text-lg flex-1"
-          style={{ border: "1px solid var(--hairline)", background: "var(--canvas)" }}
-        />
-        <button
-          onClick={handleAdd}
-          disabled={saving}
-          className="rounded-lg px-5 py-3 text-lg font-semibold active:opacity-80 disabled:opacity-50"
-          style={{ background: "var(--primary)", color: "#fff" }}
-        >
-          追加
-        </button>
-      </div>
+      {isOwner && (
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+            placeholder="プレイヤー名"
+            className="rounded-lg px-4 py-3 text-lg flex-1"
+            style={{ border: "1px solid var(--hairline)", background: "var(--canvas)" }}
+          />
+          <button
+            onClick={handleAdd}
+            disabled={saving}
+            className="rounded-lg px-5 py-3 text-lg font-semibold active:opacity-80 disabled:opacity-50"
+            style={{ background: "var(--primary)", color: "#fff" }}
+          >
+            追加
+          </button>
+        </div>
+      )}
       {error && <p style={{ color: "var(--error)" }}>{error}</p>}
       <ul className="flex flex-col gap-2">
         {players.map((p) =>
-          editingId === p.id ? (
+          isOwner && editingId === p.id ? (
             <li key={p.id} className="flex gap-2 items-center">
               <input
                 type="text"
@@ -143,13 +146,15 @@ export default function PlayerRegistration({ tournamentId, players }: Props) {
               style={{ background: "var(--surface-strong)", color: "var(--body)" }}
             >
               <span>{p.name}</span>
-              <button
-                onClick={() => startEdit(p)}
-                className="text-xs active:opacity-70 ml-2"
-                style={{ color: "var(--muted)" }}
-              >
-                編集
-              </button>
+              {isOwner && (
+                <button
+                  onClick={() => startEdit(p)}
+                  className="text-xs active:opacity-70 ml-2"
+                  style={{ color: "var(--muted)" }}
+                >
+                  編集
+                </button>
+              )}
             </li>
           )
         )}

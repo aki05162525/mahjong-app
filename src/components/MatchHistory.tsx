@@ -4,9 +4,9 @@ import { useState } from "react";
 import type { Match } from "@/lib/types";
 import { fmtPt } from "@/lib/utils";
 
-type Props = { matches: Match[] };
+type Props = { matches: Match[]; isOwner?: boolean };
 
-export default function MatchHistory({ matches }: Props) {
+export default function MatchHistory({ matches, isOwner = false }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleDelete = async (matchId: string) => {
@@ -62,14 +62,16 @@ export default function MatchHistory({ matches }: Props) {
                       minute: "2-digit",
                     })}
                   </span>
-                  <button
-                    onClick={() => handleDelete(match.id)}
-                    disabled={deletingId === match.id}
-                    className="rounded-lg px-3 py-1 text-sm active:opacity-70 disabled:opacity-40"
-                    style={{ color: "var(--error)", border: "1px solid var(--error)" }}
-                  >
-                    削除
-                  </button>
+                  {isOwner && (
+                    <button
+                      onClick={() => handleDelete(match.id)}
+                      disabled={deletingId === match.id}
+                      className="rounded-lg px-3 py-1 text-sm active:opacity-70 disabled:opacity-40"
+                      style={{ color: "var(--error)", border: "1px solid var(--error)" }}
+                    >
+                      削除
+                    </button>
+                  )}
                 </div>
               </div>
               <table className="w-full text-base">
