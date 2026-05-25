@@ -13,6 +13,8 @@ updates:
       all-dependencies:
         patterns:
           - "*"
+    # eslint-plugin-react が ESLint 10 に未対応のため、メジャーアップは手動で判断する。
+    # 対応状況: https://github.com/jsx-eslint/eslint-plugin-react/issues/3977
     ignore:
       - dependency-name: "eslint"
         update-types: ["version-update:semver-major"]
