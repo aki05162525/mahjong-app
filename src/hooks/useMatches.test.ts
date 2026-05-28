@@ -13,7 +13,7 @@ vi.mock("react", async () => {
 });
 
 vi.mock("@/lib/debounce", () => ({
-  debounce: (fn: unknown) => Object.assign(fn, { cancel: vi.fn() }),
+  debounce: (fn: unknown) => Object.assign(fn as object, { cancel: vi.fn() }),
 }));
 
 vi.mock("@/lib/ranking", () => ({
@@ -61,10 +61,13 @@ describe("useMatches — Realtime subscription", () => {
     useMatches("tournament-123");
 
     const matchResultsCalls = mockOn.mock.calls.filter(
-      ([, options]: [string, Record<string, unknown>]) => options.table === "match_results"
+      (args: unknown[]) => (args[1] as Record<string, unknown>).table === "match_results"
     );
 
     expect(matchResultsCalls).toHaveLength(1);
-    expect(matchResultsCalls[0][1]).toHaveProperty("filter", "tournament_id=eq.tournament-123");
+    expect(matchResultsCalls[0][1] as Record<string, unknown>).toHaveProperty(
+      "filter",
+      "tournament_id=eq.tournament-123"
+    );
   });
 });
