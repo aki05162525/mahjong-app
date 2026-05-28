@@ -27,6 +27,9 @@ WHERE mr.match_id = m.id;
 -- バックフィル後に NOT NULL 制約を追加
 ALTER TABLE match_results
   ALTER COLUMN tournament_id SET NOT NULL;
+
+-- Realtime フィルタリングと参照クエリのためにインデックスを作成
+CREATE INDEX ON match_results (tournament_id);
 ```
 
 ### 2. API Route の更新
