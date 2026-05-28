@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/infra/supabase";
 import { buildRanking } from "@/lib/ranking";
+import { debounce } from "@/lib/debounce";
 import type { Match, RankingEntry } from "@/lib/types";
 
 const MATCH_SELECT = `
@@ -72,6 +73,8 @@ export function useMatches(tournamentId: string): { matches: Match[]; ranking: R
           setRanking(buildRanking(mapped));
         });
 
+    const debouncedFetch = debounce(fetchMatches, 100);
+
     fetchMatches();
 
     // Subscribe to matches changes for this tournament
@@ -85,7 +88,7 @@ export function useMatches(tournamentId: string): { matches: Match[]; ranking: R
           table: "matches",
           filter: `tournament_id=eq.${tournamentId}`,
         },
-        fetchMatches
+        debouncedFetch
       )
       .subscribe();
 
@@ -95,7 +98,7 @@ export function useMatches(tournamentId: string): { matches: Match[]; ranking: R
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "match_results" },
-        fetchMatches
+        debouncedFetch
       )
       .subscribe();
 
@@ -110,7 +113,7 @@ export function useMatches(tournamentId: string): { matches: Match[]; ranking: R
           table: "players",
           filter: `tournament_id=eq.${tournamentId}`,
         },
-        fetchMatches
+        debouncedFetch
       )
       .on(
         "postgres_changes",
@@ -120,11 +123,12 @@ export function useMatches(tournamentId: string): { matches: Match[]; ranking: R
           table: "tables",
           filter: `tournament_id=eq.${tournamentId}`,
         },
-        fetchMatches
+        debouncedFetch
       )
       .subscribe();
 
     return () => {
+      debouncedFetch.cancel();
       supabase.removeChannel(matchChannel);
       supabase.removeChannel(resultsChannel);
       supabase.removeChannel(namesChannel);
