@@ -154,4 +154,20 @@ describe("POST /api/matches — DB バリデーション", () => {
       .calls[0][0] as unknown[];
     expect(insertCall).toHaveLength(4);
   });
+
+  it("200: match_results の insert payload に tournament_id が含まれる", async () => {
+    const insertChain = makeChain({ data: null, error: null });
+    mockFrom
+      .mockReturnValueOnce(makeChain({ count: 1 }))
+      .mockReturnValueOnce(makeChain({ count: 4 }))
+      .mockReturnValueOnce(makeChain({ data: { id: "match-id" }, error: null }))
+      .mockReturnValueOnce(insertChain);
+
+    await POST(makeReq({ ...baseBody, inputs: validInputs }));
+
+    const insertCall = (insertChain.insert as ReturnType<typeof vi.fn>).mock.calls[0][0] as Array<
+      Record<string, unknown>
+    >;
+    expect(insertCall[0]).toHaveProperty("tournament_id", "t1");
+  });
 });

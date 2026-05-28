@@ -77,6 +77,7 @@ export async function POST(req: NextRequest) {
   const { error: resultsError } = await supabaseAdmin.from("match_results").insert(
     results.map((r, i) => ({
       match_id: match.id,
+      tournament_id: tournamentId,
       player_id: inputs[i].playerId,
       score: r.score,
       rank: r.rank,
