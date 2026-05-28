@@ -92,12 +92,16 @@ export function useMatches(tournamentId: string): { matches: Match[]; ranking: R
       )
       .subscribe();
 
-    // Subscribe to match_results INSERT (no tournament_id column; refetch resolves names)
     const resultsChannel = supabase
       .channel("match_results:" + tournamentId)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "match_results" },
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "match_results",
+          filter: `tournament_id=eq.${tournamentId}`,
+        },
         debouncedFetch
       )
       .subscribe();

@@ -125,6 +125,7 @@ export type Database = {
         Row: {
           id: string;
           match_id: string;
+          tournament_id: string;
           player_id: string;
           score: number;
           rank: number;
@@ -135,6 +136,7 @@ export type Database = {
         Insert: {
           id?: string;
           match_id: string;
+          tournament_id: string;
           player_id: string;
           score: number;
           rank: number;
@@ -145,6 +147,7 @@ export type Database = {
         Update: {
           id?: string;
           match_id?: string;
+          tournament_id?: string;
           player_id?: string;
           score?: number;
           rank?: number;
@@ -154,11 +157,11 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "match_results_match_id_fkey";
-            columns: ["match_id"];
+            foreignKeyName: "match_results_match_id_tournament_id_fkey";
+            columns: ["match_id", "tournament_id"];
             isOneToOne: false;
             referencedRelation: "matches";
-            referencedColumns: ["id"];
+            referencedColumns: ["id", "tournament_id"];
           },
           {
             foreignKeyName: "match_results_player_id_fkey";
