@@ -56,6 +56,7 @@ function setupMocks(): void {
   mockOn.mockReset();
   mockSubscribe.mockReset();
   mockChannel.mockReset();
+  mockFrom.mockReset();
   mockApplyMatchInsert.mockReset();
   mockApplyResultInsert.mockReset();
 
