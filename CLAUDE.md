@@ -37,6 +37,11 @@ pnpm vitest run src/lib/scoring.test.ts
 
 ## Git
 
+### ブランチ
+
+- PR を作る前に必ず feature ブランチを切る（main への直接 push は禁止されている）
+- ブランチ名の例: `feat/xxx`・`fix/xxx`・`chore/xxx`
+
 ### コミットメッセージ
 
 - What/How はコードを見れば分かる。Why（なぜその変更が必要か）を書く
