@@ -1,4 +1,4 @@
-# #011 `match_results` に `tournament_id` を追加して Realtime フィルターを有効化
+# #030 `match_results` に `tournament_id` を追加して Realtime フィルターを有効化
 
 ## 概要
 
@@ -62,4 +62,4 @@ CREATE INDEX ON match_results (tournament_id);
 
 ## 依存
 
-\#010 のデバウンスが入っていると効果を確認しやすいが、独立して実施可能
+\#029 のデバウンスが入っていると効果を確認しやすいが、独立して実施可能
