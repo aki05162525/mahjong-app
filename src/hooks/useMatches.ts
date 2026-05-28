@@ -1,8 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/infra/supabase";
 import { buildRanking } from "@/lib/ranking";
 import { debounce } from "@/lib/debounce";
+import { applyMatchInsert, applyResultInsert } from "@/lib/matchUpdater";
 import type { Match, RankingEntry } from "@/lib/types";
+import type { Database } from "@/lib/database.types";
+
+type MatchRow = Database["public"]["Tables"]["matches"]["Row"];
+type MatchResultRow = Database["public"]["Tables"]["match_results"]["Row"];
 
 const MATCH_SELECT = `
   id,
@@ -58,6 +63,16 @@ export function useMatches(tournamentId: string): { matches: Match[]; ranking: R
   const [matches, setMatches] = useState<Match[]>([]);
   const [ranking, setRanking] = useState<RankingEntry[]>([]);
 
+  const matchesRef = useRef<Match[]>([]);
+  const playersCacheRef = useRef<Map<string, string>>(new Map());
+  const tablesCacheRef = useRef<Map<string, string>>(new Map());
+
+  const updateState = (newMatches: Match[]) => {
+    matchesRef.current = newMatches;
+    setMatches(newMatches);
+    setRanking(buildRanking(newMatches));
+  };
+
   useEffect(() => {
     const fetchMatches = () =>
       supabase
@@ -69,21 +84,71 @@ export function useMatches(tournamentId: string): { matches: Match[]; ranking: R
         .then(({ data }) => {
           if (!data) return;
           const mapped = (data as unknown as SupabaseMatch[]).map(toMatch);
-          setMatches(mapped);
-          setRanking(buildRanking(mapped));
+          updateState(mapped);
         });
 
     const debouncedFetch = debounce(fetchMatches, 100);
 
-    fetchMatches();
+    const fetchPlayersCache = () =>
+      supabase
+        .from("players")
+        .select("id, name")
+        .eq("tournament_id", tournamentId)
+        .then(({ data }) => {
+          if (data) {
+            playersCacheRef.current = new Map(data.map((p) => [p.id, p.name]));
+          }
+        });
 
-    // Subscribe to matches changes for this tournament
+    const fetchTablesCache = () =>
+      supabase
+        .from("tables")
+        .select("id, name")
+        .eq("tournament_id", tournamentId)
+        .then(({ data }) => {
+          if (data) {
+            tablesCacheRef.current = new Map(data.map((t) => [t.id, t.name]));
+          }
+        });
+
+    fetchMatches();
+    fetchPlayersCache();
+    fetchTablesCache();
+
+    const handleMatchInsert = (payload: { new: MatchRow }) => {
+      const next = applyMatchInsert(matchesRef.current, payload.new, tablesCacheRef.current);
+      if (next === null) {
+        debouncedFetch();
+        return;
+      }
+      updateState(next);
+    };
+
+    const handleResultInsert = (payload: { new: MatchResultRow }) => {
+      const next = applyResultInsert(matchesRef.current, payload.new, playersCacheRef.current);
+      if (next === null) {
+        debouncedFetch();
+        return;
+      }
+      updateState(next);
+    };
+
     const matchChannel = supabase
       .channel("matches:" + tournamentId)
       .on(
         "postgres_changes",
         {
-          event: "*",
+          event: "INSERT",
+          schema: "public",
+          table: "matches",
+          filter: `tournament_id=eq.${tournamentId}`,
+        },
+        handleMatchInsert
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
           schema: "public",
           table: "matches",
           filter: `tournament_id=eq.${tournamentId}`,
@@ -92,6 +157,8 @@ export function useMatches(tournamentId: string): { matches: Match[]; ranking: R
       )
       .subscribe();
 
+    // DELETE は購読しない。match_results は matches 削除時の CASCADE でのみ消えるため、
+    // matches の DELETE 購読による全件再取得で既にカバーされている。
     const resultsChannel = supabase
       .channel("match_results:" + tournamentId)
       .on(
@@ -102,11 +169,11 @@ export function useMatches(tournamentId: string): { matches: Match[]; ranking: R
           table: "match_results",
           filter: `tournament_id=eq.${tournamentId}`,
         },
-        debouncedFetch
+        handleResultInsert
       )
       .subscribe();
 
-    // Refresh materialized playerName / tableName when a rename happens in this tournament
+    // プレイヤー・卓の名前変更時はキャッシュ更新と全件再取得
     const namesChannel = supabase
       .channel("match_names:" + tournamentId)
       .on(
@@ -117,7 +184,10 @@ export function useMatches(tournamentId: string): { matches: Match[]; ranking: R
           table: "players",
           filter: `tournament_id=eq.${tournamentId}`,
         },
-        debouncedFetch
+        () => {
+          fetchPlayersCache();
+          debouncedFetch();
+        }
       )
       .on(
         "postgres_changes",
@@ -127,7 +197,10 @@ export function useMatches(tournamentId: string): { matches: Match[]; ranking: R
           table: "tables",
           filter: `tournament_id=eq.${tournamentId}`,
         },
-        debouncedFetch
+        () => {
+          fetchTablesCache();
+          debouncedFetch();
+        }
       )
       .subscribe();
 
