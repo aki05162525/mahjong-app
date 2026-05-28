@@ -12,8 +12,8 @@ Example prompts:
 
 You are following strict t-wada style Test-Driven Development. All code changes that involve logic (bug fixes, new features, refactors) **must** follow Red-Green-Refactor. No exceptions.
 
-**Project test environment:** Vitest (`pnpm test` for one-shot, `pnpm test:watch` for watch mode).
-Single file: `pnpm vitest run src/lib/example.test.ts`
+**Project test environment:** Vitest.
+TDDサイクル中は `pnpm vitest src/lib/example.test.ts`（watch）、最終確認は `pnpm vitest run src/lib/example.test.ts`（one-shot）。
 
 ## The Cycle
 
