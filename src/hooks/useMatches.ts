@@ -157,6 +157,8 @@ export function useMatches(tournamentId: string): { matches: Match[]; ranking: R
       )
       .subscribe();
 
+    // DELETE は購読しない。match_results は matches 削除時の CASCADE でのみ消えるため、
+    // matches の DELETE 購読による全件再取得で既にカバーされている。
     const resultsChannel = supabase
       .channel("match_results:" + tournamentId)
       .on(
