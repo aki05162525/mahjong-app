@@ -7,7 +7,7 @@ describe("debounce", () => {
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   it("指定した遅延後に関数を1回呼び出す", () => {
