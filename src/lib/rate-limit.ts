@@ -1,21 +1,24 @@
-const store = new Map<string, { count: number; resetAt: number }>();
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
 
-const WINDOW_MS = 60_000;
-const MAX_REQUESTS = 10;
+let ratelimit: Ratelimit | null = null;
 
-export function checkRateLimit(ip: string): { ok: boolean } {
-  const now = Date.now();
-  const entry = store.get(ip);
+function getRatelimit(): Ratelimit {
+  if (!ratelimit) {
+    ratelimit = new Ratelimit({
+      redis: Redis.fromEnv(),
+      limiter: Ratelimit.fixedWindow(10, "60 s"),
+    });
+  }
+  return ratelimit;
+}
 
-  if (!entry || now >= entry.resetAt) {
-    store.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+export async function checkRateLimit(ip: string): Promise<{ ok: boolean }> {
+  try {
+    const { success } = await getRatelimit().limit(ip);
+    return { ok: success };
+  } catch (e) {
+    console.error("rate-limit: Upstash unavailable, failing open", e);
     return { ok: true };
   }
-
-  if (entry.count >= MAX_REQUESTS) {
-    return { ok: false };
-  }
-
-  entry.count++;
-  return { ok: true };
 }
