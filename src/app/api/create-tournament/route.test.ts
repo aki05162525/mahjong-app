@@ -38,7 +38,7 @@ function makeReq(body: object) {
 describe("POST /api/create-tournament", () => {
   beforeEach(() => {
     mockFrom.mockReset();
-    mockCheckRateLimit.mockReturnValue({ ok: true });
+    mockCheckRateLimit.mockResolvedValue({ ok: true });
     mockGetAuthUser.mockResolvedValue({ id: "test-user-id" });
   });
 
@@ -50,7 +50,7 @@ describe("POST /api/create-tournament", () => {
     });
 
     it("429: レート制限に引っかかる", async () => {
-      mockCheckRateLimit.mockReturnValueOnce({ ok: false });
+      mockCheckRateLimit.mockResolvedValueOnce({ ok: false });
       const res = await POST(makeReq({ name: "テスト大会" }));
       expect(res.status).toBe(429);
     });

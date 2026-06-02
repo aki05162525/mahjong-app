@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 
-vi.mock("@/lib/rate-limit", () => ({ checkRateLimit: () => ({ ok: true }) }));
+vi.mock("@/lib/rate-limit", () => ({ checkRateLimit: () => Promise.resolve({ ok: true }) }));
 
 const mockGetAuthUser = vi.hoisted(() => vi.fn());
 vi.mock("@/infra/supabase-server", () => ({
