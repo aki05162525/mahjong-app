@@ -8,7 +8,7 @@ vi.mock("@/infra/supabase-server", () => ({
 
 const mockFrom = vi.hoisted(() => vi.fn());
 vi.mock("@/infra/supabase-admin", () => ({
-  supabaseAdmin: { from: mockFrom },
+  getSupabaseAdmin: () => ({ from: mockFrom }),
 }));
 
 import { DELETE } from "./route";

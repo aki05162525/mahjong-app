@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/infra/supabase-admin";
+import { getSupabaseAdmin } from "@/infra/supabase-admin";
 import { getAuthUser } from "@/infra/supabase-server";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -19,7 +19,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "卓名は20文字以内で入力してください" }, { status: 400 });
   }
 
-  const { data: table, error: tableError } = await supabaseAdmin
+  const { data: table, error: tableError } = await getSupabaseAdmin()
     .from("tables")
     .select("tournament_id")
     .eq("id", id)
@@ -32,7 +32,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "卓が見つかりません" }, { status: 404 });
   }
 
-  const { data: tournament, error: tournamentError } = await supabaseAdmin
+  const { data: tournament, error: tournamentError } = await getSupabaseAdmin()
     .from("tournaments")
     .select("owner_id")
     .eq("id", table.tournament_id)
@@ -45,7 +45,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "権限がありません" }, { status: 403 });
   }
 
-  const { count } = await supabaseAdmin
+  const { count } = await getSupabaseAdmin()
     .from("tables")
     .select("id", { count: "exact", head: true })
     .eq("tournament_id", table.tournament_id)
@@ -56,7 +56,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "同じ名前の卓が既に存在します" }, { status: 409 });
   }
 
-  const { error } = await supabaseAdmin.from("tables").update({ name: trimmed }).eq("id", id);
+  const { error } = await getSupabaseAdmin().from("tables").update({ name: trimmed }).eq("id", id);
 
   if (error) {
     return NextResponse.json({ error: "変更に失敗しました" }, { status: 500 });

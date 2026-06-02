@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/infra/supabase-admin";
+import { getSupabaseAdmin } from "@/infra/supabase-admin";
 import { calculateMatchResults } from "@/lib/scoring";
 
 type InputItem = { playerId: string; score: number };
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   }
 
   // tableId が当該大会に存在するか確認
-  const { count: tableCount } = await supabaseAdmin
+  const { count: tableCount } = await getSupabaseAdmin()
     .from("tables")
     .select("id", { count: "exact", head: true })
     .eq("id", tableId)
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
   }
 
   // 全 playerId が当該大会のプレイヤーか確認
-  const { count: playerCount } = await supabaseAdmin
+  const { count: playerCount } = await getSupabaseAdmin()
     .from("players")
     .select("id", { count: "exact", head: true })
     .eq("tournament_id", tournamentId)
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     inputs.map((i) => ({ playerId: i.playerId, playerName: "", score: i.score }))
   );
 
-  const { data: match, error: matchError } = await supabaseAdmin
+  const { data: match, error: matchError } = await getSupabaseAdmin()
     .from("matches")
     .insert({ tournament_id: tournamentId, table_id: tableId, round_number: roundNumber })
     .select("id")
@@ -74,21 +74,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "保存に失敗しました" }, { status: 500 });
   }
 
-  const { error: resultsError } = await supabaseAdmin.from("match_results").insert(
-    results.map((r, i) => ({
-      match_id: match.id,
-      tournament_id: tournamentId,
-      player_id: inputs[i].playerId,
-      score: r.score,
-      rank: r.rank,
-      base_point: r.basePoint,
-      uma_point: r.umaPoint,
-      total_point: r.totalPoint,
-    }))
-  );
+  const { error: resultsError } = await getSupabaseAdmin()
+    .from("match_results")
+    .insert(
+      results.map((r, i) => ({
+        match_id: match.id,
+        tournament_id: tournamentId,
+        player_id: inputs[i].playerId,
+        score: r.score,
+        rank: r.rank,
+        base_point: r.basePoint,
+        uma_point: r.umaPoint,
+        total_point: r.totalPoint,
+      }))
+    );
 
   if (resultsError) {
-    await supabaseAdmin.from("matches").delete().eq("id", match.id);
+    await getSupabaseAdmin().from("matches").delete().eq("id", match.id);
     return NextResponse.json({ error: "保存に失敗しました" }, { status: 500 });
   }
 

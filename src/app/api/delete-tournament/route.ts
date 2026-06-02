@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/infra/supabase-admin";
+import { getSupabaseAdmin } from "@/infra/supabase-admin";
 import { getAuthUser } from "@/infra/supabase-server";
 import { checkRateLimit } from "@/lib/rate-limit";
 
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "大会IDが必要です" }, { status: 400 });
   }
 
-  const { data: tournament, error: tournamentError } = await supabaseAdmin
+  const { data: tournament, error: tournamentError } = await getSupabaseAdmin()
     .from("tournaments")
     .select("owner_id")
     .eq("id", tournamentId)
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "権限がありません" }, { status: 403 });
   }
 
-  const { error } = await supabaseAdmin.from("tournaments").delete().eq("id", tournamentId);
+  const { error } = await getSupabaseAdmin().from("tournaments").delete().eq("id", tournamentId);
 
   if (error) {
     return NextResponse.json({ error: "大会の削除に失敗しました" }, { status: 500 });

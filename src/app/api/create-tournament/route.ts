@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/infra/supabase-admin";
+import { getSupabaseAdmin } from "@/infra/supabase-admin";
 import { getAuthUser } from "@/infra/supabase-server";
 import { checkRateLimit } from "@/lib/rate-limit";
 
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabaseAdmin()
       .from("tournaments")
       .insert({ id: customId, name: name.trim(), owner_id: user.id })
       .select("id")
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ id: data.id });
   }
 
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from("tournaments")
     .insert({ name: name.trim(), owner_id: user.id })
     .select("id")
