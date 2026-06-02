@@ -7,6 +7,11 @@ const ratelimit = new Ratelimit({
 });
 
 export async function checkRateLimit(ip: string): Promise<{ ok: boolean }> {
-  const { success } = await ratelimit.limit(ip);
-  return { ok: success };
+  try {
+    const { success } = await ratelimit.limit(ip);
+    return { ok: success };
+  } catch (e) {
+    console.error("rate-limit: Upstash unavailable, failing open", e);
+    return { ok: true };
+  }
 }

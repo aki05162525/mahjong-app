@@ -31,4 +31,9 @@ describe("checkRateLimit", () => {
     await checkRateLimit("9.9.9.9");
     expect(mockLimit).toHaveBeenCalledWith("9.9.9.9");
   });
+
+  it("Upstash が失敗したらフェイルオープン（ok:true）にする", async () => {
+    mockLimit.mockRejectedValue(new Error("connection error"));
+    expect(await checkRateLimit("1.2.3.4")).toEqual({ ok: true });
+  });
 });
