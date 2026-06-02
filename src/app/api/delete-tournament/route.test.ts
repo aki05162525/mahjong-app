@@ -38,15 +38,19 @@ function makeReq(body: object) {
 describe("POST /api/delete-tournament", () => {
   beforeEach(() => {
     mockFrom.mockReset();
+    mockCheckRateLimit.mockReset();
+    mockGetAuthUser.mockReset();
     mockCheckRateLimit.mockResolvedValue({ ok: true });
     mockGetAuthUser.mockResolvedValue({ id: "test-user-id" });
   });
 
   describe("認証・認可", () => {
-    it("429: レート制限に引っかかる", async () => {
+    it("429: レート制限に引っかかったら認証・DB 処理を行わずに返す", async () => {
       mockCheckRateLimit.mockResolvedValueOnce({ ok: false });
       const res = await POST(makeReq({ tournamentId: "t1" }));
       expect(res.status).toBe(429);
+      expect(mockGetAuthUser).not.toHaveBeenCalled();
+      expect(mockFrom).not.toHaveBeenCalled();
     });
 
     it("401: 未ログインは削除できない", async () => {
