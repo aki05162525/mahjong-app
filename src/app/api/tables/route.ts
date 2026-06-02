@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/infra/supabase-admin";
+import { getSupabaseAdmin } from "@/infra/supabase-admin";
 import { getAuthUser } from "@/infra/supabase-server";
 
 export async function POST(req: NextRequest) {
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "大会IDが必要です" }, { status: 400 });
   }
 
-  const { data: tournament, error: tournamentError } = await supabaseAdmin
+  const { data: tournament, error: tournamentError } = await getSupabaseAdmin()
     .from("tournaments")
     .select("owner_id")
     .eq("id", tournamentId)
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "卓名は20文字以内で入力してください" }, { status: 400 });
   }
 
-  const { count } = await supabaseAdmin
+  const { count } = await getSupabaseAdmin()
     .from("tables")
     .select("id", { count: "exact", head: true })
     .eq("tournament_id", tournamentId)
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "同じ名前の卓が既に存在します" }, { status: 409 });
   }
 
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from("tables")
     .insert({ tournament_id: tournamentId, name: trimmed })
     .select("id")

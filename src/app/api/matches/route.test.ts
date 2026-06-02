@@ -5,7 +5,7 @@ vi.mock("@/lib/rate-limit", () => ({ checkRateLimit: () => ({ ok: true }) }));
 
 const mockFrom = vi.hoisted(() => vi.fn());
 vi.mock("@/infra/supabase-admin", () => ({
-  supabaseAdmin: { from: mockFrom },
+  getSupabaseAdmin: () => ({ from: mockFrom }),
 }));
 
 import { POST } from "./route";
