@@ -31,6 +31,16 @@ export default function PlayerRegistration({
     ]
   );
 
+  // 再取得（onChange）は成功した書き込みを画面へ反映するだけのベストエフォート。
+  // 失敗しても書き込み自体は成功しているので、mutation の成否には含めず握りつぶす。
+  const refresh = async () => {
+    try {
+      await onChange?.();
+    } catch {
+      // 再取得失敗はビューの一時的なずれのみ。Realtime か次の操作で収束する。
+    }
+  };
+
   const handleAdd = () => {
     const trimmed = name.trim();
     if (!trimmed) {
@@ -58,12 +68,13 @@ export default function PlayerRegistration({
           setName(trimmed);
           return;
         }
-        // 本物の players が trimmed を含むまで待ってから transition を終える（チラつき防止）。
-        await onChange?.();
       } catch {
         setError("登録に失敗しました");
         setName(trimmed);
+        return;
       }
+      // 登録成功。本物の players が trimmed を含むまで待ってから transition を終える（チラつき防止）。
+      await refresh();
     });
   };
 
@@ -95,13 +106,14 @@ export default function PlayerRegistration({
         setError((await res.json()).error ?? "変更に失敗しました");
         return;
       }
-      setEditingId(null);
-      onChange?.();
     } catch {
       setError("変更に失敗しました");
+      return;
     } finally {
       setRenaming(false);
     }
+    setEditingId(null);
+    await refresh();
   };
 
   return (
