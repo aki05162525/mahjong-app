@@ -10,6 +10,7 @@ import { useRules } from "@/hooks/useRules";
 import { useMatches } from "@/hooks/useMatches";
 import { useAuth } from "@/hooks/useAuth";
 import MatchForm from "@/components/MatchForm";
+import MatchFormFour from "@/components/MatchFormFour";
 import MatchHistory from "@/components/MatchHistory";
 import Ranking from "@/components/Ranking";
 
@@ -207,7 +208,15 @@ export default function TournamentPage() {
         {tab === "ranking" && <Ranking ranking={ranking} />}
 
         {tab === "input" &&
-          (players.length >= 4 ? (
+          (players.length === 4 && tables.length < 2 ? (
+            // ちょうど4人・単一卓は組み合わせが1通り。選択を省きドラッグ＋点数入力に特化する。
+            <MatchFormFour
+              tournamentId={tournamentId}
+              players={players}
+              rules={rules}
+              maxRound={maxRound}
+            />
+          ) : players.length >= 4 ? (
             <MatchForm
               tournamentId={tournamentId}
               players={players}
