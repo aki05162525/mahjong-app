@@ -214,7 +214,6 @@ export default function TournamentPage() {
               tournamentId={tournamentId}
               players={players}
               rules={rules}
-              matchCounts={matchCounts}
               maxRound={maxRound}
             />
           ) : players.length >= 4 ? (

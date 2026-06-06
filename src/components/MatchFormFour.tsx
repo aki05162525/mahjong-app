@@ -10,7 +10,6 @@ type Props = {
   tournamentId: string;
   players: Player[]; // ちょうど4人
   rules: Rule[];
-  matchCounts: Record<string, number>;
   maxRound: number;
 };
 
@@ -31,13 +30,7 @@ const arrayMove = (arr: string[], from: number, to: number) => {
  * ちょうど4人のときの対局入力。プレイヤー選択も回戦番号入力も不要（組み合わせは1通り、回戦は通し番号）。
  * 登録4人を東南西北に並べ、ドラッグで席順を変え、点数だけ入力する。並び順は保存後も引き継ぐ。
  */
-export default function MatchFormFour({
-  tournamentId,
-  players,
-  rules,
-  matchCounts,
-  maxRound,
-}: Props) {
+export default function MatchFormFour({ tournamentId, players, rules, maxRound }: Props) {
   const ids = players.map((p) => p.id);
   const idsKey = ids.join(",");
 
@@ -230,7 +223,7 @@ export default function MatchFormFour({
                     )}
                   </svg>
                   <span className="flex-1 truncate text-lg" style={{ color: "var(--body)" }}>
-                    {player?.name ?? "?"}（{matchCounts[id] ?? 0}）
+                    {player?.name ?? "?"}
                   </span>
                 </div>
                 <input
