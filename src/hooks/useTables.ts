@@ -14,7 +14,9 @@ export function useTables(tournamentId: string): {
         .from("tables")
         .select("id, name, created_at")
         .eq("tournament_id", tournamentId)
+        // created_at が同値のときも並び順を固定するため id をタイブレークにする。
         .order("created_at")
+        .order("id")
         .then(({ data }) => {
           if (data)
             setTables(

@@ -14,7 +14,10 @@ export function useRules(tournamentId: string): {
         .from("rules")
         .select("id, name, uma, return_points, is_default, created_at")
         .eq("tournament_id", tournamentId)
+        // created_at は seed でまとめて入れた行が同値になる。id をタイブレークにして
+        // UPDATE（デフォルト切替など）後も並び順が動かないようにする。
         .order("created_at")
+        .order("id")
         .then(({ data }) => {
           if (data)
             setRules(

@@ -14,7 +14,9 @@ export function usePlayers(tournamentId: string): {
         .from("players")
         .select("id, name, created_at")
         .eq("tournament_id", tournamentId)
+        // created_at が同値のときも並び順を固定するため id をタイブレークにする。
         .order("created_at")
+        .order("id")
         .then(({ data }) => {
           if (data)
             setPlayers(
