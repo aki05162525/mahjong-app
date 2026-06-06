@@ -7,15 +7,18 @@ type InputItem = { playerId: string; score: number };
 export async function POST(req: NextRequest) {
   const { tournamentId, tableId, roundNumber, ruleId, inputs } = (await req.json()) as {
     tournamentId: string;
-    tableId: string;
+    tableId?: string | null;
     roundNumber: number;
     ruleId: string;
     inputs: InputItem[];
   };
 
-  if (!tournamentId || !tableId || roundNumber == null || !Array.isArray(inputs)) {
+  if (!tournamentId || roundNumber == null || !Array.isArray(inputs)) {
     return NextResponse.json({ error: "必須項目が不足しています" }, { status: 400 });
   }
+
+  // 卓は複数卓のときだけ持つ。単一卓は table_id を持たない（null）。
+  const normalizedTableId = tableId || null;
 
   if (!ruleId) {
     return NextResponse.json({ error: "ルールを選択してください" }, { status: 400 });
@@ -43,15 +46,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // tableId が当該大会に存在するか確認
-  const { count: tableCount } = await getSupabaseAdmin()
-    .from("tables")
-    .select("id", { count: "exact", head: true })
-    .eq("id", tableId)
-    .eq("tournament_id", tournamentId);
+  // tableId が指定されたときだけ、当該大会に存在するか確認する（単一卓は null）。
+  if (normalizedTableId) {
+    const { count: tableCount } = await getSupabaseAdmin()
+      .from("tables")
+      .select("id", { count: "exact", head: true })
+      .eq("id", normalizedTableId)
+      .eq("tournament_id", tournamentId);
 
-  if (!tableCount || tableCount === 0) {
-    return NextResponse.json({ error: "指定された卓が見つかりません" }, { status: 400 });
+    if (!tableCount || tableCount === 0) {
+      return NextResponse.json({ error: "指定された卓が見つかりません" }, { status: 400 });
+    }
   }
 
   // 全 playerId が当該大会のプレイヤーか確認
@@ -86,7 +91,7 @@ export async function POST(req: NextRequest) {
     .from("matches")
     .insert({
       tournament_id: tournamentId,
-      table_id: tableId,
+      table_id: normalizedTableId,
       round_number: roundNumber,
       rule_id: ruleId,
       uma: rule.uma,

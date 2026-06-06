@@ -143,6 +143,25 @@ describe("POST /api/matches — DB バリデーション", () => {
     expect((await res.json()).id).toBe("match-id");
   });
 
+  it("200: tableId 無し（単一卓）は卓チェックを飛ばし table_id=null で保存する", async () => {
+    // 単一卓では tables の存在確認を行わないため、最初の from() は players になる。
+    const matchInsertChain = makeChain({ data: { id: "match-id" }, error: null });
+    mockFrom
+      .mockReturnValueOnce(makeChain({ count: 4 })) // players: 4人存在
+      .mockReturnValueOnce(makeChain({ data: ruleRow, error: null })) // rules
+      .mockReturnValueOnce(matchInsertChain) // matches: insert
+      .mockReturnValueOnce(makeChain({ data: null, error: null })); // match_results
+
+    const res = await POST(
+      makeReq({ tournamentId: "t1", roundNumber: 1, ruleId: "r1", inputs: validInputs })
+    );
+
+    expect(res.status).toBe(200);
+    const matchPayload = (matchInsertChain.insert as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as Record<string, unknown>;
+    expect(matchPayload.table_id).toBeNull();
+  });
+
   it("200: match_results に 4 件の結果が insert される", async () => {
     const insertChain = makeChain({ data: null, error: null });
     mockFrom

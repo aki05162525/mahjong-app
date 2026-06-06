@@ -43,6 +43,9 @@ export default function MatchForm({
   matchCounts,
   maxRound,
 }: Props) {
+  // 卓は複数卓のときだけ意味を持つ。2卓以上あるときだけ卓セレクタを出す。
+  const multiTable = tables.length >= 2;
+
   const [roundNumber, setRoundNumber] = useState("");
   const [tableId, setTableId] = useState("");
   const [ruleId, setRuleId] = useState("");
@@ -93,7 +96,7 @@ export default function MatchForm({
 
   const validate = (): string | null => {
     if (!roundNumber.trim()) return "回戦番号を入力してください";
-    if (!tableId) return "卓名を入力してください";
+    if (multiTable && !tableId) return "卓を選択してください";
     if (!effectiveRuleId) return "ルールを選択してください";
     for (let i = 0; i < 4; i++) {
       if (!slots[i].playerId) return `${WINDS[i]}のプレイヤーを選択してください`;
@@ -128,7 +131,7 @@ export default function MatchForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           tournamentId,
-          tableId,
+          tableId: multiTable ? tableId : null,
           ruleId: effectiveRuleId,
           roundNumber: Number(roundNumber),
           inputs,
@@ -177,24 +180,26 @@ export default function MatchForm({
             ))}
           </select>
         </div>
-        <div className="flex flex-col gap-1 flex-1">
-          <label className="text-sm font-medium" style={{ color: "var(--muted)" }}>
-            卓名
-          </label>
-          <select
-            value={tableId}
-            onChange={(e) => setTableId(e.target.value)}
-            className="rounded-lg px-3 py-3 text-lg w-full"
-            style={selectStyle}
-          >
-            <option value="">選択</option>
-            {tables.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        {multiTable && (
+          <div className="flex flex-col gap-1 flex-1">
+            <label className="text-sm font-medium" style={{ color: "var(--muted)" }}>
+              卓
+            </label>
+            <select
+              value={tableId}
+              onChange={(e) => setTableId(e.target.value)}
+              className="rounded-lg px-3 py-3 text-lg w-full"
+              style={selectStyle}
+            >
+              <option value="">選択</option>
+              {tables.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-1">

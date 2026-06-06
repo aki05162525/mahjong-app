@@ -124,7 +124,7 @@ export type Database = {
         Row: {
           id: string;
           tournament_id: string;
-          table_id: string;
+          table_id: string | null;
           round_number: number;
           rule_id: string | null;
           uma: number[];
@@ -134,7 +134,7 @@ export type Database = {
         Insert: {
           id?: string;
           tournament_id: string;
-          table_id: string;
+          table_id?: string | null;
           round_number: number;
           rule_id?: string | null;
           uma: number[];
@@ -144,7 +144,7 @@ export type Database = {
         Update: {
           id?: string;
           tournament_id?: string;
-          table_id?: string;
+          table_id?: string | null;
           round_number?: number;
           rule_id?: string | null;
           uma?: number[];

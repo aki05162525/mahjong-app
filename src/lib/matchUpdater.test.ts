@@ -113,6 +113,25 @@ describe("applyMatchInsert", () => {
     expect(result).toBeNull();
   });
 
+  it("table_id が null（単一卓）のとき、tableName を空文字にして追加する", () => {
+    const tablesCache = new Map<string, string>();
+    const payload = {
+      id: "match-2",
+      tournament_id: "t-1",
+      table_id: null,
+      round_number: 2,
+      rule_id: "rule-1",
+      uma: [30, 10, -10, -30],
+      return_points: 30000,
+      created_at: "2024-01-01T11:00:00Z",
+    };
+
+    const result = applyMatchInsert([baseMatch], payload, tablesCache);
+
+    expect(result).not.toBeNull();
+    expect(result![1]).toMatchObject({ id: "match-2", tableName: "" });
+  });
+
   it("すでに同じidのマッチが存在するとき、stateをそのまま返す（冪等性）", () => {
     const tablesCache = new Map([["table-1", "East Table"]]);
     const payload = {

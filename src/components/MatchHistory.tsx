@@ -5,9 +5,9 @@ import type { Match } from "@/lib/types";
 import { formatUma } from "@/lib/formatUma";
 import { fmtPt } from "@/lib/utils";
 
-type Props = { matches: Match[]; isOwner?: boolean };
+type Props = { matches: Match[]; isOwner?: boolean; showTable?: boolean };
 
-export default function MatchHistory({ matches, isOwner = false }: Props) {
+export default function MatchHistory({ matches, isOwner = false, showTable = false }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<Set<string>>(new Set());
 
@@ -129,7 +129,8 @@ export default function MatchHistory({ matches, isOwner = false }: Props) {
               >
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-lg" style={{ color: "var(--ink)" }}>
-                    第{match.roundNumber}回戦 {match.tableName}
+                    第{match.roundNumber}回戦
+                    {showTable && match.tableName ? ` ${match.tableName}` : ""}
                   </span>
                   <div className="flex items-center gap-3">
                     <span className="text-sm" style={{ color: "var(--muted)" }}>

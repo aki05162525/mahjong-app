@@ -103,9 +103,14 @@ export default function TableRegistration({
 
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="text-xl font-semibold" style={{ color: "var(--body)" }}>
-        卓登録
-      </h2>
+      <div className="flex flex-col gap-1">
+        <h2 className="text-xl font-semibold" style={{ color: "var(--body)" }}>
+          卓登録
+        </h2>
+        <p className="text-sm" style={{ color: "var(--muted)" }}>
+          複数卓に分けて同時進行する場合のみ登録します。1卓だけなら登録は不要です。
+        </p>
+      </div>
       {isOwner && (
         <div className="flex gap-2">
           <input

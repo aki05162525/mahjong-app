@@ -234,7 +234,9 @@ export default function TournamentPage() {
             </div>
           ))}
 
-        {tab === "history" && <MatchHistory matches={matches} isOwner={isOwner} />}
+        {tab === "history" && (
+          <MatchHistory matches={matches} isOwner={isOwner} showTable={tables.length >= 2} />
+        )}
       </div>
     </div>
   );
