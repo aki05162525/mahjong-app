@@ -5,8 +5,9 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { SEED_RULES } from "@/lib/seedRules";
 
 // 新規大会に標準ルールを投入する。対局入力で選べるルールが最初から存在するようにする。
+// 失敗すると「ルールが無く対局を登録できない大会」が残るため、エラーを呼び出し元に返す。
 async function seedRules(tournamentId: string) {
-  await getSupabaseAdmin()
+  const { error } = await getSupabaseAdmin()
     .from("rules")
     .insert(
       SEED_RULES.map((r) => ({
@@ -17,6 +18,18 @@ async function seedRules(tournamentId: string) {
         is_default: r.isDefault,
       }))
     );
+  return error;
+}
+
+// 大会作成後に標準ルールを seed する。失敗したら大会を削除して 500 を返し、
+// ルールが無く対局を登録できない中途半端な大会を残さない。
+async function finishCreation(tournamentId: string) {
+  const seedError = await seedRules(tournamentId);
+  if (seedError) {
+    await getSupabaseAdmin().from("tournaments").delete().eq("id", tournamentId);
+    return NextResponse.json({ error: "大会の作成に失敗しました" }, { status: 500 });
+  }
+  return NextResponse.json({ id: tournamentId });
 }
 
 export async function POST(req: NextRequest) {
@@ -67,8 +80,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "大会の作成に失敗しました" }, { status: 500 });
     }
 
-    await seedRules(data.id);
-    return NextResponse.json({ id: data.id });
+    return finishCreation(data.id);
   }
 
   const { data, error } = await getSupabaseAdmin()
@@ -81,6 +93,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "大会の作成に失敗しました" }, { status: 500 });
   }
 
-  await seedRules(data.id);
-  return NextResponse.json({ id: data.id });
+  return finishCreation(data.id);
 }

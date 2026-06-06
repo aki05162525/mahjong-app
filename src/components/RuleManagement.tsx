@@ -15,31 +15,43 @@ export default function RuleManagement({ tournamentId, rules, isOwner = false }:
   const [error, setError] = useState("");
 
   const create = async (values: RuleFormValues): Promise<string | null> => {
-    const res = await fetch("/api/rules", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tournamentId, ...values }),
-    });
-    if (!res.ok) return (await res.json()).error ?? "作成に失敗しました";
-    return null;
+    try {
+      const res = await fetch("/api/rules", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tournamentId, ...values }),
+      });
+      if (!res.ok) return (await res.json()).error ?? "作成に失敗しました";
+      return null;
+    } catch {
+      return "作成に失敗しました";
+    }
   };
 
   const update = async (id: string, values: RuleFormValues): Promise<string | null> => {
-    const res = await fetch(`/api/rules/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
-    });
-    if (!res.ok) return (await res.json()).error ?? "変更に失敗しました";
-    setEditingId(null);
-    return null;
+    try {
+      const res = await fetch(`/api/rules/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      if (!res.ok) return (await res.json()).error ?? "変更に失敗しました";
+      setEditingId(null);
+      return null;
+    } catch {
+      return "変更に失敗しました";
+    }
   };
 
   const remove = async (id: string) => {
     setError("");
-    const res = await fetch(`/api/rules/${id}`, { method: "DELETE" });
-    if (!res.ok) {
-      setError((await res.json()).error ?? "削除に失敗しました");
+    try {
+      const res = await fetch(`/api/rules/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        setError((await res.json()).error ?? "削除に失敗しました");
+      }
+    } catch {
+      setError("削除に失敗しました");
     }
   };
 
