@@ -37,6 +37,11 @@ pnpm vitest run src/lib/scoring.test.ts
 
 ## Git
 
+### ブランチ運用
+
+- `main` には直接コミットしない。必ずブランチを切って作業し、PR 経由でマージする。
+- ブランチ名は `fix/...`・`feat/...` など prefix をつける。
+
 ### コミットメッセージ
 
 - What/How はコードを見れば分かる。Why（なぜその変更が必要か）を書く
@@ -52,6 +57,7 @@ pnpm vitest run src/lib/scoring.test.ts
 
 - **Why を必ず書く**: なぜこの変更が必要か・なぜそのコードになっているか
 - What/How は diff で分かるので書かない
+- `.github/PULL_REQUEST_TEMPLATE.md` のテンプレに沿って作成する
 
 ## Key Decisions
 

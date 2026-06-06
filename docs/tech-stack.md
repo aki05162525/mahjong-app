@@ -1,6 +1,37 @@
 # 技術選定
 
-作成日: 2026-05-19
+作成日: 2026-05-19  
+更新日: 2026-06-02
+
+---
+
+## アーキテクチャ概要
+
+```mermaid
+graph TD
+    Browser["ブラウザ"]
+
+    subgraph Vercel["Vercel（Tokyo / AWS ap-northeast-1）"]
+        Next["Next.js\nPages / RSC"]
+        API["API Routes\nservice_role キー"]
+    end
+
+    subgraph Upstash["Upstash（Tokyo / AWS ap-northeast-1）"]
+        Redis["Redis\nレートリミット"]
+    end
+
+    subgraph Supabase["Supabase（PostgreSQL）"]
+        DB["Database\n（RLS 有効）"]
+        RT["Realtime\nWebSocket"]
+    end
+
+    Browser -->|"ページ表示"| Next
+    Browser -->|"書き込み（POST）"| API
+    API -->|"レート確認"| Redis
+    API -->|"INSERT / DELETE"| DB
+    Browser -->|"SELECT（public key）"| DB
+    RT -->|"INSERT イベント push"| Browser
+```
 
 ---
 
@@ -11,8 +42,8 @@
 | フロントエンド | React + Next.js |
 | バックエンド | Next.js API Routes |
 | データベース | Supabase |
+| レートリミット | Upstash Redis |
 | ホスティング | Vercel |
-| モニタリング | Sentry |
 
 ---
 
@@ -38,18 +69,18 @@
 - リアルタイムサブスクリプション機能があり、Firestore の `onSnapshot` 相当の挙動を実現できる
 - 無料枠（DB 500MB・週次停止あり）でこのアプリの規模は十分に収まる
 
+### Upstash Redis（レートリミット）
+
+- Vercel のサーバーレス環境では複数インスタンスが起動するため、プロセスのメモリ上に状態を持つレートリミットは機能しない。全インスタンスで共有できる外部ストアが必要
+- Supabase DB をレートリミットのカウントに使うと、攻撃集中時に守るべき DB 自身も大量クエリを受けるため不適切
+- Redis はインメモリ設計で高速・高耐久であり、レートリミット用途に適している
+- Vercel の Tokyo リージョン（AWS ap-northeast-1）に合わせて同リージョンに配置し、往復レイテンシを最小化している
+
 ### Vercel
 
 - Next.js との親和性が最も高く、設定なしでデプロイできる
 - 無料枠で十分な規模のアプリである
 - サーバー管理が不要
-
-### Sentry
-
-- Vercel のモニタリング機能は有料のため、無料で使える Sentry を採用
-- 本番環境でエラーが発生した際にスタックトレースと通知を受け取れる
-- Next.js との公式インテグレーションがありセットアップが簡単
-- 無料枠で月 5,000 イベントまで対応でき、このアプリの規模では十分
 
 ---
 
@@ -61,3 +92,4 @@
 | Hono / Express | Next.js API Routes で十分なため不要。バックエンドを別サーバーに分けるメリットがない |
 | SolidJS | React からの移行コストに対してメリットが薄い。Firebase 関連ライブラリのエコシステムも React の方が充実している |
 | Firebase Hosting | Vercel の方が Next.js のデプロイ体験が優れている |
+| Supabase（レートリミット用途） | 攻撃時に守るべき DB を自分が攻撃する構造になるため不採用。詳細は `docs/rate-limiting-upstash.md` を参照 |
