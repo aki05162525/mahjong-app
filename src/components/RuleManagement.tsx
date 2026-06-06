@@ -9,9 +9,10 @@ type Props = {
   tournamentId: string;
   rules: Rule[];
   isOwner?: boolean;
+  onChange?: () => void | PromiseLike<void>;
 };
 
-export default function RuleManagement({ tournamentId, rules, isOwner = false }: Props) {
+export default function RuleManagement({ tournamentId, rules, isOwner = false, onChange }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -24,6 +25,7 @@ export default function RuleManagement({ tournamentId, rules, isOwner = false }:
         body: JSON.stringify({ tournamentId, ...values }),
       });
       if (!res.ok) return (await res.json()).error ?? "作成に失敗しました";
+      await onChange?.();
       return null;
     } catch {
       return "作成に失敗しました";
@@ -38,6 +40,8 @@ export default function RuleManagement({ tournamentId, rules, isOwner = false }:
         body: JSON.stringify(values),
       });
       if (!res.ok) return (await res.json()).error ?? "変更に失敗しました";
+      // 新デフォルト設定時は旧デフォルト行も is_default=false に変わるので、全件取り直す。
+      await onChange?.();
       setEditingId(null);
       return null;
     } catch {
@@ -52,6 +56,8 @@ export default function RuleManagement({ tournamentId, rules, isOwner = false }:
       const res = await fetch(`/api/rules/${id}`, { method: "DELETE" });
       if (!res.ok) {
         setError((await res.json()).error ?? "削除に失敗しました");
+      } else {
+        await onChange?.();
       }
     } catch {
       setError("削除に失敗しました");
