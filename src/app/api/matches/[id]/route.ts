@@ -44,20 +44,29 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   // 4人モード（登録ちょうど4人＝回戦が通し番号）のときだけ、削除した回戦より後ろを繰り上げて
   // 1..N の連番を保つ。5人以上は回戦が複数卓にまたがり手動採番なので触らない。
-  const { count: playerCount } = await getSupabaseAdmin()
+  // この再採番が途中で失敗すると回戦番号が部分的にずれて不整合になるため、各クエリのエラーを必ず検査する。
+  const { count: playerCount, error: countError } = await getSupabaseAdmin()
     .from("players")
     .select("id", { count: "exact", head: true })
     .eq("tournament_id", match.tournament_id);
 
+  if (countError) {
+    return NextResponse.json({ error: "回戦番号の更新に失敗しました" }, { status: 500 });
+  }
+
   if (playerCount === 4) {
-    const { data: subsequent } = await getSupabaseAdmin()
+    const { data: subsequent, error: subsequentError } = await getSupabaseAdmin()
       .from("matches")
       .select("id, round_number")
       .eq("tournament_id", match.tournament_id)
       .gt("round_number", match.round_number);
 
+    if (subsequentError) {
+      return NextResponse.json({ error: "回戦番号の更新に失敗しました" }, { status: 500 });
+    }
+
     if (subsequent && subsequent.length > 0) {
-      await Promise.all(
+      const results = await Promise.all(
         subsequent.map((m) =>
           getSupabaseAdmin()
             .from("matches")
@@ -65,6 +74,9 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
             .eq("id", m.id)
         )
       );
+      if (results.some((r) => r.error)) {
+        return NextResponse.json({ error: "回戦番号の更新に失敗しました" }, { status: 500 });
+      }
     }
   }
 

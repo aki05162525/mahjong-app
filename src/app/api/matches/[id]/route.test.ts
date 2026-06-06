@@ -104,4 +104,32 @@ describe("DELETE /api/matches/[id]", () => {
       expect(mockFrom).toHaveBeenCalledTimes(7);
     });
   });
+
+  describe("再採番の失敗", () => {
+    it("500: プレイヤー数の取得が失敗したら500（静かにスキップしない）", async () => {
+      mockFrom
+        .mockReturnValueOnce(
+          makeChain({ data: { tournament_id: "t1", round_number: 2 }, error: null })
+        )
+        .mockReturnValueOnce(makeChain({ data: { owner_id: "test-user-id" }, error: null }))
+        .mockReturnValueOnce(makeChain({ error: null })) // delete
+        .mockReturnValueOnce(makeChain({ count: null, error: { message: "boom" } })); // players count 失敗
+      const res = await DELETE(makeReq("match-1"), { params: makeParams("match-1") });
+      expect(res.status).toBe(500);
+    });
+
+    it("500: 後続の繰り上げ update が1件でも失敗したら500", async () => {
+      mockFrom
+        .mockReturnValueOnce(
+          makeChain({ data: { tournament_id: "t1", round_number: 2 }, error: null })
+        )
+        .mockReturnValueOnce(makeChain({ data: { owner_id: "test-user-id" }, error: null }))
+        .mockReturnValueOnce(makeChain({ error: null })) // delete
+        .mockReturnValueOnce(makeChain({ count: 4 })) // 登録ちょうど4人
+        .mockReturnValueOnce(makeChain({ data: [{ id: "m4", round_number: 3 }] })) // 後続1件
+        .mockReturnValueOnce(makeChain({ error: { message: "boom" } })); // update 失敗
+      const res = await DELETE(makeReq("match-1"), { params: makeParams("match-1") });
+      expect(res.status).toBe(500);
+    });
+  });
 });
