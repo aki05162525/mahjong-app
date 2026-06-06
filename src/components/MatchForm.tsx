@@ -21,6 +21,7 @@ type PlayerSlot = {
 };
 
 const EMPTY_SLOT: PlayerSlot = { playerId: "", score: "" };
+const WINDS = ["東", "南", "西", "北"] as const;
 const toActualScore = (input: string) => Number(input) * 100;
 
 const calcLastScore = (slots: PlayerSlot[]): string => {
@@ -78,9 +79,9 @@ export default function MatchForm({
     if (!roundNumber.trim()) return "回戦番号を入力してください";
     if (!tableId) return "卓名を入力してください";
     for (let i = 0; i < 4; i++) {
-      if (!slots[i].playerId) return `${i + 1}人目のプレイヤーを選択してください`;
-      if (slots[i].score === "") return `${i + 1}人目の点数を入力してください`;
-      if (isNaN(Number(slots[i].score))) return `${i + 1}人目の点数は数値で入力してください`;
+      if (!slots[i].playerId) return `${WINDS[i]}のプレイヤーを選択してください`;
+      if (slots[i].score === "") return `${WINDS[i]}の点数を入力してください`;
+      if (isNaN(Number(slots[i].score))) return `${WINDS[i]}の点数は数値で入力してください`;
     }
     if (new Set(slots.map((s) => s.playerId)).size !== 4)
       return "同じプレイヤーを重複して選択できません";
@@ -178,7 +179,7 @@ export default function MatchForm({
         return (
           <div key={i} className="flex gap-2 items-center">
             <span className="text-base font-medium w-6" style={{ color: "var(--muted)" }}>
-              {i + 1}
+              {WINDS[i]}
             </span>
             <select
               value={slot.playerId}
