@@ -1,25 +1,33 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/infra/supabase";
 import type { Table } from "@/lib/types";
 
-export function useTables(tournamentId: string): Table[] {
+export function useTables(tournamentId: string): {
+  tables: Table[];
+  refetch: () => PromiseLike<void>;
+} {
   const [tables, setTables] = useState<Table[]>([]);
 
-  useEffect(() => {
-    const fetch = () =>
+  const refetch = useCallback(
+    () =>
       supabase
         .from("tables")
         .select("id, name, created_at")
         .eq("tournament_id", tournamentId)
+        // created_at が同値のときも並び順を固定するため id をタイブレークにする。
         .order("created_at")
+        .order("id")
         .then(({ data }) => {
           if (data)
             setTables(
               data.map((t) => ({ id: t.id, name: t.name, createdAt: new Date(t.created_at) }))
             );
-        });
+        }),
+    [tournamentId]
+  );
 
-    fetch();
+  useEffect(() => {
+    refetch();
 
     const channel = supabase
       .channel("tables:" + tournamentId)
@@ -31,14 +39,14 @@ export function useTables(tournamentId: string): Table[] {
           table: "tables",
           filter: `tournament_id=eq.${tournamentId}`,
         },
-        fetch
+        refetch
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [tournamentId]);
+  }, [tournamentId, refetch]);
 
-  return tables;
+  return { tables, refetch };
 }

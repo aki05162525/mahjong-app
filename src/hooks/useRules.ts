@@ -1,17 +1,23 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/infra/supabase";
 import type { Rule } from "@/lib/types";
 
-export function useRules(tournamentId: string): Rule[] {
+export function useRules(tournamentId: string): {
+  rules: Rule[];
+  refetch: () => PromiseLike<void>;
+} {
   const [rules, setRules] = useState<Rule[]>([]);
 
-  useEffect(() => {
-    const fetch = () =>
+  const refetch = useCallback(
+    () =>
       supabase
         .from("rules")
         .select("id, name, uma, return_points, is_default, created_at")
         .eq("tournament_id", tournamentId)
+        // created_at は seed でまとめて入れた行が同値になる。id をタイブレークにして
+        // UPDATE（デフォルト切替など）後も並び順が動かないようにする。
         .order("created_at")
+        .order("id")
         .then(({ data }) => {
           if (data)
             setRules(
@@ -24,9 +30,12 @@ export function useRules(tournamentId: string): Rule[] {
                 createdAt: new Date(r.created_at),
               }))
             );
-        });
+        }),
+    [tournamentId]
+  );
 
-    fetch();
+  useEffect(() => {
+    refetch();
 
     const channel = supabase
       .channel("rules:" + tournamentId)
@@ -38,14 +47,14 @@ export function useRules(tournamentId: string): Rule[] {
           table: "rules",
           filter: `tournament_id=eq.${tournamentId}`,
         },
-        fetch
+        refetch
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [tournamentId]);
+  }, [tournamentId, refetch]);
 
-  return rules;
+  return { rules, refetch };
 }

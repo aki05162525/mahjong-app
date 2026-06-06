@@ -12,8 +12,8 @@ import TableRegistration from "@/components/TableRegistration";
 export default function PlayersPage() {
   const { tournamentId } = useParams<{ tournamentId: string }>();
   const { tournament } = useTournament(tournamentId);
-  const players = usePlayers(tournamentId);
-  const tables = useTables(tournamentId);
+  const { players, refetch: refetchPlayers } = usePlayers(tournamentId);
+  const { tables, refetch: refetchTables } = useTables(tournamentId);
   const { user } = useAuth();
 
   const isOwner = !!user && !!tournament && user.id === tournament.ownerId;
@@ -29,10 +29,20 @@ export default function PlayersPage() {
         </h1>
       </div>
 
-      <PlayerRegistration tournamentId={tournamentId} players={players} isOwner={isOwner} />
+      <PlayerRegistration
+        tournamentId={tournamentId}
+        players={players}
+        isOwner={isOwner}
+        onChange={refetchPlayers}
+      />
 
       <div style={{ borderTop: "1px solid var(--hairline)", paddingTop: "1.5rem" }}>
-        <TableRegistration tournamentId={tournamentId} tables={tables} isOwner={isOwner} />
+        <TableRegistration
+          tournamentId={tournamentId}
+          tables={tables}
+          isOwner={isOwner}
+          onChange={refetchTables}
+        />
       </div>
     </main>
   );

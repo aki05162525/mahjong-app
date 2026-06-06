@@ -143,6 +143,35 @@ describe("POST /api/matches — DB バリデーション", () => {
     expect((await res.json()).id).toBe("match-id");
   });
 
+  it("200: tableId 無し（卓<2）は table_id=null で保存する", async () => {
+    // 卓未指定のときは「2卓以上あるか」を数えるので、最初の from() は tables の総数。
+    const matchInsertChain = makeChain({ data: { id: "match-id" }, error: null });
+    mockFrom
+      .mockReturnValueOnce(makeChain({ count: 1 })) // tables: 大会内に1卓のみ（<2なので卓省略可）
+      .mockReturnValueOnce(makeChain({ count: 4 })) // players: 4人存在
+      .mockReturnValueOnce(makeChain({ data: ruleRow, error: null })) // rules
+      .mockReturnValueOnce(matchInsertChain) // matches: insert
+      .mockReturnValueOnce(makeChain({ data: null, error: null })); // match_results
+
+    const res = await POST(
+      makeReq({ tournamentId: "t1", roundNumber: 1, ruleId: "r1", inputs: validInputs })
+    );
+
+    expect(res.status).toBe(200);
+    const matchPayload = (matchInsertChain.insert as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as Record<string, unknown>;
+    expect(matchPayload.table_id).toBeNull();
+  });
+
+  it("400: tableId 無しでも大会に2卓以上あれば卓必須", async () => {
+    mockFrom.mockReturnValueOnce(makeChain({ count: 2 })); // tables: 2卓ある
+    const res = await POST(
+      makeReq({ tournamentId: "t1", roundNumber: 1, ruleId: "r1", inputs: validInputs })
+    );
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toMatch(/卓/);
+  });
+
   it("200: match_results に 4 件の結果が insert される", async () => {
     const insertChain = makeChain({ data: null, error: null });
     mockFrom

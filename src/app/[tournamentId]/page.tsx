@@ -18,9 +18,9 @@ type Tab = "ranking" | "input" | "history";
 export default function TournamentPage() {
   const { tournamentId } = useParams<{ tournamentId: string }>();
   const { tournament, notFound } = useTournament(tournamentId);
-  const players = usePlayers(tournamentId);
-  const tables = useTables(tournamentId);
-  const rules = useRules(tournamentId);
+  const { players } = usePlayers(tournamentId);
+  const { tables } = useTables(tournamentId);
+  const { rules } = useRules(tournamentId);
   const { matches, ranking } = useMatches(tournamentId);
   const { user } = useAuth();
 
@@ -234,7 +234,9 @@ export default function TournamentPage() {
             </div>
           ))}
 
-        {tab === "history" && <MatchHistory matches={matches} isOwner={isOwner} />}
+        {tab === "history" && (
+          <MatchHistory matches={matches} isOwner={isOwner} showTable={tables.length >= 2} />
+        )}
       </div>
     </div>
   );

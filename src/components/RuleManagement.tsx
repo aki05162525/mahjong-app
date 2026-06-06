@@ -2,18 +2,30 @@
 
 import { useState } from "react";
 import type { Rule } from "@/lib/types";
+import { formatUma } from "@/lib/formatUma";
 import RuleForm, { type RuleFormValues } from "./RuleForm";
 
 type Props = {
   tournamentId: string;
   rules: Rule[];
   isOwner?: boolean;
+  onChange?: () => void | PromiseLike<void>;
 };
 
-export default function RuleManagement({ tournamentId, rules, isOwner = false }: Props) {
+export default function RuleManagement({ tournamentId, rules, isOwner = false, onChange }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState("");
+
+  // 再取得（onChange）は「成功した書き込みを画面に反映する」だけのベストエフォート。
+  // ここが失敗しても書き込み自体は成功しているので、mutation の成否には含めない。
+  const refresh = async () => {
+    try {
+      await onChange?.();
+    } catch {
+      // 再取得失敗はビューの一時的なずれのみ。Realtime か次の操作で収束する。
+    }
+  };
 
   const create = async (values: RuleFormValues): Promise<string | null> => {
     try {
@@ -23,10 +35,11 @@ export default function RuleManagement({ tournamentId, rules, isOwner = false }:
         body: JSON.stringify({ tournamentId, ...values }),
       });
       if (!res.ok) return (await res.json()).error ?? "作成に失敗しました";
-      return null;
     } catch {
       return "作成に失敗しました";
     }
+    await refresh();
+    return null;
   };
 
   const update = async (id: string, values: RuleFormValues): Promise<string | null> => {
@@ -37,11 +50,13 @@ export default function RuleManagement({ tournamentId, rules, isOwner = false }:
         body: JSON.stringify(values),
       });
       if (!res.ok) return (await res.json()).error ?? "変更に失敗しました";
-      setEditingId(null);
-      return null;
     } catch {
       return "変更に失敗しました";
     }
+    // 新デフォルト設定時は旧デフォルト行も is_default=false に変わるので、全件取り直す。
+    await refresh();
+    setEditingId(null);
+    return null;
   };
 
   const remove = async (id: string) => {
@@ -51,12 +66,15 @@ export default function RuleManagement({ tournamentId, rules, isOwner = false }:
       const res = await fetch(`/api/rules/${id}`, { method: "DELETE" });
       if (!res.ok) {
         setError((await res.json()).error ?? "削除に失敗しました");
+        return;
       }
     } catch {
       setError("削除に失敗しました");
+      return;
     } finally {
       setDeletingId(null);
     }
+    await refresh();
   };
 
   return (
@@ -106,7 +124,7 @@ export default function RuleManagement({ tournamentId, rules, isOwner = false }:
                   )}
                 </span>
                 <span className="text-xs" style={{ color: "var(--muted)" }}>
-                  ウマ {rule.uma.join("/")}・返し {rule.returnPoints.toLocaleString()}
+                  ウマ {formatUma(rule.uma)} オカ {rule.returnPoints.toLocaleString()}
                 </span>
               </div>
               {isOwner && (

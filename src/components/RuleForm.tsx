@@ -17,11 +17,11 @@ type Props = {
   onCancel?: () => void;
 };
 
-// ウマのクイック入力候補（「○-○」表記。通称を添える）
+// ウマのクイック入力候補（「○-○」表記で統一）
 const UMA_PRESETS: { label: string; uma: number[] }[] = [
   { label: "10-30", uma: [30, 10, -10, -30] },
-  { label: "ワンツー", uma: [20, 10, -10, -20] },
-  { label: "ゴットー", uma: [10, 5, -5, -10] },
+  { label: "10-20", uma: [20, 10, -10, -20] },
+  { label: "5-10", uma: [10, 5, -5, -10] },
   { label: "なし", uma: [0, 0, 0, 0] },
 ];
 const RETURN_PRESETS = [30000, 25000];
@@ -97,7 +97,7 @@ export default function RuleForm({ initial, submitLabel, onSubmit, onCancel }: P
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="例: 10-30（返し30000）"
+          placeholder="例: 10-30（オカ30000）"
           className="rounded-lg px-3 py-3 text-lg"
           style={inputStyle}
         />
@@ -143,7 +143,7 @@ export default function RuleForm({ initial, submitLabel, onSubmit, onCancel }: P
 
       <div className="flex flex-col gap-1">
         <label className="text-sm font-medium" style={{ color: "var(--muted)" }}>
-          返し点（持ち点25000）
+          オカ（持ち点25000）
         </label>
         <div className="flex flex-wrap gap-2">
           {RETURN_PRESETS.map((r) => (

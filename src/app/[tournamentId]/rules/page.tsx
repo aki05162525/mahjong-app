@@ -10,7 +10,7 @@ import RuleManagement from "@/components/RuleManagement";
 export default function RulesPage() {
   const { tournamentId } = useParams<{ tournamentId: string }>();
   const { tournament } = useTournament(tournamentId);
-  const rules = useRules(tournamentId);
+  const { rules, refetch } = useRules(tournamentId);
   const { user } = useAuth();
 
   const isOwner = !!user && !!tournament && user.id === tournament.ownerId;
@@ -26,7 +26,12 @@ export default function RulesPage() {
         </h1>
       </div>
 
-      <RuleManagement tournamentId={tournamentId} rules={rules} isOwner={isOwner} />
+      <RuleManagement
+        tournamentId={tournamentId}
+        rules={rules}
+        isOwner={isOwner}
+        onChange={refetch}
+      />
     </main>
   );
 }

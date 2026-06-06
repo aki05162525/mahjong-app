@@ -9,7 +9,8 @@ export function applyMatchInsert(
   payload: MatchRow,
   tablesCache: ReadonlyMap<string, string>
 ): Match[] | null {
-  const tableName = tablesCache.get(payload.table_id);
+  // 単一卓の対局は table_id が null（卓を持たない）。卓名は空文字で扱う。
+  const tableName = payload.table_id === null ? "" : tablesCache.get(payload.table_id);
   if (tableName === undefined) return null;
 
   if (matches.some((m) => m.id === payload.id)) return matches;

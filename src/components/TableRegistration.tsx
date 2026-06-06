@@ -1,50 +1,78 @@
 "use client";
 
-import { useState } from "react";
+import { useOptimistic, useState, useTransition } from "react";
 import type { Table } from "@/lib/types";
 
 type Props = {
   tournamentId: string;
   tables: Table[];
   isOwner?: boolean;
+  onChange?: () => void | PromiseLike<void>;
 };
 
-export default function TableRegistration({ tournamentId, tables, isOwner = false }: Props) {
+export default function TableRegistration({
+  tournamentId,
+  tables,
+  isOwner = false,
+  onChange,
+}: Props) {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [, startTransition] = useTransition();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [renaming, setRenaming] = useState(false);
 
-  const handleAdd = async () => {
+  const [optimisticTables, addOptimisticTable] = useOptimistic(tables, (current, name: string) => [
+    ...current,
+    { id: `optimistic-${name}`, name, createdAt: new Date() },
+  ]);
+
+  // 再取得（onChange）は成功した書き込みを画面へ反映するだけのベストエフォート。
+  // 失敗しても書き込み自体は成功しているので、mutation の成否には含めず握りつぶす。
+  const refresh = async () => {
+    try {
+      await onChange?.();
+    } catch {
+      // 再取得失敗はビューの一時的なずれのみ。Realtime か次の操作で収束する。
+    }
+  };
+
+  const handleAdd = () => {
     const trimmed = name.trim();
     if (!trimmed) {
       setError("卓名を入力してください");
       return;
     }
-    if (tables.some((t) => t.name === trimmed)) {
+    if (optimisticTables.some((t) => t.name === trimmed)) {
       setError("同じ名前の卓が既に存在します");
       return;
     }
-    setSaving(true);
+    setName("");
     setError("");
-    try {
-      const res = await fetch("/api/tables", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tournamentId, name: trimmed }),
-      });
-      if (!res.ok) {
-        setError((await res.json()).error ?? "登録に失敗しました");
+    startTransition(async () => {
+      // 楽観的に画面へ反映。transition が終わると tables（本物）に巻き戻る。
+      addOptimisticTable(trimmed);
+      try {
+        const res = await fetch("/api/tables", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tournamentId, name: trimmed }),
+        });
+        if (!res.ok) {
+          // 巻き戻りで楽観行は消える。入力を戻して再編集できるようにする。
+          setError((await res.json()).error ?? "登録に失敗しました");
+          setName(trimmed);
+          return;
+        }
+      } catch {
+        setError("登録に失敗しました");
+        setName(trimmed);
         return;
       }
-      setName("");
-    } catch {
-      setError("登録に失敗しました");
-    } finally {
-      setSaving(false);
-    }
+      // 登録成功。本物の tables が trimmed を含むまで待ってから transition を終える（チラつき防止）。
+      await refresh();
+    });
   };
 
   const startEdit = (table: Table) => {
@@ -59,7 +87,7 @@ export default function TableRegistration({ tournamentId, tables, isOwner = fals
       setError("卓名を入力してください");
       return;
     }
-    if (tables.some((t) => t.name === trimmed && t.id !== editingId)) {
+    if (optimisticTables.some((t) => t.name === trimmed && t.id !== editingId)) {
       setError("同じ名前の卓が既に存在します");
       return;
     }
@@ -75,19 +103,26 @@ export default function TableRegistration({ tournamentId, tables, isOwner = fals
         setError((await res.json()).error ?? "変更に失敗しました");
         return;
       }
-      setEditingId(null);
     } catch {
       setError("変更に失敗しました");
+      return;
     } finally {
       setRenaming(false);
     }
+    setEditingId(null);
+    await refresh();
   };
 
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="text-xl font-semibold" style={{ color: "var(--body)" }}>
-        卓登録
-      </h2>
+      <div className="flex flex-col gap-1">
+        <h2 className="text-xl font-semibold" style={{ color: "var(--body)" }}>
+          卓登録
+        </h2>
+        <p className="text-sm" style={{ color: "var(--muted)" }}>
+          複数卓に分けて同時進行する場合のみ登録します。1卓だけなら登録は不要です。
+        </p>
+      </div>
       {isOwner && (
         <div className="flex gap-2">
           <input
@@ -101,8 +136,7 @@ export default function TableRegistration({ tournamentId, tables, isOwner = fals
           />
           <button
             onClick={handleAdd}
-            disabled={saving}
-            className="rounded-lg px-5 py-3 text-lg font-semibold active:opacity-80 disabled:opacity-50"
+            className="rounded-lg px-5 py-3 text-lg font-semibold active:opacity-80"
             style={{ background: "var(--primary)", color: "#fff" }}
           >
             追加
@@ -111,7 +145,7 @@ export default function TableRegistration({ tournamentId, tables, isOwner = fals
       )}
       {error && <p style={{ color: "var(--error)" }}>{error}</p>}
       <ul className="flex flex-col gap-2">
-        {tables.map((t) =>
+        {optimisticTables.map((t) =>
           isOwner && editingId === t.id ? (
             <li key={t.id} className="flex gap-2 items-center">
               <input
@@ -146,7 +180,7 @@ export default function TableRegistration({ tournamentId, tables, isOwner = fals
               style={{ background: "var(--surface-strong)", color: "var(--body)" }}
             >
               <span>{t.name}</span>
-              {isOwner && (
+              {isOwner && !t.id.startsWith("optimistic-") && (
                 <button
                   onClick={() => startEdit(t)}
                   className="text-xs active:opacity-70 ml-2"
