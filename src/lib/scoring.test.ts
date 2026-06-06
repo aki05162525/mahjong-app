@@ -32,6 +32,14 @@ describe("calculateBasePoint", () => {
   it("24900点は -0.1pt", () => {
     expect(calculateBasePoint(24900)).toBe(-0.1);
   });
+
+  it("返し点を指定すると、その返し点を基準に素点を計算する（返し30000・30000点 → 0pt）", () => {
+    expect(calculateBasePoint(30000, 30000)).toBe(0);
+  });
+
+  it("返し30000・42000点 → +12pt", () => {
+    expect(calculateBasePoint(42000, 30000)).toBe(12);
+  });
 });
 
 // ========================================
@@ -83,6 +91,21 @@ describe("calculateUmaPoints", () => {
     const scores = [25000, 25000, 25000, 25000];
     const result = calculateUmaPoints(scores);
     expect(result).toEqual([0, 0, 0, 0]);
+  });
+
+  it("ウマ配列を指定すると、その順位点を使う（ワンツー 10-20）", () => {
+    const scores = [40000, 30000, 20000, 10000];
+    const result = calculateUmaPoints(scores, [20, 10, -10, -20]);
+    expect(result).toEqual([20, 10, -10, -20]);
+  });
+
+  it("指定ウマでも同点按分する（ワンツーで1着同点 → (20+10)/2 = 15）", () => {
+    const scores = [35000, 35000, 20000, 10000];
+    const result = calculateUmaPoints(scores, [20, 10, -10, -20]);
+    expect(result[0]).toBe(15);
+    expect(result[1]).toBe(15);
+    expect(result[2]).toBe(-10);
+    expect(result[3]).toBe(-20);
   });
 });
 
@@ -149,6 +172,70 @@ describe("calculateMatchResults", () => {
 
     expect(bob.umaPoint).toBe(0);
     expect(carol.umaPoint).toBe(0);
+  });
+
+  it("返し点>25000のとき、トップにオカが付き、卓全体でゼロサムになる（返し30000 → オカ+20）", () => {
+    const inputs = [
+      { playerId: "p1", playerName: "Alice", score: 42000 },
+      { playerId: "p2", playerName: "Bob", score: 31000 },
+      { playerId: "p3", playerName: "Carol", score: 18000 },
+      { playerId: "p4", playerName: "Dave", score: 9000 },
+    ];
+    const results = calculateMatchResults(inputs, {
+      uma: [30, 10, -10, -30],
+      returnPoints: 30000,
+    });
+
+    // 1位 Alice: 素点(42000-30000)/1000=+12, ウマ+30, オカ+20, 合計+62
+    expect(results[0].basePoint).toBe(12);
+    expect(results[0].umaPoint).toBe(30);
+    expect(results[0].okaPoint).toBe(20);
+    expect(results[0].totalPoint).toBe(62);
+
+    // 2位以下にオカは付かない
+    expect(results[1].okaPoint).toBe(0);
+    expect(results[1].totalPoint).toBe(11); // +1 +10 +0
+    expect(results[2].okaPoint).toBe(0);
+    expect(results[3].okaPoint).toBe(0);
+
+    // 卓全体ゼロサム
+    const sum = results.reduce((s, r) => s + r.totalPoint, 0);
+    expect(sum).toBe(0);
+  });
+
+  it("トップ同点のときオカを頭割りする（返し30000・1着同点 → オカ各+10）", () => {
+    const inputs = [
+      { playerId: "p1", playerName: "Alice", score: 35000 },
+      { playerId: "p2", playerName: "Bob", score: 35000 },
+      { playerId: "p3", playerName: "Carol", score: 20000 },
+      { playerId: "p4", playerName: "Dave", score: 10000 },
+    ];
+    const results = calculateMatchResults(inputs, {
+      uma: [30, 10, -10, -30],
+      returnPoints: 30000,
+    });
+
+    expect(results[0].okaPoint).toBe(10);
+    expect(results[1].okaPoint).toBe(10);
+    expect(results[2].okaPoint).toBe(0);
+    expect(results[3].okaPoint).toBe(0);
+
+    const sum = results.reduce((s, r) => s + r.totalPoint, 0);
+    expect(sum).toBe(0);
+  });
+
+  it("返し25000（オカなし）のときオカは0", () => {
+    const inputs = [
+      { playerId: "p1", playerName: "Alice", score: 42000 },
+      { playerId: "p2", playerName: "Bob", score: 31000 },
+      { playerId: "p3", playerName: "Carol", score: 18000 },
+      { playerId: "p4", playerName: "Dave", score: 9000 },
+    ];
+    const results = calculateMatchResults(inputs, {
+      uma: [30, 10, -10, -30],
+      returnPoints: 25000,
+    });
+    expect(results.every((r) => r.okaPoint === 0)).toBe(true);
   });
 
   it("入力順が点数と無関係でも正しく順位を付ける", () => {

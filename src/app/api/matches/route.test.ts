@@ -37,13 +37,17 @@ const validInputs = [
   { playerId: "p4", score: 9000 },
 ];
 
-const baseBody = { tournamentId: "t1", tableId: "tb1", roundNumber: 1 };
+const baseBody = { tournamentId: "t1", tableId: "tb1", roundNumber: 1, ruleId: "r1" };
+
+// rules フェッチが返すルール（ワンツー・返し30000）
+const ruleRow = { uma: [20, 10, -10, -20], return_points: 30000 };
 
 // DB が正常なときのモック設定
 function setupSuccessDb() {
   mockFrom
     .mockReturnValueOnce(makeChain({ count: 1 })) // tables: 卓が存在する
     .mockReturnValueOnce(makeChain({ count: 4 })) // players: 4人全員が存在する
+    .mockReturnValueOnce(makeChain({ data: ruleRow, error: null })) // rules: ルール取得
     .mockReturnValueOnce(makeChain({ data: { id: "match-id" }, error: null })) // matches: insert
     .mockReturnValueOnce(makeChain({ data: null, error: null })); // match_results: insert
 }
@@ -144,6 +148,7 @@ describe("POST /api/matches — DB バリデーション", () => {
     mockFrom
       .mockReturnValueOnce(makeChain({ count: 1 }))
       .mockReturnValueOnce(makeChain({ count: 4 }))
+      .mockReturnValueOnce(makeChain({ data: ruleRow, error: null }))
       .mockReturnValueOnce(makeChain({ data: { id: "match-id" }, error: null }))
       .mockReturnValueOnce(insertChain);
 
@@ -160,6 +165,7 @@ describe("POST /api/matches — DB バリデーション", () => {
     mockFrom
       .mockReturnValueOnce(makeChain({ count: 1 }))
       .mockReturnValueOnce(makeChain({ count: 4 }))
+      .mockReturnValueOnce(makeChain({ data: ruleRow, error: null }))
       .mockReturnValueOnce(makeChain({ data: { id: "match-id" }, error: null }))
       .mockReturnValueOnce(insertChain);
 
@@ -169,5 +175,64 @@ describe("POST /api/matches — DB バリデーション", () => {
       Record<string, unknown>
     >;
     expect(insertCall[0]).toHaveProperty("tournament_id", "t1");
+  });
+
+  it("400: ruleId が指定されていない", async () => {
+    const res = await POST(
+      makeReq({ tournamentId: "t1", tableId: "tb1", roundNumber: 1, inputs: validInputs })
+    );
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toMatch(/ルール/);
+  });
+
+  it("400: 指定された ruleId が当該大会に存在しない", async () => {
+    mockFrom
+      .mockReturnValueOnce(makeChain({ count: 1 })) // 卓は存在する
+      .mockReturnValueOnce(makeChain({ count: 4 })) // プレイヤーも存在する
+      .mockReturnValueOnce(makeChain({ data: null, error: null })); // ルールが見つからない
+    const res = await POST(makeReq({ ...baseBody, inputs: validInputs }));
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toMatch(/ルール/);
+  });
+
+  it("200: matches の insert payload にルールスナップショット（rule_id・uma・return_points）が含まれる", async () => {
+    const matchInsertChain = makeChain({ data: { id: "match-id" }, error: null });
+    mockFrom
+      .mockReturnValueOnce(makeChain({ count: 1 }))
+      .mockReturnValueOnce(makeChain({ count: 4 }))
+      .mockReturnValueOnce(makeChain({ data: ruleRow, error: null }))
+      .mockReturnValueOnce(matchInsertChain)
+      .mockReturnValueOnce(makeChain({ data: null, error: null }));
+
+    await POST(makeReq({ ...baseBody, inputs: validInputs }));
+
+    const matchPayload = (matchInsertChain.insert as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as Record<string, unknown>;
+    expect(matchPayload).toMatchObject({
+      rule_id: "r1",
+      uma: [20, 10, -10, -20],
+      return_points: 30000,
+    });
+  });
+
+  it("200: 返し30000のとき、トップの oka_point が +20 で保存される", async () => {
+    const resultsInsertChain = makeChain({ data: null, error: null });
+    mockFrom
+      .mockReturnValueOnce(makeChain({ count: 1 }))
+      .mockReturnValueOnce(makeChain({ count: 4 }))
+      .mockReturnValueOnce(makeChain({ data: ruleRow, error: null }))
+      .mockReturnValueOnce(makeChain({ data: { id: "match-id" }, error: null }))
+      .mockReturnValueOnce(resultsInsertChain);
+
+    // p1=42000 がトップ
+    await POST(makeReq({ ...baseBody, inputs: validInputs }));
+
+    const payload = (resultsInsertChain.insert as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as Array<Record<string, unknown>>;
+    const top = payload.find((r) => r.player_id === "p1")!;
+    expect(top.oka_point).toBe(20);
+    // 卓全体ゼロサム
+    const sum = payload.reduce((s, r) => s + (r.total_point as number), 0);
+    expect(sum).toBe(0);
   });
 });

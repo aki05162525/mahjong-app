@@ -7,6 +7,8 @@ const makeMatch = (id: string, roundNumber: number, playerIds: string[]): Match 
   roundNumber,
   tableName: "A卓",
   createdAt: new Date(),
+  uma: [30, 10, -10, -30],
+  returnPoints: 25000,
   results: playerIds.map((playerId, i) => ({
     playerId,
     playerName: `Player${i + 1}`,
@@ -14,6 +16,7 @@ const makeMatch = (id: string, roundNumber: number, playerIds: string[]): Match 
     rank: i + 1,
     basePoint: 0,
     umaPoint: 0,
+    okaPoint: 0,
     totalPoint: 0,
   })),
 });

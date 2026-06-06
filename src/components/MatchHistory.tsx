@@ -151,6 +151,9 @@ export default function MatchHistory({ matches, isOwner = false }: Props) {
                     )}
                   </div>
                 </div>
+                <span className="text-xs -mt-1" style={{ color: "var(--muted)" }}>
+                  ウマ {match.uma.join("/")}・返し {match.returnPoints.toLocaleString()}
+                </span>
                 <table className="w-full text-base">
                   <thead>
                     <tr
@@ -162,6 +165,7 @@ export default function MatchHistory({ matches, isOwner = false }: Props) {
                       <th className="pb-1 pr-2 text-right">点数</th>
                       <th className="pb-1 pr-2 text-right">素点</th>
                       <th className="pb-1 pr-2 text-right">ウマ</th>
+                      <th className="pb-1 pr-2 text-right">オカ</th>
                       <th className="pb-1 text-right">合計pt</th>
                     </tr>
                   </thead>
@@ -191,6 +195,12 @@ export default function MatchHistory({ matches, isOwner = false }: Props) {
                           style={{ color: "var(--muted)" }}
                         >
                           {fmtPt(r.umaPoint)}
+                        </td>
+                        <td
+                          className="py-2 pr-2 text-right font-mono"
+                          style={{ color: "var(--muted)" }}
+                        >
+                          {r.okaPoint ? fmtPt(r.okaPoint) : "—"}
                         </td>
                         <td
                           className="py-2 text-right font-mono font-semibold"

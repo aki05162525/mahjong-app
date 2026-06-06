@@ -89,17 +89,54 @@ describe("POST /api/create-tournament", () => {
 
   describe("正常系", () => {
     it("200: 自動IDで大会を作れる", async () => {
-      mockFrom.mockReturnValueOnce(makeChain({ data: { id: "auto-generated-id" }, error: null }));
+      mockFrom
+        .mockReturnValueOnce(makeChain({ data: { id: "auto-generated-id" }, error: null })) // tournament
+        .mockReturnValueOnce(makeChain({ error: null })); // seed rules
       const res = await POST(makeReq({ name: "テスト大会" }));
       expect(res.status).toBe(200);
       expect((await res.json()).id).toBe("auto-generated-id");
     });
 
     it("200: カスタムIDで大会を作れる", async () => {
-      mockFrom.mockReturnValueOnce(makeChain({ data: { id: "my-tournament" }, error: null }));
+      mockFrom
+        .mockReturnValueOnce(makeChain({ data: { id: "my-tournament" }, error: null })) // tournament
+        .mockReturnValueOnce(makeChain({ error: null })); // seed rules
       const res = await POST(makeReq({ name: "テスト大会", customId: "my-tournament" }));
       expect(res.status).toBe(200);
       expect((await res.json()).id).toBe("my-tournament");
+    });
+
+    it("200: 大会作成時に標準ルールを seed し、デフォルトを含む", async () => {
+      const seedChain = makeChain({ error: null });
+      mockFrom
+        .mockReturnValueOnce(makeChain({ data: { id: "auto-generated-id" }, error: null })) // tournament
+        .mockReturnValueOnce(seedChain); // seed rules
+
+      await POST(makeReq({ name: "テスト大会" }));
+
+      const seeded = (seedChain.insert as ReturnType<typeof vi.fn>).mock.calls[0][0] as Array<
+        Record<string, unknown>
+      >;
+      expect(seeded.length).toBeGreaterThan(0);
+      expect(seeded.every((r) => r.tournament_id === "auto-generated-id")).toBe(true);
+      expect(seeded.filter((r) => r.is_default === true)).toHaveLength(1);
+    });
+
+    it("500: ルール seed に失敗したら大会を削除して 500 を返す（中途半端な大会を残さない）", async () => {
+      const deleteChain = makeChain({ error: null });
+      mockFrom
+        .mockReturnValueOnce(makeChain({ data: { id: "auto-generated-id" }, error: null })) // tournament insert
+        .mockReturnValueOnce(makeChain({ error: { message: "seed failed" } })) // seed rules 失敗
+        .mockReturnValueOnce(deleteChain); // ロールバックの delete
+
+      const res = await POST(makeReq({ name: "テスト大会" }));
+
+      expect(res.status).toBe(500);
+      expect(deleteChain.delete as ReturnType<typeof vi.fn>).toHaveBeenCalled();
+      expect(deleteChain.eq as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(
+        "id",
+        "auto-generated-id"
+      );
     });
   });
 });
