@@ -161,10 +161,6 @@ export default function MatchFormFour({ tournamentId, players, rules, maxRound }
         </select>
       </div>
 
-      <p className="text-sm" style={{ color: "var(--muted)" }}>
-        左の取っ手をドラッグして席順を入れ替えられます
-      </p>
-
       <div className="flex gap-2">
         {/* 風ラベルは席（位置）に固定。プレイヤーだけが動く。 */}
         <div className="flex flex-col gap-2">
@@ -187,6 +183,9 @@ export default function MatchFormFour({ tournamentId, players, rules, maxRound }
             const isAuto = autoId === id && val !== "";
             const placeholder =
               autoTarget && order[autoTarget.index] === id ? autoTarget.value : "250";
+            const dragging = draggingIndex === i;
+            // ドラッグ中は行全体の箱を消し、名前部分だけをカード化したチップにする。
+            // 点数欄・00・ポイントはフェード（場所は保持してレイアウト＝送り幅を崩さない）。
             return (
               <li
                 key={id}
@@ -197,15 +196,27 @@ export default function MatchFormFour({ tournamentId, players, rules, maxRound }
                   transition: st.transition,
                   zIndex: st.zIndex,
                   position: "relative",
-                  background: draggingIndex === i ? "var(--surface-card)" : "var(--canvas)",
-                  border: "1px solid var(--hairline)",
-                  boxShadow: draggingIndex === i ? "0 4px 12px rgba(0,0,0,0.15)" : "none",
+                  background: dragging ? "transparent" : "var(--canvas)",
+                  border: dragging ? "1px solid transparent" : "1px solid var(--hairline)",
+                  boxShadow: "none",
                 }}
               >
                 {/* 名前全体を掴んで並べ替え。点数入力は掴めないよう、ここだけを取っ手にする。 */}
                 <div
-                  className="flex items-center gap-2 flex-1 min-w-0 select-none active:cursor-grabbing"
-                  style={{ touchAction: "none", cursor: "grab" }}
+                  className={`flex items-center gap-2 min-w-0 select-none active:cursor-grabbing ${dragging ? "" : "flex-1"}`}
+                  style={{
+                    touchAction: "none",
+                    cursor: "grab",
+                    ...(dragging
+                      ? {
+                          background: "var(--surface-card)",
+                          border: "1px solid var(--hairline)",
+                          borderRadius: 8,
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                          padding: "6px 10px",
+                        }
+                      : {}),
+                  }}
                   {...handleProps(i)}
                 >
                   <svg
@@ -235,17 +246,19 @@ export default function MatchFormFour({ tournamentId, players, rules, maxRound }
                   style={{
                     border: "1px solid var(--hairline)",
                     background: isAuto ? "#f0ede8" : "var(--canvas)",
+                    opacity: dragging ? 0 : 1,
                   }}
                 />
                 <span
                   className="text-lg font-semibold select-none"
-                  style={{ color: "var(--muted)" }}
+                  style={{ color: "var(--muted)", opacity: dragging ? 0 : 1 }}
                 >
                   00
                 </span>
                 <span
                   className="text-base font-mono font-semibold w-12 text-right"
                   style={{
+                    opacity: dragging ? 0 : 1,
                     color: preview
                       ? preview[i] > 0
                         ? "var(--primary)"
