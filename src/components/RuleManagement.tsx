@@ -12,6 +12,7 @@ type Props = {
 
 export default function RuleManagement({ tournamentId, rules, isOwner = false }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   const create = async (values: RuleFormValues): Promise<string | null> => {
@@ -45,6 +46,7 @@ export default function RuleManagement({ tournamentId, rules, isOwner = false }:
 
   const remove = async (id: string) => {
     setError("");
+    setDeletingId(id);
     try {
       const res = await fetch(`/api/rules/${id}`, { method: "DELETE" });
       if (!res.ok) {
@@ -52,6 +54,8 @@ export default function RuleManagement({ tournamentId, rules, isOwner = false }:
       }
     } catch {
       setError("削除に失敗しました");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -120,10 +124,11 @@ export default function RuleManagement({ tournamentId, rules, isOwner = false }:
                   {!rule.isDefault && (
                     <button
                       onClick={() => remove(rule.id)}
-                      className="text-xs active:opacity-70"
+                      disabled={deletingId === rule.id}
+                      className="text-xs active:opacity-70 disabled:opacity-40"
                       style={{ color: "var(--error)" }}
                     >
-                      削除
+                      {deletingId === rule.id ? "削除中..." : "削除"}
                     </button>
                   )}
                 </div>
