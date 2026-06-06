@@ -19,11 +19,22 @@ export type Table = {
   createdAt: Date;
 };
 
+export type Rule = {
+  id: string;
+  name: string;
+  uma: number[];
+  returnPoints: number;
+  isDefault: boolean;
+  createdAt: Date;
+};
+
 export type Match = {
   id: string;
   roundNumber: number;
   tableName: string;
   createdAt: Date;
+  uma: number[];
+  returnPoints: number;
   results: MatchResult[];
 };
 

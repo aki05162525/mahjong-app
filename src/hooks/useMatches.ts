@@ -13,6 +13,8 @@ const MATCH_SELECT = `
   id,
   round_number,
   created_at,
+  uma,
+  return_points,
   tables!matches_table_id_fkey(name),
   match_results(
     player_id,
@@ -20,6 +22,7 @@ const MATCH_SELECT = `
     rank,
     base_point,
     uma_point,
+    oka_point,
     total_point,
     players(name)
   )
@@ -29,6 +32,8 @@ type SupabaseMatch = {
   id: string;
   round_number: number;
   created_at: string;
+  uma: number[];
+  return_points: number;
   "tables!matches_table_id_fkey": { name: string } | null;
   match_results: Array<{
     player_id: string;
@@ -36,6 +41,7 @@ type SupabaseMatch = {
     rank: number;
     base_point: number;
     uma_point: number;
+    oka_point: number;
     total_point: number;
     players: { name: string } | null;
   }>;
@@ -47,6 +53,8 @@ function toMatch(row: SupabaseMatch): Match {
     roundNumber: row.round_number,
     tableName: row["tables!matches_table_id_fkey"]?.name ?? "",
     createdAt: new Date(row.created_at),
+    uma: row.uma,
+    returnPoints: row.return_points,
     results: (row.match_results ?? []).map((r) => ({
       playerId: r.player_id,
       playerName: r.players?.name ?? "",
@@ -54,6 +62,7 @@ function toMatch(row: SupabaseMatch): Match {
       rank: r.rank,
       basePoint: r.base_point,
       umaPoint: r.uma_point,
+      okaPoint: r.oka_point,
       totalPoint: r.total_point,
     })),
   };

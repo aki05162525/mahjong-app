@@ -82,12 +82,53 @@ export type Database = {
           },
         ];
       };
+      rules: {
+        Row: {
+          id: string;
+          tournament_id: string;
+          name: string;
+          uma: number[];
+          return_points: number;
+          is_default: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          tournament_id: string;
+          name: string;
+          uma: number[];
+          return_points: number;
+          is_default?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          tournament_id?: string;
+          name?: string;
+          uma?: number[];
+          return_points?: number;
+          is_default?: boolean;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "rules_tournament_id_fkey";
+            columns: ["tournament_id"];
+            isOneToOne: false;
+            referencedRelation: "tournaments";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       matches: {
         Row: {
           id: string;
           tournament_id: string;
           table_id: string;
           round_number: number;
+          rule_id: string | null;
+          uma: number[];
+          return_points: number;
           created_at: string;
         };
         Insert: {
@@ -95,6 +136,9 @@ export type Database = {
           tournament_id: string;
           table_id: string;
           round_number: number;
+          rule_id?: string | null;
+          uma: number[];
+          return_points: number;
           created_at?: string;
         };
         Update: {
@@ -102,6 +146,9 @@ export type Database = {
           tournament_id?: string;
           table_id?: string;
           round_number?: number;
+          rule_id?: string | null;
+          uma?: number[];
+          return_points?: number;
           created_at?: string;
         };
         Relationships: [
@@ -119,6 +166,13 @@ export type Database = {
             referencedRelation: "tables";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "matches_rule_id_fkey";
+            columns: ["rule_id"];
+            isOneToOne: false;
+            referencedRelation: "rules";
+            referencedColumns: ["id"];
+          },
         ];
       };
       match_results: {
@@ -131,6 +185,7 @@ export type Database = {
           rank: number;
           base_point: number;
           uma_point: number;
+          oka_point: number;
           total_point: number;
         };
         Insert: {
@@ -142,6 +197,7 @@ export type Database = {
           rank: number;
           base_point: number;
           uma_point: number;
+          oka_point?: number;
           total_point: number;
         };
         Update: {
@@ -153,6 +209,7 @@ export type Database = {
           rank?: number;
           base_point?: number;
           uma_point?: number;
+          oka_point?: number;
           total_point?: number;
         };
         Relationships: [

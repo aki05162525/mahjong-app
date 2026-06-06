@@ -7,6 +7,8 @@ const makeMatch = (id: string, results: Match["results"]): Match => ({
   roundNumber: 1,
   tableName: "A卓",
   createdAt: new Date(),
+  uma: [30, 10, -10, -30],
+  returnPoints: 25000,
   results,
 });
 
@@ -23,6 +25,7 @@ describe("buildRanking", () => {
           rank: 1,
           basePoint: 17,
           umaPoint: 30,
+          okaPoint: 0,
           totalPoint: 47,
         },
         {
@@ -32,6 +35,7 @@ describe("buildRanking", () => {
           rank: 2,
           basePoint: 6,
           umaPoint: 10,
+          okaPoint: 0,
           totalPoint: 16,
         },
         {
@@ -41,6 +45,7 @@ describe("buildRanking", () => {
           rank: 3,
           basePoint: -7,
           umaPoint: -10,
+          okaPoint: 0,
           totalPoint: -17,
         },
         {
@@ -50,6 +55,7 @@ describe("buildRanking", () => {
           rank: 4,
           basePoint: -16,
           umaPoint: -30,
+          okaPoint: 0,
           totalPoint: -46,
         },
       ]),
@@ -72,6 +78,7 @@ describe("buildRanking", () => {
           rank: 1,
           basePoint: 17,
           umaPoint: 30,
+          okaPoint: 0,
           totalPoint: 47,
         },
         {
@@ -81,6 +88,7 @@ describe("buildRanking", () => {
           rank: 2,
           basePoint: 6,
           umaPoint: 10,
+          okaPoint: 0,
           totalPoint: 16,
         },
         {
@@ -90,6 +98,7 @@ describe("buildRanking", () => {
           rank: 3,
           basePoint: -7,
           umaPoint: -10,
+          okaPoint: 0,
           totalPoint: -17,
         },
         {
@@ -99,6 +108,7 @@ describe("buildRanking", () => {
           rank: 4,
           basePoint: -16,
           umaPoint: -30,
+          okaPoint: 0,
           totalPoint: -46,
         },
       ]),
@@ -125,6 +135,7 @@ describe("buildRanking", () => {
           rank: 1,
           basePoint: 17,
           umaPoint: 30,
+          okaPoint: 0,
           totalPoint: 47,
         },
         {
@@ -134,6 +145,7 @@ describe("buildRanking", () => {
           rank: 2,
           basePoint: 6,
           umaPoint: 10,
+          okaPoint: 0,
           totalPoint: 16,
         },
         {
@@ -143,6 +155,7 @@ describe("buildRanking", () => {
           rank: 3,
           basePoint: -7,
           umaPoint: -10,
+          okaPoint: 0,
           totalPoint: -17,
         },
         {
@@ -152,6 +165,7 @@ describe("buildRanking", () => {
           rank: 4,
           basePoint: -16,
           umaPoint: -30,
+          okaPoint: 0,
           totalPoint: -46,
         },
       ]),
@@ -163,6 +177,7 @@ describe("buildRanking", () => {
           rank: 1,
           basePoint: 15,
           umaPoint: 30,
+          okaPoint: 0,
           totalPoint: 45,
         },
         {
@@ -172,6 +187,7 @@ describe("buildRanking", () => {
           rank: 2,
           basePoint: 5,
           umaPoint: 10,
+          okaPoint: 0,
           totalPoint: 15,
         },
         {
@@ -181,6 +197,7 @@ describe("buildRanking", () => {
           rank: 3,
           basePoint: -5,
           umaPoint: -10,
+          okaPoint: 0,
           totalPoint: -15,
         },
         {
@@ -190,6 +207,7 @@ describe("buildRanking", () => {
           rank: 4,
           basePoint: -15,
           umaPoint: -30,
+          okaPoint: 0,
           totalPoint: -45,
         },
       ]),
@@ -217,6 +235,7 @@ describe("buildRanking", () => {
           rank: 1,
           basePoint: 10,
           umaPoint: 20,
+          okaPoint: 0,
           totalPoint: 30,
         },
         {
@@ -226,6 +245,7 @@ describe("buildRanking", () => {
           rank: 1,
           basePoint: 10,
           umaPoint: 20,
+          okaPoint: 0,
           totalPoint: 30,
         },
         {
@@ -235,6 +255,7 @@ describe("buildRanking", () => {
           rank: 3,
           basePoint: -5,
           umaPoint: -10,
+          okaPoint: 0,
           totalPoint: -15,
         },
         {
@@ -244,6 +265,7 @@ describe("buildRanking", () => {
           rank: 4,
           basePoint: -15,
           umaPoint: -30,
+          okaPoint: 0,
           totalPoint: -45,
         },
       ]),
@@ -275,6 +297,7 @@ describe("buildRanking", () => {
           rank: 1,
           basePoint: 17,
           umaPoint: 30,
+          okaPoint: 0,
           totalPoint: 47,
         },
         {
@@ -284,6 +307,7 @@ describe("buildRanking", () => {
           rank: 2,
           basePoint: 6,
           umaPoint: 10,
+          okaPoint: 0,
           totalPoint: 16,
         },
         {
@@ -293,6 +317,7 @@ describe("buildRanking", () => {
           rank: 3,
           basePoint: -7,
           umaPoint: -10,
+          okaPoint: 0,
           totalPoint: -17,
         },
         {
@@ -302,6 +327,7 @@ describe("buildRanking", () => {
           rank: 4,
           basePoint: -16,
           umaPoint: -30,
+          okaPoint: 0,
           totalPoint: -46,
         },
       ]),
@@ -313,6 +339,7 @@ describe("buildRanking", () => {
           rank: 4,
           basePoint: -15,
           umaPoint: -30,
+          okaPoint: 0,
           totalPoint: -45,
         },
         {
@@ -322,6 +349,7 @@ describe("buildRanking", () => {
           rank: 2,
           basePoint: 5,
           umaPoint: 10,
+          okaPoint: 0,
           totalPoint: 15,
         },
         {
@@ -331,6 +359,7 @@ describe("buildRanking", () => {
           rank: 1,
           basePoint: 15,
           umaPoint: 30,
+          okaPoint: 0,
           totalPoint: 45,
         },
         {
@@ -340,6 +369,7 @@ describe("buildRanking", () => {
           rank: 3,
           basePoint: -5,
           umaPoint: -10,
+          okaPoint: 0,
           totalPoint: -15,
         },
       ]),
@@ -365,6 +395,7 @@ describe("buildRanking", () => {
           rank: 1,
           basePoint: 17,
           umaPoint: 30,
+          okaPoint: 0,
           totalPoint: 47,
         },
         {
@@ -374,6 +405,7 @@ describe("buildRanking", () => {
           rank: 2,
           basePoint: 6,
           umaPoint: 10,
+          okaPoint: 0,
           totalPoint: 16,
         },
         {
@@ -383,6 +415,7 @@ describe("buildRanking", () => {
           rank: 3,
           basePoint: -7,
           umaPoint: -10,
+          okaPoint: 0,
           totalPoint: -17,
         },
         {
@@ -392,6 +425,7 @@ describe("buildRanking", () => {
           rank: 4,
           basePoint: -16,
           umaPoint: -30,
+          okaPoint: 0,
           totalPoint: -46,
         },
       ]),
@@ -403,6 +437,7 @@ describe("buildRanking", () => {
           rank: 2,
           basePoint: 5,
           umaPoint: 10,
+          okaPoint: 0,
           totalPoint: 15,
         },
         {
@@ -412,6 +447,7 @@ describe("buildRanking", () => {
           rank: 1,
           basePoint: 15,
           umaPoint: 30,
+          okaPoint: 0,
           totalPoint: 45,
         },
         {
@@ -421,6 +457,7 @@ describe("buildRanking", () => {
           rank: 3,
           basePoint: -5,
           umaPoint: -10,
+          okaPoint: 0,
           totalPoint: -15,
         },
         {
@@ -430,6 +467,7 @@ describe("buildRanking", () => {
           rank: 4,
           basePoint: -15,
           umaPoint: -30,
+          okaPoint: 0,
           totalPoint: -45,
         },
       ]),
@@ -452,6 +490,7 @@ describe("buildRanking", () => {
           rank: 1,
           basePoint: 17,
           umaPoint: 30,
+          okaPoint: 0,
           totalPoint: 47,
         },
         {
@@ -461,6 +500,7 @@ describe("buildRanking", () => {
           rank: 2,
           basePoint: 6,
           umaPoint: 10,
+          okaPoint: 0,
           totalPoint: 16,
         },
         {
@@ -470,6 +510,7 @@ describe("buildRanking", () => {
           rank: 3,
           basePoint: -7,
           umaPoint: -10,
+          okaPoint: 0,
           totalPoint: -17,
         },
         {
@@ -479,6 +520,7 @@ describe("buildRanking", () => {
           rank: 4,
           basePoint: -16,
           umaPoint: -30,
+          okaPoint: 0,
           totalPoint: -46,
         },
       ]),
@@ -490,6 +532,7 @@ describe("buildRanking", () => {
           rank: 4,
           basePoint: -15,
           umaPoint: -30,
+          okaPoint: 0,
           totalPoint: -45,
         },
         {
@@ -499,6 +542,7 @@ describe("buildRanking", () => {
           rank: 1,
           basePoint: 15,
           umaPoint: 30,
+          okaPoint: 0,
           totalPoint: 45,
         },
         {
@@ -508,6 +552,7 @@ describe("buildRanking", () => {
           rank: 2,
           basePoint: 5,
           umaPoint: 10,
+          okaPoint: 0,
           totalPoint: 15,
         },
         {
@@ -517,6 +562,7 @@ describe("buildRanking", () => {
           rank: 3,
           basePoint: -5,
           umaPoint: -10,
+          okaPoint: 0,
           totalPoint: -15,
         },
       ]),
@@ -542,6 +588,7 @@ describe("buildRanking", () => {
           rank: 1,
           basePoint: 17,
           umaPoint: 30,
+          okaPoint: 0,
           totalPoint: 47,
         },
         {
@@ -551,6 +598,7 @@ describe("buildRanking", () => {
           rank: 2,
           basePoint: 6,
           umaPoint: 10,
+          okaPoint: 0,
           totalPoint: 16,
         },
         {
@@ -560,6 +608,7 @@ describe("buildRanking", () => {
           rank: 3,
           basePoint: -7,
           umaPoint: -10,
+          okaPoint: 0,
           totalPoint: -17,
         },
         {
@@ -569,6 +618,7 @@ describe("buildRanking", () => {
           rank: 4,
           basePoint: -16,
           umaPoint: -30,
+          okaPoint: 0,
           totalPoint: -46,
         },
       ]),
@@ -580,6 +630,7 @@ describe("buildRanking", () => {
           rank: 4,
           basePoint: -15,
           umaPoint: -30,
+          okaPoint: 0,
           totalPoint: -45,
         },
         {
@@ -589,6 +640,7 @@ describe("buildRanking", () => {
           rank: 1,
           basePoint: 15,
           umaPoint: 30,
+          okaPoint: 0,
           totalPoint: 45,
         },
         {
@@ -598,6 +650,7 @@ describe("buildRanking", () => {
           rank: 2,
           basePoint: 5,
           umaPoint: 10,
+          okaPoint: 0,
           totalPoint: 15,
         },
         {
@@ -607,6 +660,7 @@ describe("buildRanking", () => {
           rank: 3,
           basePoint: -5,
           umaPoint: -10,
+          okaPoint: 0,
           totalPoint: -15,
         },
       ]),
@@ -635,6 +689,7 @@ describe("buildRanking", () => {
           rank: 1,
           basePoint: 17,
           umaPoint: 30,
+          okaPoint: 0,
           totalPoint: 47,
         },
         {
@@ -644,6 +699,7 @@ describe("buildRanking", () => {
           rank: 2,
           basePoint: 6,
           umaPoint: 10,
+          okaPoint: 0,
           totalPoint: 16,
         },
         {
@@ -653,6 +709,7 @@ describe("buildRanking", () => {
           rank: 3,
           basePoint: -7,
           umaPoint: -10,
+          okaPoint: 0,
           totalPoint: -17,
         },
         {
@@ -662,6 +719,7 @@ describe("buildRanking", () => {
           rank: 4,
           basePoint: -16,
           umaPoint: -30,
+          okaPoint: 0,
           totalPoint: -46,
         },
       ]),
@@ -673,6 +731,7 @@ describe("buildRanking", () => {
           rank: 4,
           basePoint: -15,
           umaPoint: -30,
+          okaPoint: 0,
           totalPoint: -45,
         },
         {
@@ -682,6 +741,7 @@ describe("buildRanking", () => {
           rank: 1,
           basePoint: 15,
           umaPoint: 30,
+          okaPoint: 0,
           totalPoint: 45,
         },
         {
@@ -691,6 +751,7 @@ describe("buildRanking", () => {
           rank: 2,
           basePoint: 5,
           umaPoint: 10,
+          okaPoint: 0,
           totalPoint: 15,
         },
         {
@@ -700,6 +761,7 @@ describe("buildRanking", () => {
           rank: 3,
           basePoint: -5,
           umaPoint: -10,
+          okaPoint: 0,
           totalPoint: -15,
         },
       ]),

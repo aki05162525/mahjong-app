@@ -2,14 +2,15 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { getUsedPlayerIds } from "@/lib/matchFilter";
-import { calculateBasePoint, calculateUmaPoints } from "@/lib/scoring";
+import { calculateMatchResults } from "@/lib/scoring";
 import { fmtPt } from "@/lib/utils";
-import type { Player, Table, Match } from "@/lib/types";
+import type { Player, Table, Match, Rule } from "@/lib/types";
 
 type Props = {
   tournamentId: string;
   players: Player[];
   tables: Table[];
+  rules: Rule[];
   matches: Match[];
   matchCounts: Record<string, number>;
   maxRound: number;
@@ -37,16 +38,27 @@ export default function MatchForm({
   tournamentId,
   players,
   tables,
+  rules,
   matches,
   matchCounts,
   maxRound,
 }: Props) {
   const [roundNumber, setRoundNumber] = useState("");
   const [tableId, setTableId] = useState("");
+  const [ruleId, setRuleId] = useState("");
   const [slots, setSlots] = useState<PlayerSlot[]>(newSlots);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  // 未選択（ruleId="")のときは大会のデフォルトルールを選択済みとして扱う。
+  // effect で setState せず派生値にすることで、初期選択を表現する。
+  const defaultRuleId = (rules.find((r) => r.isDefault) ?? rules[0])?.id ?? "";
+  const effectiveRuleId = ruleId || defaultRuleId;
+  const selectedRule = useMemo(
+    () => rules.find((r) => r.id === effectiveRuleId),
+    [rules, effectiveRuleId]
+  );
 
   const updateSlot = useCallback((index: number, field: keyof PlayerSlot, value: string) => {
     setSlots((prev) => {
@@ -67,17 +79,22 @@ export default function MatchForm({
   const autoLastScore = useMemo(() => calcLastScore(slots), [slots]);
 
   const previewPoints = useMemo<number[] | null>(() => {
+    if (!selectedRule) return null;
     const allValid = slots.every((s) => s.score !== "" && !isNaN(Number(s.score)));
     if (!allValid) return null;
     const scores = slots.map((s) => toActualScore(s.score));
     if (scores.reduce((sum, s) => sum + s, 0) !== 100000) return null;
-    const uma = calculateUmaPoints(scores);
-    return scores.map((score, i) => calculateBasePoint(score) + uma[i]);
-  }, [slots]);
+    const results = calculateMatchResults(
+      scores.map((score) => ({ playerId: "", playerName: "", score })),
+      { uma: selectedRule.uma, returnPoints: selectedRule.returnPoints }
+    );
+    return results.map((r) => r.totalPoint);
+  }, [slots, selectedRule]);
 
   const validate = (): string | null => {
     if (!roundNumber.trim()) return "回戦番号を入力してください";
     if (!tableId) return "卓名を入力してください";
+    if (!effectiveRuleId) return "ルールを選択してください";
     for (let i = 0; i < 4; i++) {
       if (!slots[i].playerId) return `${WINDS[i]}のプレイヤーを選択してください`;
       if (slots[i].score === "") return `${WINDS[i]}の点数を入力してください`;
@@ -109,7 +126,13 @@ export default function MatchForm({
       const res = await fetch("/api/matches", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tournamentId, tableId, roundNumber: Number(roundNumber), inputs }),
+        body: JSON.stringify({
+          tournamentId,
+          tableId,
+          ruleId: effectiveRuleId,
+          roundNumber: Number(roundNumber),
+          inputs,
+        }),
       });
       if (!res.ok) {
         setError((await res.json()).error ?? "保存に失敗しました");
@@ -172,6 +195,30 @@ export default function MatchForm({
             ))}
           </select>
         </div>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label className="text-sm font-medium" style={{ color: "var(--muted)" }}>
+          ルール
+        </label>
+        <select
+          value={effectiveRuleId}
+          onChange={(e) => setRuleId(e.target.value)}
+          className="rounded-lg px-3 py-3 text-lg w-full"
+          style={selectStyle}
+        >
+          <option value="">選択</option>
+          {rules.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.name}
+            </option>
+          ))}
+        </select>
+        {selectedRule && (
+          <span className="text-xs" style={{ color: "var(--muted)" }}>
+            ウマ {selectedRule.uma.join("/")}・返し {selectedRule.returnPoints.toLocaleString()}
+          </span>
+        )}
       </div>
 
       {slots.map((slot, i) => {

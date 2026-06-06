@@ -19,6 +19,8 @@ export function applyMatchInsert(
     roundNumber: payload.round_number,
     tableName,
     createdAt: new Date(payload.created_at),
+    uma: payload.uma,
+    returnPoints: payload.return_points,
     results: [],
   };
 
@@ -46,6 +48,7 @@ export function applyResultInsert(
     rank: payload.rank,
     basePoint: payload.base_point,
     umaPoint: payload.uma_point,
+    okaPoint: payload.oka_point,
     totalPoint: payload.total_point,
   };
 

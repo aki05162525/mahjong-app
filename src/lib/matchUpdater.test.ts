@@ -7,6 +7,8 @@ const baseMatch: Match = {
   roundNumber: 1,
   tableName: "East Table",
   createdAt: new Date("2024-01-01T10:00:00Z"),
+  uma: [30, 10, -10, -30],
+  returnPoints: 25000,
   results: [],
 };
 
@@ -20,6 +22,7 @@ const matchWithResults: Match = {
       rank: 1,
       basePoint: 5,
       umaPoint: 30,
+      okaPoint: 0,
       totalPoint: 35,
     },
   ],
@@ -33,6 +36,9 @@ describe("applyMatchInsert", () => {
       tournament_id: "t-1",
       table_id: "table-2",
       round_number: 2,
+      rule_id: "rule-1",
+      uma: [30, 10, -10, -30],
+      return_points: 30000,
       created_at: "2024-01-01T11:00:00Z",
     };
 
@@ -47,6 +53,24 @@ describe("applyMatchInsert", () => {
     });
   });
 
+  it("ルールのスナップショット（uma・return_points）を Match に反映する", () => {
+    const tablesCache = new Map([["table-2", "West Table"]]);
+    const payload = {
+      id: "match-2",
+      tournament_id: "t-1",
+      table_id: "table-2",
+      round_number: 2,
+      rule_id: "rule-1",
+      uma: [20, 10, -10, -20],
+      return_points: 30000,
+      created_at: "2024-01-01T11:00:00Z",
+    };
+
+    const result = applyMatchInsert([baseMatch], payload, tablesCache);
+
+    expect(result![1]).toMatchObject({ uma: [20, 10, -10, -20], returnPoints: 30000 });
+  });
+
   it("追加後のマッチはcreated_at順に並ぶ", () => {
     const tablesCache = new Map([["table-2", "West Table"]]);
     const earlyMatch: Match = {
@@ -59,6 +83,9 @@ describe("applyMatchInsert", () => {
       tournament_id: "t-1",
       table_id: "table-2",
       round_number: 2,
+      rule_id: "rule-1",
+      uma: [30, 10, -10, -30],
+      return_points: 30000,
       created_at: "2024-01-01T11:00:00Z",
     };
 
@@ -75,6 +102,9 @@ describe("applyMatchInsert", () => {
       tournament_id: "t-1",
       table_id: "unknown-table",
       round_number: 2,
+      rule_id: "rule-1",
+      uma: [30, 10, -10, -30],
+      return_points: 30000,
       created_at: "2024-01-01T11:00:00Z",
     };
 
@@ -90,6 +120,9 @@ describe("applyMatchInsert", () => {
       tournament_id: "t-1",
       table_id: "table-1",
       round_number: 1,
+      rule_id: "rule-1",
+      uma: [30, 10, -10, -30],
+      return_points: 30000,
       created_at: "2024-01-01T10:00:00Z",
     };
 
@@ -113,6 +146,7 @@ describe("applyResultInsert", () => {
       rank: 2,
       base_point: 0,
       uma_point: 10,
+      oka_point: 0,
       total_point: 10,
     };
 
@@ -128,6 +162,26 @@ describe("applyResultInsert", () => {
     });
   });
 
+  it("oka_point を okaPoint としてマッピングする", () => {
+    const playersCache = new Map([["player-2", "Bob"]]);
+    const payload = {
+      id: "result-oka",
+      match_id: "match-1",
+      tournament_id: "t-1",
+      player_id: "player-2",
+      score: 42000,
+      rank: 1,
+      base_point: 12,
+      uma_point: 30,
+      oka_point: 20,
+      total_point: 62,
+    };
+
+    const result = applyResultInsert([matchWithResults], payload, playersCache);
+
+    expect(result![0].results[1]).toMatchObject({ okaPoint: 20, totalPoint: 62 });
+  });
+
   it("プレイヤーキャッシュにplayer_idが存在しないとき、nullを返す（フォールバック）", () => {
     const playersCache = new Map<string, string>();
     const payload = {
@@ -139,6 +193,7 @@ describe("applyResultInsert", () => {
       rank: 2,
       base_point: 0,
       uma_point: 10,
+      oka_point: 0,
       total_point: 10,
     };
 
@@ -158,6 +213,7 @@ describe("applyResultInsert", () => {
       rank: 2,
       base_point: 0,
       uma_point: 10,
+      oka_point: 0,
       total_point: 10,
     };
 
@@ -177,6 +233,7 @@ describe("applyResultInsert", () => {
       rank: 1,
       base_point: 5,
       uma_point: 30,
+      oka_point: 0,
       total_point: 35,
     };
 

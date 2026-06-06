@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useTournament } from "@/hooks/useTournament";
 import { usePlayers } from "@/hooks/usePlayers";
 import { useTables } from "@/hooks/useTables";
+import { useRules } from "@/hooks/useRules";
 import { useMatches } from "@/hooks/useMatches";
 import { useAuth } from "@/hooks/useAuth";
 import MatchForm from "@/components/MatchForm";
@@ -19,6 +20,7 @@ export default function TournamentPage() {
   const { tournament, notFound } = useTournament(tournamentId);
   const players = usePlayers(tournamentId);
   const tables = useTables(tournamentId);
+  const rules = useRules(tournamentId);
   const { matches, ranking } = useMatches(tournamentId);
   const { user } = useAuth();
 
@@ -115,6 +117,13 @@ export default function TournamentPage() {
                 >
                   選手管理 ({players.length})
                 </Link>
+                <Link
+                  href={`/${tournamentId}/rules`}
+                  className="text-sm rounded-lg px-3 py-1 active:opacity-70"
+                  style={{ color: "var(--muted)", border: "1px solid var(--hairline)" }}
+                >
+                  ルール管理 ({rules.length})
+                </Link>
                 <button
                   onClick={() => {
                     setShowDeleteModal(true);
@@ -203,6 +212,7 @@ export default function TournamentPage() {
               tournamentId={tournamentId}
               players={players}
               tables={tables}
+              rules={rules}
               matches={matches}
               matchCounts={matchCounts}
               maxRound={maxRound}

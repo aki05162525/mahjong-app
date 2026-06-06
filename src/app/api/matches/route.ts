@@ -5,15 +5,20 @@ import { calculateMatchResults } from "@/lib/scoring";
 type InputItem = { playerId: string; score: number };
 
 export async function POST(req: NextRequest) {
-  const { tournamentId, tableId, roundNumber, inputs } = (await req.json()) as {
+  const { tournamentId, tableId, roundNumber, ruleId, inputs } = (await req.json()) as {
     tournamentId: string;
     tableId: string;
     roundNumber: number;
+    ruleId: string;
     inputs: InputItem[];
   };
 
   if (!tournamentId || !tableId || roundNumber == null || !Array.isArray(inputs)) {
     return NextResponse.json({ error: "必須項目が不足しています" }, { status: 400 });
+  }
+
+  if (!ruleId) {
+    return NextResponse.json({ error: "ルールを選択してください" }, { status: 400 });
   }
 
   if (!Number.isInteger(roundNumber) || roundNumber < 1) {
@@ -60,13 +65,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "指定されたプレイヤーが見つかりません" }, { status: 400 });
   }
 
+  // ルールを取得し、当該対局に使った値をスナップショットする
+  const { data: rule } = await getSupabaseAdmin()
+    .from("rules")
+    .select("uma, return_points")
+    .eq("id", ruleId)
+    .eq("tournament_id", tournamentId)
+    .single();
+
+  if (!rule) {
+    return NextResponse.json({ error: "指定されたルールが見つかりません" }, { status: 400 });
+  }
+
   const results = calculateMatchResults(
-    inputs.map((i) => ({ playerId: i.playerId, playerName: "", score: i.score }))
+    inputs.map((i) => ({ playerId: i.playerId, playerName: "", score: i.score })),
+    { uma: rule.uma, returnPoints: rule.return_points }
   );
 
   const { data: match, error: matchError } = await getSupabaseAdmin()
     .from("matches")
-    .insert({ tournament_id: tournamentId, table_id: tableId, round_number: roundNumber })
+    .insert({
+      tournament_id: tournamentId,
+      table_id: tableId,
+      round_number: roundNumber,
+      rule_id: ruleId,
+      uma: rule.uma,
+      return_points: rule.return_points,
+    })
     .select("id")
     .single();
 
@@ -85,6 +110,7 @@ export async function POST(req: NextRequest) {
         rank: r.rank,
         base_point: r.basePoint,
         uma_point: r.umaPoint,
+        oka_point: r.okaPoint,
         total_point: r.totalPoint,
       }))
     );

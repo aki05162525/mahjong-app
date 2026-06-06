@@ -2,6 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/infra/supabase-admin";
 import { getAuthUser } from "@/infra/supabase-server";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { SEED_RULES } from "@/lib/seedRules";
+
+// 新規大会に標準ルールを投入する。対局入力で選べるルールが最初から存在するようにする。
+async function seedRules(tournamentId: string) {
+  await getSupabaseAdmin()
+    .from("rules")
+    .insert(
+      SEED_RULES.map((r) => ({
+        tournament_id: tournamentId,
+        name: r.name,
+        uma: [...r.uma],
+        return_points: r.returnPoints,
+        is_default: r.isDefault,
+      }))
+    );
+}
 
 export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
@@ -51,6 +67,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "大会の作成に失敗しました" }, { status: 500 });
     }
 
+    await seedRules(data.id);
     return NextResponse.json({ id: data.id });
   }
 
@@ -64,5 +81,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "大会の作成に失敗しました" }, { status: 500 });
   }
 
+  await seedRules(data.id);
   return NextResponse.json({ id: data.id });
 }
