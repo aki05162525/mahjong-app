@@ -7,9 +7,15 @@ type Props = {
   tournamentId: string;
   players: Player[];
   isOwner?: boolean;
+  onChange?: () => void;
 };
 
-export default function PlayerRegistration({ tournamentId, players, isOwner = false }: Props) {
+export default function PlayerRegistration({
+  tournamentId,
+  players,
+  isOwner = false,
+  onChange,
+}: Props) {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -40,6 +46,7 @@ export default function PlayerRegistration({ tournamentId, players, isOwner = fa
         return;
       }
       setName("");
+      onChange?.();
     } catch {
       setError("登録に失敗しました");
     } finally {
@@ -76,6 +83,7 @@ export default function PlayerRegistration({ tournamentId, players, isOwner = fa
         return;
       }
       setEditingId(null);
+      onChange?.();
     } catch {
       setError("変更に失敗しました");
     } finally {

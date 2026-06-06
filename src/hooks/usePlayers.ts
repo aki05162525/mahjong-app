@@ -1,12 +1,15 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/infra/supabase";
 import type { Player } from "@/lib/types";
 
-export function usePlayers(tournamentId: string): Player[] {
+export function usePlayers(tournamentId: string): {
+  players: Player[];
+  refetch: () => PromiseLike<void>;
+} {
   const [players, setPlayers] = useState<Player[]>([]);
 
-  useEffect(() => {
-    const fetch = () =>
+  const refetch = useCallback(
+    () =>
       supabase
         .from("players")
         .select("id, name, created_at")
@@ -17,9 +20,12 @@ export function usePlayers(tournamentId: string): Player[] {
             setPlayers(
               data.map((p) => ({ id: p.id, name: p.name, createdAt: new Date(p.created_at) }))
             );
-        });
+        }),
+    [tournamentId]
+  );
 
-    fetch();
+  useEffect(() => {
+    refetch();
 
     const channel = supabase
       .channel("players:" + tournamentId)
@@ -31,14 +37,14 @@ export function usePlayers(tournamentId: string): Player[] {
           table: "players",
           filter: `tournament_id=eq.${tournamentId}`,
         },
-        fetch
+        refetch
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [tournamentId]);
+  }, [tournamentId, refetch]);
 
-  return players;
+  return { players, refetch };
 }

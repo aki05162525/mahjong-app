@@ -18,8 +18,8 @@ type Tab = "ranking" | "input" | "history";
 export default function TournamentPage() {
   const { tournamentId } = useParams<{ tournamentId: string }>();
   const { tournament, notFound } = useTournament(tournamentId);
-  const players = usePlayers(tournamentId);
-  const tables = useTables(tournamentId);
+  const { players } = usePlayers(tournamentId);
+  const { tables } = useTables(tournamentId);
   const rules = useRules(tournamentId);
   const { matches, ranking } = useMatches(tournamentId);
   const { user } = useAuth();
