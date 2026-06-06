@@ -12,7 +12,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   const { data: match, error: matchError } = await getSupabaseAdmin()
     .from("matches")
-    .select("tournament_id")
+    .select("tournament_id, round_number")
     .eq("id", id)
     .single();
 
@@ -41,5 +41,32 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   if (error) {
     return NextResponse.json({ error: "削除に失敗しました" }, { status: 500 });
   }
+
+  // 4人モード（登録ちょうど4人＝回戦が通し番号）のときだけ、削除した回戦より後ろを繰り上げて
+  // 1..N の連番を保つ。5人以上は回戦が複数卓にまたがり手動採番なので触らない。
+  const { count: playerCount } = await getSupabaseAdmin()
+    .from("players")
+    .select("id", { count: "exact", head: true })
+    .eq("tournament_id", match.tournament_id);
+
+  if (playerCount === 4) {
+    const { data: subsequent } = await getSupabaseAdmin()
+      .from("matches")
+      .select("id, round_number")
+      .eq("tournament_id", match.tournament_id)
+      .gt("round_number", match.round_number);
+
+    if (subsequent && subsequent.length > 0) {
+      await Promise.all(
+        subsequent.map((m) =>
+          getSupabaseAdmin()
+            .from("matches")
+            .update({ round_number: m.round_number - 1 })
+            .eq("id", m.id)
+        )
+      );
+    }
+  }
+
   return NextResponse.json({ ok: true });
 }
