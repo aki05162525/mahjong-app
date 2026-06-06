@@ -117,14 +117,7 @@ export default function MatchHistory({ matches, isOwner = false }: Props) {
                       </td>
                       <td
                         className="py-2 text-right font-mono font-semibold"
-                        style={{
-                          color:
-                            r.totalPoint > 0
-                              ? "var(--primary)"
-                              : r.totalPoint < 0
-                                ? "var(--error)"
-                                : "var(--body)",
-                        }}
+                        style={{ color: "var(--primary)" }}
                       >
                         {fmtPt(r.totalPoint)}
                       </td>

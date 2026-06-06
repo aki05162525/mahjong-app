@@ -208,8 +208,8 @@ export default function MatchForm({
                 placeholder={i === 3 && autoLastScore !== "" ? autoLastScore : "250"}
                 className="rounded-lg px-3 py-3 text-lg w-20 text-right"
                 style={{
-                  border: `1px solid ${isAutoFilled ? "var(--accent-teal)" : "var(--hairline)"}`,
-                  background: isAutoFilled ? "#f0faf8" : "var(--canvas)",
+                  border: "1px solid var(--hairline)",
+                  background: isAutoFilled ? "#f0ede8" : "var(--canvas)",
                 }}
               />
               <span className="text-lg font-semibold select-none" style={{ color: "var(--muted)" }}>

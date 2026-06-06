@@ -17,6 +17,15 @@ export default function Ranking({ ranking }: Props) {
     );
   }
 
+  const best = {
+    avgScore: Math.max(...ranking.map((e) => e.avgScore)),
+    maxScore: Math.max(...ranking.map((e) => e.maxScore)),
+    avgRank: Math.min(...ranking.map((e) => e.avgRank)),
+    topRate: Math.max(...ranking.map((e) => e.topRate)),
+    top2Rate: Math.max(...ranking.map((e) => e.top2Rate)),
+    lastAvoidRate: Math.max(...ranking.map((e) => e.lastAvoidRate)),
+  };
+
   return (
     <div className="flex flex-col gap-3">
       <h2 className="text-xl font-semibold" style={{ color: "var(--body)" }}>
@@ -54,34 +63,45 @@ export default function Ranking({ ranking }: Props) {
                   {entry.playerName}
                 </td>
                 <td
-                  className={`py-3 pr-3 text-right font-mono text-base ${entry.totalPoint > 0 ? "font-bold" : ""}`}
-                  style={{
-                    color:
-                      entry.totalPoint > 0
-                        ? "var(--primary)"
-                        : entry.totalPoint < 0
-                          ? "var(--error)"
-                          : "var(--body)",
-                  }}
+                  className="py-3 pr-3 text-right font-mono text-base font-black"
+                  style={{ color: "var(--primary)" }}
                 >
                   {fmtPt(entry.totalPoint)}
                 </td>
-                <td className="py-3 pr-3 text-right font-mono" style={{ color: "var(--body)" }}>
+                <td
+                  className={`py-3 pr-3 text-right font-mono ${entry.avgScore === best.avgScore ? "font-black" : ""}`}
+                  style={{ color: "var(--body)" }}
+                >
                   {entry.avgScore.toLocaleString()}
                 </td>
-                <td className="py-3 pr-3 text-right font-mono" style={{ color: "var(--body)" }}>
+                <td
+                  className={`py-3 pr-3 text-right font-mono ${entry.maxScore === best.maxScore ? "font-black" : ""}`}
+                  style={{ color: "var(--body)" }}
+                >
                   {entry.maxScore.toLocaleString()}
                 </td>
-                <td className="py-3 pr-3 text-right font-mono" style={{ color: "var(--body)" }}>
+                <td
+                  className={`py-3 pr-3 text-right font-mono ${entry.avgRank === best.avgRank ? "font-black" : ""}`}
+                  style={{ color: "var(--body)" }}
+                >
                   {entry.avgRank.toFixed(2)}
                 </td>
-                <td className="py-3 pr-3 text-right font-mono" style={{ color: "var(--body)" }}>
+                <td
+                  className={`py-3 pr-3 text-right font-mono ${entry.topRate === best.topRate ? "font-black" : ""}`}
+                  style={{ color: "var(--body)" }}
+                >
                   {(entry.topRate / 100).toFixed(2)}
                 </td>
-                <td className="py-3 pr-3 text-right font-mono" style={{ color: "var(--body)" }}>
+                <td
+                  className={`py-3 pr-3 text-right font-mono ${entry.top2Rate === best.top2Rate ? "font-black" : ""}`}
+                  style={{ color: "var(--body)" }}
+                >
                   {(entry.top2Rate / 100).toFixed(2)}
                 </td>
-                <td className="py-3 pr-3 text-right font-mono" style={{ color: "var(--body)" }}>
+                <td
+                  className={`py-3 pr-3 text-right font-mono ${entry.lastAvoidRate === best.lastAvoidRate ? "font-black" : ""}`}
+                  style={{ color: "var(--body)" }}
+                >
                   {(entry.lastAvoidRate / 100).toFixed(2)}
                 </td>
                 <td className="py-3 text-right" style={{ color: "var(--muted)" }}>
