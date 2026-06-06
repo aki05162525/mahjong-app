@@ -88,6 +88,19 @@ export default function MatchFormFour({ tournamentId, players, rules, maxRound }
     setScores(working);
   };
 
+  // 数字キーパッドのままマイナスを扱えるよう、入力は text + inputMode=numeric にし、
+  // 数字と先頭の "-" だけ通す。
+  const onScoreInput = (id: string, raw: string) => {
+    const cleaned = raw.replace(/[^\d-]/g, "").replace(/(?!^)-/g, "");
+    updateScore(id, cleaned);
+  };
+
+  // 符号反転（モバイルのキーパッドにマイナスが無いことの代替）。空欄なら "-" にする。
+  const toggleSign = (id: string) => {
+    const cur = scores[id] ?? "";
+    updateScore(id, cur.startsWith("-") ? cur.slice(1) : "-" + cur);
+  };
+
   const handleSave = async () => {
     setError("");
     setSuccess(false);
@@ -226,11 +239,24 @@ export default function MatchFormFour({ tournamentId, players, rules, maxRound }
                     {player?.name ?? "?"}
                   </span>
                 </div>
+                <button
+                  type="button"
+                  aria-label="符号を反転"
+                  onClick={() => toggleSign(id)}
+                  className="shrink-0 w-8 py-3 rounded-lg text-lg font-bold active:opacity-70"
+                  style={{
+                    border: "1px solid var(--hairline)",
+                    color: val.startsWith("-") ? "var(--error)" : "var(--muted)",
+                    background: "var(--canvas)",
+                  }}
+                >
+                  {val.startsWith("-") ? "−" : "+"}
+                </button>
                 <input
-                  type="number"
+                  type="text"
                   inputMode="numeric"
                   value={val}
-                  onChange={(e) => updateScore(id, e.target.value)}
+                  onChange={(e) => onScoreInput(id, e.target.value)}
                   placeholder={placeholder}
                   className="rounded-lg px-3 py-3 text-lg w-20 text-right"
                   style={{
