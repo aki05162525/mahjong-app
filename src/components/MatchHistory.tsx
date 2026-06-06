@@ -61,7 +61,7 @@ export default function MatchHistory({ matches, isOwner = false }: Props) {
 
   // AND 絞り込み: 選んだ全員が同卓した対局のみ残す
   const filtered =
-    selectedPlayerIds.size === 0
+    !showFilter || selectedPlayerIds.size === 0
       ? sorted
       : sorted.filter((match) => {
           const ids = new Set(match.results.map((r) => r.playerId));
@@ -96,6 +96,7 @@ export default function MatchHistory({ matches, isOwner = false }: Props) {
                 <button
                   key={p.id}
                   onClick={() => togglePlayer(p.id)}
+                  aria-pressed={selected}
                   className="rounded-full px-3 py-1 text-sm active:opacity-70"
                   style={
                     selected
