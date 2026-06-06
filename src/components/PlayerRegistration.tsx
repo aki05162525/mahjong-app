@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useOptimistic, useState, useTransition } from "react";
 import type { Player } from "@/lib/types";
 
 type Props = {
   tournamentId: string;
   players: Player[];
   isOwner?: boolean;
-  onChange?: () => void;
+  onChange?: () => void | PromiseLike<void>;
 };
 
 export default function PlayerRegistration({
@@ -18,40 +18,53 @@ export default function PlayerRegistration({
 }: Props) {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [, startTransition] = useTransition();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [renaming, setRenaming] = useState(false);
 
-  const handleAdd = async () => {
+  const [optimisticPlayers, addOptimisticPlayer] = useOptimistic(
+    players,
+    (current, name: string) => [
+      ...current,
+      { id: `optimistic-${name}`, name, createdAt: new Date() },
+    ]
+  );
+
+  const handleAdd = () => {
     const trimmed = name.trim();
     if (!trimmed) {
       setError("名前を入力してください");
       return;
     }
-    if (players.some((p) => p.name === trimmed)) {
+    if (optimisticPlayers.some((p) => p.name === trimmed)) {
       setError("同じ名前のプレイヤーが既に存在します");
       return;
     }
-    setSaving(true);
+    setName("");
     setError("");
-    try {
-      const res = await fetch("/api/players", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tournamentId, name: trimmed }),
-      });
-      if (!res.ok) {
-        setError((await res.json()).error ?? "登録に失敗しました");
-        return;
+    startTransition(async () => {
+      // 楽観的に画面へ反映。transition が終わると players（本物）に巻き戻る。
+      addOptimisticPlayer(trimmed);
+      try {
+        const res = await fetch("/api/players", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tournamentId, name: trimmed }),
+        });
+        if (!res.ok) {
+          // 巻き戻りで楽観行は消える。入力を戻して再編集できるようにする。
+          setError((await res.json()).error ?? "登録に失敗しました");
+          setName(trimmed);
+          return;
+        }
+        // 本物の players が trimmed を含むまで待ってから transition を終える（チラつき防止）。
+        await onChange?.();
+      } catch {
+        setError("登録に失敗しました");
+        setName(trimmed);
       }
-      setName("");
-      onChange?.();
-    } catch {
-      setError("登録に失敗しました");
-    } finally {
-      setSaving(false);
-    }
+    });
   };
 
   const startEdit = (player: Player) => {
@@ -66,7 +79,7 @@ export default function PlayerRegistration({
       setError("名前を入力してください");
       return;
     }
-    if (players.some((p) => p.name === trimmed && p.id !== editingId)) {
+    if (optimisticPlayers.some((p) => p.name === trimmed && p.id !== editingId)) {
       setError("同じ名前のプレイヤーが既に存在します");
       return;
     }
@@ -109,8 +122,7 @@ export default function PlayerRegistration({
           />
           <button
             onClick={handleAdd}
-            disabled={saving}
-            className="rounded-lg px-5 py-3 text-lg font-semibold active:opacity-80 disabled:opacity-50"
+            className="rounded-lg px-5 py-3 text-lg font-semibold active:opacity-80"
             style={{ background: "var(--primary)", color: "#fff" }}
           >
             追加
@@ -119,7 +131,7 @@ export default function PlayerRegistration({
       )}
       {error && <p style={{ color: "var(--error)" }}>{error}</p>}
       <ul className="flex flex-col gap-2">
-        {players.map((p) =>
+        {optimisticPlayers.map((p) =>
           isOwner && editingId === p.id ? (
             <li key={p.id} className="flex gap-2 items-center">
               <input
@@ -154,7 +166,7 @@ export default function PlayerRegistration({
               style={{ background: "var(--surface-strong)", color: "var(--body)" }}
             >
               <span>{p.name}</span>
-              {isOwner && (
+              {isOwner && !p.id.startsWith("optimistic-") && (
                 <button
                   onClick={() => startEdit(p)}
                   className="text-xs active:opacity-70 ml-2"
