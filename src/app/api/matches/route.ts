@@ -46,8 +46,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // tableId が指定されたときだけ、当該大会に存在するか確認する（単一卓は null）。
   if (normalizedTableId) {
+    // 卓が指定されたら当該大会に存在するか確認する。
     const { count: tableCount } = await getSupabaseAdmin()
       .from("tables")
       .select("id", { count: "exact", head: true })
@@ -56,6 +56,17 @@ export async function POST(req: NextRequest) {
 
     if (!tableCount || tableCount === 0) {
       return NextResponse.json({ error: "指定された卓が見つかりません" }, { status: 400 });
+    }
+  } else {
+    // 卓を省略できるのは単一卓のときだけ。2卓以上ある大会ではどの卓か曖昧になるため必須。
+    // UI でも防ぐが、API 直叩きやクライアント不整合で曖昧データが混入しないようサーバーでも強制する。
+    const { count: tableCount } = await getSupabaseAdmin()
+      .from("tables")
+      .select("id", { count: "exact", head: true })
+      .eq("tournament_id", tournamentId);
+
+    if (tableCount && tableCount >= 2) {
+      return NextResponse.json({ error: "卓を選択してください" }, { status: 400 });
     }
   }
 
