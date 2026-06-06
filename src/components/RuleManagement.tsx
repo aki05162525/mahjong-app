@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Rule } from "@/lib/types";
+import { formatUma } from "@/lib/formatUma";
 import RuleForm, { type RuleFormValues } from "./RuleForm";
 
 type Props = {
@@ -106,7 +107,7 @@ export default function RuleManagement({ tournamentId, rules, isOwner = false }:
                   )}
                 </span>
                 <span className="text-xs" style={{ color: "var(--muted)" }}>
-                  ウマ {rule.uma.join("/")}・返し {rule.returnPoints.toLocaleString()}
+                  ウマ {formatUma(rule.uma)} オカ {rule.returnPoints.toLocaleString()}
                 </span>
               </div>
               {isOwner && (

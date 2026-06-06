@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Match } from "@/lib/types";
+import { formatUma } from "@/lib/formatUma";
 import { fmtPt } from "@/lib/utils";
 
 type Props = { matches: Match[]; isOwner?: boolean };
@@ -152,7 +153,7 @@ export default function MatchHistory({ matches, isOwner = false }: Props) {
                   </div>
                 </div>
                 <span className="text-xs -mt-1" style={{ color: "var(--muted)" }}>
-                  ウマ {match.uma.join("/")}・返し {match.returnPoints.toLocaleString()}
+                  ウマ {formatUma(match.uma)} オカ {match.returnPoints.toLocaleString()}
                 </span>
                 <table className="w-full text-base">
                   <thead>
