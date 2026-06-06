@@ -214,11 +214,6 @@ export default function MatchForm({
             </option>
           ))}
         </select>
-        {selectedRule && (
-          <span className="text-xs" style={{ color: "var(--muted)" }}>
-            ウマ {selectedRule.uma.join("/")}・返し {selectedRule.returnPoints.toLocaleString()}
-          </span>
-        )}
       </div>
 
       {slots.map((slot, i) => {
