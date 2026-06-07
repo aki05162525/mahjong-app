@@ -28,7 +28,10 @@
       "lefthook",
       "sharp",
       "unrs-resolver"
-    ]
+    ],
+    "overrides": {
+      "postcss": ">=8.5.10"
+    }
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
