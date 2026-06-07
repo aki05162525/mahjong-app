@@ -35,7 +35,7 @@ describe("route", () => {
     expect(json).toEqual({
       error: "ログインが必要です",
       code: "unauthorized",
-      details: undefined,
+      details: null,
     });
   });
 
