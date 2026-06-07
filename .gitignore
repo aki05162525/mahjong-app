@@ -30,8 +30,10 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files — 実値を含むファイルは除外
+# .env は op:// 参照のみで実値なし → 追跡対象
 .env*
+!.env
 
 # vercel
 .vercel
