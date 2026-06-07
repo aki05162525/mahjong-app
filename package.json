@@ -5,8 +5,8 @@
   "packageManager": "pnpm@10.33.2",
   "scripts": {
     "dev": "op run --env-file=.env -- next dev",
-    "build": "op run --env-file=.env -- next build",
-    "start": "op run --env-file=.env -- next start",
+    "build": "next build",
+    "start": "next start",
     "lint": "eslint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
