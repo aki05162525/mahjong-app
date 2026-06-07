@@ -1,65 +1,47 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getSupabaseAdmin } from "@/infra/supabase-admin";
-import { getAuthUser } from "@/infra/supabase-server";
+import { route } from "@/server/http/route";
+import { badRequest, conflict, notFound, internalError } from "@/server/http/errors";
+import { requireUser } from "@/server/auth/requireUser";
+import { requireTournamentOwner } from "@/server/auth/requireTournamentOwner";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getAuthUser();
-  if (!user) {
-    return NextResponse.json({ error: "ログインが必要です" }, { status: 401 });
-  }
+  return route(async () => {
+    const user = await requireUser();
 
-  const { id } = await params;
-  const { name } = await req.json();
+    const { id } = await params;
+    const { name } = await req.json();
 
-  const trimmed = (name ?? "").trim();
-  if (!trimmed) {
-    return NextResponse.json({ error: "卓名を入力してください" }, { status: 400 });
-  }
-  if (trimmed.length > 20) {
-    return NextResponse.json({ error: "卓名は20文字以内で入力してください" }, { status: 400 });
-  }
+    const trimmed = (name ?? "").trim();
+    if (!trimmed) throw badRequest("卓名を入力してください");
+    if (trimmed.length > 20) throw badRequest("卓名は20文字以内で入力してください");
 
-  const { data: table, error: tableError } = await getSupabaseAdmin()
-    .from("tables")
-    .select("tournament_id")
-    .eq("id", id)
-    .single();
+    const { data: table, error: tableError } = await getSupabaseAdmin()
+      .from("tables")
+      .select("tournament_id")
+      .eq("id", id)
+      .single();
 
-  if (tableError && tableError.code !== "PGRST116") {
-    return NextResponse.json({ error: "内部エラー" }, { status: 500 });
-  }
-  if (!table) {
-    return NextResponse.json({ error: "卓が見つかりません" }, { status: 404 });
-  }
+    if (tableError && tableError.code !== "PGRST116") throw internalError("内部エラー");
+    if (!table) throw notFound("卓が見つかりません");
 
-  const { data: tournament, error: tournamentError } = await getSupabaseAdmin()
-    .from("tournaments")
-    .select("owner_id")
-    .eq("id", table.tournament_id)
-    .single();
+    await requireTournamentOwner(table.tournament_id, user);
 
-  if (tournamentError || !tournament) {
-    return NextResponse.json({ error: "内部エラー" }, { status: 500 });
-  }
-  if (tournament.owner_id !== user.id) {
-    return NextResponse.json({ error: "権限がありません" }, { status: 403 });
-  }
+    const { count } = await getSupabaseAdmin()
+      .from("tables")
+      .select("id", { count: "exact", head: true })
+      .eq("tournament_id", table.tournament_id)
+      .eq("name", trimmed)
+      .neq("id", id);
 
-  const { count } = await getSupabaseAdmin()
-    .from("tables")
-    .select("id", { count: "exact", head: true })
-    .eq("tournament_id", table.tournament_id)
-    .eq("name", trimmed)
-    .neq("id", id);
+    if (count && count > 0) throw conflict("同じ名前の卓が既に存在します");
 
-  if (count && count > 0) {
-    return NextResponse.json({ error: "同じ名前の卓が既に存在します" }, { status: 409 });
-  }
+    const { error } = await getSupabaseAdmin()
+      .from("tables")
+      .update({ name: trimmed })
+      .eq("id", id);
 
-  const { error } = await getSupabaseAdmin().from("tables").update({ name: trimmed }).eq("id", id);
-
-  if (error) {
-    return NextResponse.json({ error: "変更に失敗しました" }, { status: 500 });
-  }
-  return NextResponse.json({ ok: true });
+    if (error) throw internalError("変更に失敗しました");
+    return { ok: true };
+  });
 }
