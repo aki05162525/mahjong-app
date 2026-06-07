@@ -8,7 +8,7 @@ import { validateRule } from "@/lib/ruleValidation";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   return route(async () => {
-    await requireUser();
+    const user = await requireUser();
 
     const { id } = await params;
 
@@ -21,7 +21,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (ruleError && ruleError.code !== "PGRST116") throw internalError("内部エラー");
     if (!rule) throw notFound("ルールが見つかりません");
 
-    await requireTournamentOwner(rule.tournament_id);
+    await requireTournamentOwner(rule.tournament_id, user);
 
     const { name, uma, returnPoints, isDefault } = await req.json();
 
@@ -50,7 +50,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   return route(async () => {
-    await requireUser();
+    const user = await requireUser();
 
     const { id } = await params;
 
@@ -63,7 +63,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     if (ruleError && ruleError.code !== "PGRST116") throw internalError("内部エラー");
     if (!rule) throw notFound("ルールが見つかりません");
 
-    await requireTournamentOwner(rule.tournament_id);
+    await requireTournamentOwner(rule.tournament_id, user);
 
     // デフォルトは大会内に必ず1つ残す。削除前に別のルールをデフォルトにすること。
     if (rule.is_default) {

@@ -8,13 +8,13 @@ import { validateRule } from "@/lib/ruleValidation";
 
 export async function POST(req: NextRequest) {
   return route(async () => {
-    await requireUser();
+    const user = await requireUser();
 
     const { tournamentId, name, uma, returnPoints, isDefault } = await req.json();
 
     if (!tournamentId) throw badRequest("大会IDが必要です");
 
-    await requireTournamentOwner(tournamentId);
+    await requireTournamentOwner(tournamentId, user);
 
     const validationError = validateRule({ name, uma, returnPoints });
     if (validationError) throw badRequest(validationError);

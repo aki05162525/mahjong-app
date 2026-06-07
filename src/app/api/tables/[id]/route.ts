@@ -7,7 +7,7 @@ import { requireTournamentOwner } from "@/server/auth/requireTournamentOwner";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   return route(async () => {
-    await requireUser();
+    const user = await requireUser();
 
     const { id } = await params;
     const { name } = await req.json();
@@ -25,7 +25,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (tableError && tableError.code !== "PGRST116") throw internalError("内部エラー");
     if (!table) throw notFound("卓が見つかりません");
 
-    await requireTournamentOwner(table.tournament_id);
+    await requireTournamentOwner(table.tournament_id, user);
 
     const { count } = await getSupabaseAdmin()
       .from("tables")

@@ -7,13 +7,13 @@ import { requireTournamentOwner } from "@/server/auth/requireTournamentOwner";
 
 export async function POST(req: NextRequest) {
   return route(async () => {
-    await requireUser();
+    const user = await requireUser();
 
     const { tournamentId, name } = await req.json();
 
     if (!tournamentId) throw badRequest("大会IDが必要です");
 
-    await requireTournamentOwner(tournamentId);
+    await requireTournamentOwner(tournamentId, user);
 
     const trimmed = (name ?? "").trim();
     if (!trimmed) throw badRequest("名前を入力してください");
