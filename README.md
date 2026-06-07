@@ -17,17 +17,15 @@
 pnpm install
 ```
 
-### 2. 環境変数の設定
+### 2. 1Password CLI のセットアップ
 
-`.env.local` を作成し、以下を設定する。
+[1Password CLI](https://developer.1password.com/docs/cli/get-started/) をインストールし、サインインする。
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=<Supabase プロジェクト URL>
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<Supabase Publishable Key>
-SUPABASE_SERVICE_ROLE_KEY=<Supabase Service Role Key>
+```bash
+op signin --account my.1password.com
 ```
 
-`SUPABASE_SERVICE_ROLE_KEY` は秘密鍵なので `NEXT_PUBLIC_` に含めず、サーバーサイドのみで使用すること。
+シークレットは 1Password の `mahjong-app` Vault で管理している。`.env` に `op://` 参照が書かれており、`pnpm dev` 実行時に自動で注入される。
 
 ### 3. 開発サーバーの起動
 
