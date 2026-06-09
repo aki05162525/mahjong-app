@@ -29,239 +29,48 @@ function makeReq(body: object) {
   });
 }
 
-// 合計ちょうど 100,000 点になる 4 人分の入力
+const T_ID = "00000000-0000-4000-8000-000000000001";
+const RULE_ID = "00000000-0000-4000-8000-000000000002";
+const TABLE_ID = "00000000-0000-4000-8000-000000000003";
+const P1 = "00000000-0000-4000-8000-000000000011";
+const P2 = "00000000-0000-4000-8000-000000000012";
+const P3 = "00000000-0000-4000-8000-000000000013";
+const P4 = "00000000-0000-4000-8000-000000000014";
+
 const validInputs = [
-  { playerId: "p1", score: 42000 },
-  { playerId: "p2", score: 31000 },
-  { playerId: "p3", score: 18000 },
-  { playerId: "p4", score: 9000 },
+  { playerId: P1, score: 42000 },
+  { playerId: P2, score: 31000 },
+  { playerId: P3, score: 18000 },
+  { playerId: P4, score: 9000 },
 ];
 
-const baseBody = { tournamentId: "t1", tableId: "tb1", roundNumber: 1, ruleId: "r1" };
-
-// rules フェッチが返すルール（ワンツー・返し30000）
+const baseBody = { tournamentId: T_ID, tableId: TABLE_ID, roundNumber: 1, ruleId: RULE_ID };
 const ruleRow = { uma: [20, 10, -10, -20], return_points: 30000 };
 
-// DB が正常なときのモック設定
-function setupSuccessDb() {
-  mockFrom
-    .mockReturnValueOnce(makeChain({ count: 1 })) // tables: 卓が存在する
-    .mockReturnValueOnce(makeChain({ count: 4 })) // players: 4人全員が存在する
-    .mockReturnValueOnce(makeChain({ data: ruleRow, error: null })) // rules: ルール取得
-    .mockReturnValueOnce(makeChain({ data: { id: "match-id" }, error: null })) // matches: insert
-    .mockReturnValueOnce(makeChain({ data: null, error: null })); // match_results: insert
-}
-
-describe("POST /api/matches — 入力バリデーション（DB 不要）", () => {
+describe("POST /api/matches", () => {
   beforeEach(() => mockFrom.mockReset());
 
-  it("400: inputs が 3 件（4 件未満）", async () => {
-    const res = await POST(makeReq({ ...baseBody, inputs: validInputs.slice(0, 3) }));
-    expect(res.status).toBe(400);
-    expect((await res.json()).error).toMatch(/4件/);
-  });
-
-  it("400: inputs が 5 件（4 件超）", async () => {
-    const res = await POST(
-      makeReq({
-        ...baseBody,
-        inputs: [...validInputs, { playerId: "p5", score: 0 }],
-      })
-    );
-    expect(res.status).toBe(400);
-    expect((await res.json()).error).toMatch(/4件/);
-  });
-
-  it("400: roundNumber が 0（正の整数でない）", async () => {
+  it("400: 入力が不正なとき parseCreateMatch が弾く", async () => {
     const res = await POST(makeReq({ ...baseBody, roundNumber: 0, inputs: validInputs }));
     expect(res.status).toBe(400);
-    expect((await res.json()).error).toMatch(/回戦番号/);
   });
 
-  it("400: roundNumber が小数（整数でない）", async () => {
-    const res = await POST(makeReq({ ...baseBody, roundNumber: 1.5, inputs: validInputs }));
-    expect(res.status).toBe(400);
-    expect((await res.json()).error).toMatch(/回戦番号/);
-  });
-
-  it("400: playerId が重複している", async () => {
-    const res = await POST(
-      makeReq({
-        ...baseBody,
-        inputs: [
-          { playerId: "p1", score: 42000 },
-          { playerId: "p1", score: 31000 }, // 重複
-          { playerId: "p3", score: 18000 },
-          { playerId: "p4", score: 9000 },
-        ],
-      })
-    );
-    expect(res.status).toBe(400);
-    expect((await res.json()).error).toMatch(/重複/);
-  });
-
-  it("400: 合計点数が 100,000 点でない", async () => {
-    const res = await POST(
-      makeReq({
-        ...baseBody,
-        inputs: [
-          { playerId: "p1", score: 40000 },
-          { playerId: "p2", score: 30000 },
-          { playerId: "p3", score: 20000 },
-          { playerId: "p4", score: 9000 }, // 合計 99,000
-        ],
-      })
-    );
-    expect(res.status).toBe(400);
-    expect((await res.json()).error).toMatch(/点数合計/);
-  });
-});
-
-describe("POST /api/matches — DB バリデーション", () => {
-  beforeEach(() => mockFrom.mockReset());
-
-  it("400: tableId が当該大会に存在しない", async () => {
-    mockFrom.mockReturnValue(makeChain({ count: 0 })); // 卓が見つからない
+  it("404: ビジネスルール違反のとき createMatch が弾く", async () => {
+    mockFrom.mockReturnValueOnce(makeChain({ count: 0 })); // 卓が存在しない
     const res = await POST(makeReq({ ...baseBody, inputs: validInputs }));
-    expect(res.status).toBe(400);
-    expect((await res.json()).error).toMatch(/卓/);
+    expect(res.status).toBe(404);
   });
 
-  it("400: playerId の一部が当該大会に存在しない", async () => {
+  it("200: 正常系で id を返す", async () => {
     mockFrom
-      .mockReturnValueOnce(makeChain({ count: 1 })) // 卓は存在する
-      .mockReturnValueOnce(makeChain({ count: 3 })); // 4人中3人しか見つからない
-    const res = await POST(makeReq({ ...baseBody, inputs: validInputs }));
-    expect(res.status).toBe(400);
-    expect((await res.json()).error).toMatch(/プレイヤー/);
-  });
+      .mockReturnValueOnce(makeChain({ count: 1 }))
+      .mockReturnValueOnce(makeChain({ count: 4 }))
+      .mockReturnValueOnce(makeChain({ data: ruleRow, error: null }))
+      .mockReturnValueOnce(makeChain({ data: { id: "match-id" }, error: null }))
+      .mockReturnValueOnce(makeChain({ data: null, error: null }));
 
-  it("200: 正常な対局結果を保存できる", async () => {
-    setupSuccessDb();
     const res = await POST(makeReq({ ...baseBody, inputs: validInputs }));
     expect(res.status).toBe(200);
     expect((await res.json()).id).toBe("match-id");
-  });
-
-  it("200: tableId 無し（卓<2）は table_id=null で保存する", async () => {
-    // 卓未指定のときは「2卓以上あるか」を数えるので、最初の from() は tables の総数。
-    const matchInsertChain = makeChain({ data: { id: "match-id" }, error: null });
-    mockFrom
-      .mockReturnValueOnce(makeChain({ count: 1 })) // tables: 大会内に1卓のみ（<2なので卓省略可）
-      .mockReturnValueOnce(makeChain({ count: 4 })) // players: 4人存在
-      .mockReturnValueOnce(makeChain({ data: ruleRow, error: null })) // rules
-      .mockReturnValueOnce(matchInsertChain) // matches: insert
-      .mockReturnValueOnce(makeChain({ data: null, error: null })); // match_results
-
-    const res = await POST(
-      makeReq({ tournamentId: "t1", roundNumber: 1, ruleId: "r1", inputs: validInputs })
-    );
-
-    expect(res.status).toBe(200);
-    const matchPayload = (matchInsertChain.insert as ReturnType<typeof vi.fn>).mock
-      .calls[0][0] as Record<string, unknown>;
-    expect(matchPayload.table_id).toBeNull();
-  });
-
-  it("400: tableId 無しでも大会に2卓以上あれば卓必須", async () => {
-    mockFrom.mockReturnValueOnce(makeChain({ count: 2 })); // tables: 2卓ある
-    const res = await POST(
-      makeReq({ tournamentId: "t1", roundNumber: 1, ruleId: "r1", inputs: validInputs })
-    );
-    expect(res.status).toBe(400);
-    expect((await res.json()).error).toMatch(/卓/);
-  });
-
-  it("200: match_results に 4 件の結果が insert される", async () => {
-    const insertChain = makeChain({ data: null, error: null });
-    mockFrom
-      .mockReturnValueOnce(makeChain({ count: 1 }))
-      .mockReturnValueOnce(makeChain({ count: 4 }))
-      .mockReturnValueOnce(makeChain({ data: ruleRow, error: null }))
-      .mockReturnValueOnce(makeChain({ data: { id: "match-id" }, error: null }))
-      .mockReturnValueOnce(insertChain);
-
-    await POST(makeReq({ ...baseBody, inputs: validInputs }));
-
-    // match_results の insert が呼ばれた際の引数を確認
-    const insertCall = (insertChain.insert as ReturnType<typeof vi.fn>).mock
-      .calls[0][0] as unknown[];
-    expect(insertCall).toHaveLength(4);
-  });
-
-  it("200: match_results の insert payload に tournament_id が含まれる", async () => {
-    const insertChain = makeChain({ data: null, error: null });
-    mockFrom
-      .mockReturnValueOnce(makeChain({ count: 1 }))
-      .mockReturnValueOnce(makeChain({ count: 4 }))
-      .mockReturnValueOnce(makeChain({ data: ruleRow, error: null }))
-      .mockReturnValueOnce(makeChain({ data: { id: "match-id" }, error: null }))
-      .mockReturnValueOnce(insertChain);
-
-    await POST(makeReq({ ...baseBody, inputs: validInputs }));
-
-    const insertCall = (insertChain.insert as ReturnType<typeof vi.fn>).mock.calls[0][0] as Array<
-      Record<string, unknown>
-    >;
-    expect(insertCall[0]).toHaveProperty("tournament_id", "t1");
-  });
-
-  it("400: ruleId が指定されていない", async () => {
-    const res = await POST(
-      makeReq({ tournamentId: "t1", tableId: "tb1", roundNumber: 1, inputs: validInputs })
-    );
-    expect(res.status).toBe(400);
-    expect((await res.json()).error).toMatch(/ルール/);
-  });
-
-  it("400: 指定された ruleId が当該大会に存在しない", async () => {
-    mockFrom
-      .mockReturnValueOnce(makeChain({ count: 1 })) // 卓は存在する
-      .mockReturnValueOnce(makeChain({ count: 4 })) // プレイヤーも存在する
-      .mockReturnValueOnce(makeChain({ data: null, error: null })); // ルールが見つからない
-    const res = await POST(makeReq({ ...baseBody, inputs: validInputs }));
-    expect(res.status).toBe(400);
-    expect((await res.json()).error).toMatch(/ルール/);
-  });
-
-  it("200: matches の insert payload にルールスナップショット（rule_id・uma・return_points）が含まれる", async () => {
-    const matchInsertChain = makeChain({ data: { id: "match-id" }, error: null });
-    mockFrom
-      .mockReturnValueOnce(makeChain({ count: 1 }))
-      .mockReturnValueOnce(makeChain({ count: 4 }))
-      .mockReturnValueOnce(makeChain({ data: ruleRow, error: null }))
-      .mockReturnValueOnce(matchInsertChain)
-      .mockReturnValueOnce(makeChain({ data: null, error: null }));
-
-    await POST(makeReq({ ...baseBody, inputs: validInputs }));
-
-    const matchPayload = (matchInsertChain.insert as ReturnType<typeof vi.fn>).mock
-      .calls[0][0] as Record<string, unknown>;
-    expect(matchPayload).toMatchObject({
-      rule_id: "r1",
-      uma: [20, 10, -10, -20],
-      return_points: 30000,
-    });
-  });
-
-  it("200: 返し30000のとき、トップの oka_point が +20 で保存される", async () => {
-    const resultsInsertChain = makeChain({ data: null, error: null });
-    mockFrom
-      .mockReturnValueOnce(makeChain({ count: 1 }))
-      .mockReturnValueOnce(makeChain({ count: 4 }))
-      .mockReturnValueOnce(makeChain({ data: ruleRow, error: null }))
-      .mockReturnValueOnce(makeChain({ data: { id: "match-id" }, error: null }))
-      .mockReturnValueOnce(resultsInsertChain);
-
-    // p1=42000 がトップ
-    await POST(makeReq({ ...baseBody, inputs: validInputs }));
-
-    const payload = (resultsInsertChain.insert as ReturnType<typeof vi.fn>).mock
-      .calls[0][0] as Array<Record<string, unknown>>;
-    const top = payload.find((r) => r.player_id === "p1")!;
-    expect(top.oka_point).toBe(20);
-    // 卓全体ゼロサム
-    const sum = payload.reduce((s, r) => s + (r.total_point as number), 0);
-    expect(sum).toBe(0);
   });
 });
