@@ -63,6 +63,9 @@ importers:
       eslint-config-next:
         specifier: 16.2.7
         version: 16.2.7(@typescript-eslint/parser@8.60.1(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.3))(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.3)
+      eslint-plugin-zod:
+        specifier: ^4.7.0
+        version: 4.7.0(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.3)(zod@4.4.3)
       lefthook:
         specifier: ^2.1.9
         version: 2.1.9
@@ -174,6 +177,10 @@ packages:
   '@eslint-community/regexpp@4.12.2':
     resolution: {integrity: sha512-EriSTlt5OC9/7SXkRSCAhfSxxoSUgBm33OH+IkwbdpgoqsSsUg7y3uh+IICI/Qg4BBWr3U2i39RpmycbxMq4ew==}
     engines: {node: ^12.0.0 || ^14.0.0 || >=16.0.0}
+
+  '@eslint-zod/utils@2.3.0':
+    resolution: {integrity: sha512-6XEQLA5lDOOLnX05bgzDT3DyxlCGgLDFX3q0wYSSUSyVJj5WD+8wdlIAFY8kjatSDHWJQ+qFI/BdiDh9o50nBQ==}
+    engines: {node: ^20 || ^22 || >=24}
 
   '@eslint/config-array@0.21.2':
     resolution: {integrity: sha512-nJl2KGTlrf9GjLimgIru+V/mzgSK0ABCDQRvxw5BjURL7WfH5uoWmizbH7QB6MmnMBd8cIC9uceWnezL1VZWWw==}
@@ -1326,6 +1333,21 @@ packages:
     engines: {node: '>=4'}
     peerDependencies:
       eslint: ^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7
+
+  eslint-plugin-zod@4.7.0:
+    resolution: {integrity: sha512-unziYvD8FGxhfL6rYuC3Cjdx/K3yMWSTv6t5uB9KEgzMajDXuQcp67/WDxdUiEFhGY1LlXJs03xQc+Pg6+vqrw==}
+    engines: {node: ^20 || ^22 || >=24}
+    peerDependencies:
+      eslint: ^9 || ^10
+      oxlint: ^1.59.0
+      zod: ^4
+    peerDependenciesMeta:
+      eslint:
+        optional: true
+      oxlint:
+        optional: true
+      zod:
+        optional: true
 
   eslint-scope@8.4.0:
     resolution: {integrity: sha512-sNXOfKCn74rt8RICKMvJS7XKV/Xk9kA7DyJr8mJik3S7Cwgy3qlkkmyS2uQB3jiJg6VNdZd/pDBJu0nvG2NlTg==}
@@ -2594,6 +2616,15 @@ snapshots:
 
   '@eslint-community/regexpp@4.12.2': {}
 
+  '@eslint-zod/utils@2.3.0(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.3)':
+    dependencies:
+      '@typescript-eslint/utils': 8.60.1(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.3)
+      esquery: 1.7.0
+    transitivePeerDependencies:
+      - eslint
+      - supports-color
+      - typescript
+
   '@eslint/config-array@0.21.2':
     dependencies:
       '@eslint/object-schema': 2.1.7
@@ -3738,6 +3769,17 @@ snapshots:
       semver: 6.3.1
       string.prototype.matchall: 4.0.12
       string.prototype.repeat: 1.0.0
+
+  eslint-plugin-zod@4.7.0(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.3)(zod@4.4.3):
+    dependencies:
+      '@eslint-zod/utils': 2.3.0(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.3)
+      '@typescript-eslint/utils': 8.60.1(eslint@9.39.4(jiti@2.7.0))(typescript@6.0.3)
+    optionalDependencies:
+      eslint: 9.39.4(jiti@2.7.0)
+      zod: 4.4.3
+    transitivePeerDependencies:
+      - supports-color
+      - typescript
 
   eslint-scope@8.4.0:
     dependencies:
