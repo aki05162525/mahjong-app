@@ -4,8 +4,9 @@ import { NextRequest } from "next/server";
 vi.mock("@/lib/rate-limit", () => ({ checkRateLimit: () => ({ ok: true }) }));
 
 const mockFrom = vi.hoisted(() => vi.fn());
+const mockRpc = vi.hoisted(() => vi.fn());
 vi.mock("@/infra/supabase-admin", () => ({
-  getSupabaseAdmin: () => ({ from: mockFrom }),
+  getSupabaseAdmin: () => ({ from: mockFrom, rpc: mockRpc }),
 }));
 
 import { POST } from "./route";
@@ -48,7 +49,10 @@ const baseBody = { tournamentId: T_ID, tableId: TABLE_ID, roundNumber: 1, ruleId
 const ruleRow = { uma: [20, 10, -10, -20], return_points: 30000 };
 
 describe("POST /api/matches", () => {
-  beforeEach(() => mockFrom.mockReset());
+  beforeEach(() => {
+    mockFrom.mockReset();
+    mockRpc.mockReset();
+  });
 
   it("400: 入力が不正なとき parseCreateMatch が弾く", async () => {
     const res = await POST(makeReq({ ...baseBody, roundNumber: 0, inputs: validInputs }));
@@ -63,14 +67,46 @@ describe("POST /api/matches", () => {
 
   it("200: 正常系で id を返す", async () => {
     mockFrom
-      .mockReturnValueOnce(makeChain({ count: 1 }))
-      .mockReturnValueOnce(makeChain({ count: 4 }))
-      .mockReturnValueOnce(makeChain({ data: ruleRow, error: null }))
-      .mockReturnValueOnce(makeChain({ data: { id: "match-id" }, error: null }))
-      .mockReturnValueOnce(makeChain({ data: null, error: null }));
+      .mockReturnValueOnce(makeChain({ count: 1 })) // tables: OK
+      .mockReturnValueOnce(makeChain({ count: 4 })) // players: OK
+      .mockReturnValueOnce(makeChain({ data: ruleRow, error: null })); // rules: OK
+    mockRpc.mockResolvedValueOnce({ data: "match-id", error: null });
 
     const res = await POST(makeReq({ ...baseBody, inputs: validInputs }));
     expect(res.status).toBe(200);
     expect((await res.json()).id).toBe("match-id");
+  });
+
+  it("500: RPC が失敗したとき 500 を返す", async () => {
+    mockFrom
+      .mockReturnValueOnce(makeChain({ count: 1 })) // tables: OK
+      .mockReturnValueOnce(makeChain({ count: 4 })) // players: OK
+      .mockReturnValueOnce(makeChain({ data: ruleRow, error: null })); // rules: OK
+    mockRpc.mockResolvedValueOnce({ data: null, error: { message: "db error" } });
+
+    const res = await POST(makeReq({ ...baseBody, inputs: validInputs }));
+    expect(res.status).toBe(500);
+  });
+
+  it("400: JSON パースに失敗するリクエストのとき 400 を返す", async () => {
+    const req = new NextRequest("http://localhost/api/matches", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "not valid json{",
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+  });
+
+  it("200: レスポンスボディに id フィールドのみ含まれる", async () => {
+    mockFrom
+      .mockReturnValueOnce(makeChain({ count: 1 })) // tables: OK
+      .mockReturnValueOnce(makeChain({ count: 4 })) // players: OK
+      .mockReturnValueOnce(makeChain({ data: ruleRow, error: null })); // rules: OK
+    mockRpc.mockResolvedValueOnce({ data: "uuid-123", error: null });
+
+    const res = await POST(makeReq({ ...baseBody, inputs: validInputs }));
+    const body = await res.json();
+    expect(body).toHaveProperty("id", "uuid-123");
   });
 });
