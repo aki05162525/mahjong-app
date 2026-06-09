@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockFrom = vi.hoisted(() => vi.fn());
+const mockRpc = vi.hoisted(() => vi.fn());
 vi.mock("@/infra/supabase-admin", () => ({
-  getSupabaseAdmin: () => ({ from: mockFrom }),
+  getSupabaseAdmin: () => ({ from: mockFrom, rpc: mockRpc }),
 }));
 
 import { createMatch } from "./createMatch";
@@ -43,20 +44,10 @@ function makeCountChain(count: number | null) {
 // single()で終わるクエリ用チェーン
 function makeSingleChain(data: unknown, error: unknown = null) {
   const chain: Record<string, unknown> = {};
-  for (const m of ["select", "eq", "single", "insert"]) {
+  for (const m of ["select", "eq", "single"]) {
     chain[m] = vi.fn().mockReturnValue(chain);
   }
   chain.then = (resolve: (v: unknown) => unknown) => Promise.resolve({ data, error }).then(resolve);
-  return chain;
-}
-
-// insertのみのクエリ用チェーン
-function makeInsertChain(error: unknown = null) {
-  const chain: Record<string, unknown> = {};
-  for (const m of ["insert", "delete", "eq"]) {
-    chain[m] = vi.fn().mockReturnValue(chain);
-  }
-  chain.then = (resolve: (v: unknown) => unknown) => Promise.resolve({ error }).then(resolve);
   return chain;
 }
 
@@ -65,14 +56,14 @@ function setupHappyPath(matchId = "match-id") {
   mockFrom
     .mockReturnValueOnce(makeCountChain(1)) // tables: 1卓のみ
     .mockReturnValueOnce(makeCountChain(4)) // players: 4人全員存在
-    .mockReturnValueOnce(makeSingleChain(mockRule)) // rules: ルール取得
-    .mockReturnValueOnce(makeSingleChain({ id: matchId })) // matches: insert
-    .mockReturnValueOnce(makeInsertChain()); // match_results: insert
+    .mockReturnValueOnce(makeSingleChain(mockRule)); // rules: ルール取得
+  mockRpc.mockResolvedValueOnce({ data: matchId, error: null });
 }
 
 describe("createMatch", () => {
   beforeEach(() => {
     mockFrom.mockReset();
+    mockRpc.mockReset();
   });
 
   it("プレイヤーが重複していれば badRequest を throw する", async () => {
@@ -136,33 +127,142 @@ describe("createMatch", () => {
     expect(error.code).toBe("not_found");
   });
 
-  it("matches insert 失敗なら internalError を throw する", async () => {
+  it("RPC 失敗なら internalError を throw する", async () => {
     mockFrom
       .mockReturnValueOnce(makeCountChain(1))
       .mockReturnValueOnce(makeCountChain(4))
-      .mockReturnValueOnce(makeSingleChain(mockRule))
-      .mockReturnValueOnce(makeSingleChain(null, { message: "db error" })); // matches: 失敗
+      .mockReturnValueOnce(makeSingleChain(mockRule));
+    mockRpc.mockResolvedValueOnce({ data: null, error: { message: "db error" } });
     const error = await createMatch(validInput).catch((e) => e);
     expect(error.code).toBe("internal_error");
-  });
-
-  it("match_results insert 失敗なら internalError を throw し matches を削除する", async () => {
-    const deleteChain = makeInsertChain();
-    mockFrom
-      .mockReturnValueOnce(makeCountChain(1))
-      .mockReturnValueOnce(makeCountChain(4))
-      .mockReturnValueOnce(makeSingleChain(mockRule))
-      .mockReturnValueOnce(makeSingleChain({ id: "match-id" }))
-      .mockReturnValueOnce(makeInsertChain({ message: "db error" })) // match_results: 失敗
-      .mockReturnValueOnce(deleteChain); // matches: ロールバック削除
-    const error = await createMatch(validInput).catch((e) => e);
-    expect(error.code).toBe("internal_error");
-    expect(deleteChain.delete).toHaveBeenCalled();
   });
 
   it("正常系: match の id を返す", async () => {
     setupHappyPath("new-match-id");
     const result = await createMatch(validInput);
     expect(result).toEqual({ id: "new-match-id" });
+  });
+
+  it("正常系: tableId を指定した場合も match の id を返す", async () => {
+    mockFrom
+      .mockReturnValueOnce(makeCountChain(1)) // tables: 卓が存在する
+      .mockReturnValueOnce(makeCountChain(4)) // players: OK
+      .mockReturnValueOnce(makeSingleChain(mockRule)); // rules: OK
+    mockRpc.mockResolvedValueOnce({ data: "match-with-table", error: null });
+    const result = await createMatch({ ...validInput, tableId: TABLE_ID });
+    expect(result).toEqual({ id: "match-with-table" });
+  });
+
+  it("tableId を指定したとき卓が存在しなければ notFound を throw する (count=0)", async () => {
+    mockFrom.mockReturnValueOnce(makeCountChain(0)); // tables: 0件
+    const error = await createMatch({ ...validInput, tableId: TABLE_ID }).catch((e) => e);
+    expect(error.code).toBe("not_found");
+  });
+
+  it("tableId 指定時の tables クエリがエラーなら internalError を throw する", async () => {
+    const chain: Record<string, unknown> = {};
+    for (const m of ["select", "eq", "in", "head"]) {
+      chain[m] = vi.fn().mockReturnValue(chain);
+    }
+    chain.then = (resolve: (v: unknown) => unknown) =>
+      Promise.resolve({ count: null, error: { message: "db error" } }).then(resolve);
+    mockFrom.mockReturnValueOnce(chain);
+    const error = await createMatch({ ...validInput, tableId: TABLE_ID }).catch((e) => e);
+    expect(error.code).toBe("internal_error");
+  });
+
+  it("tableId 省略時の tables クエリがエラーなら internalError を throw する", async () => {
+    const chain: Record<string, unknown> = {};
+    for (const m of ["select", "eq", "in", "head"]) {
+      chain[m] = vi.fn().mockReturnValue(chain);
+    }
+    chain.then = (resolve: (v: unknown) => unknown) =>
+      Promise.resolve({ count: null, error: { message: "db error" } }).then(resolve);
+    mockFrom.mockReturnValueOnce(chain);
+    const error = await createMatch(validInput).catch((e) => e);
+    expect(error.code).toBe("internal_error");
+  });
+
+  it("players クエリがエラーなら internalError を throw する", async () => {
+    const errChain: Record<string, unknown> = {};
+    for (const m of ["select", "eq", "in", "head"]) {
+      errChain[m] = vi.fn().mockReturnValue(errChain);
+    }
+    errChain.then = (resolve: (v: unknown) => unknown) =>
+      Promise.resolve({ count: null, error: { message: "db error" } }).then(resolve);
+    mockFrom
+      .mockReturnValueOnce(makeCountChain(1)) // tables: OK
+      .mockReturnValueOnce(errChain); // players: エラー
+    const error = await createMatch(validInput).catch((e) => e);
+    expect(error.code).toBe("internal_error");
+  });
+
+  it("rules クエリがエラー(PGRST116以外)なら internalError を throw する", async () => {
+    mockFrom
+      .mockReturnValueOnce(makeCountChain(1)) // tables: OK
+      .mockReturnValueOnce(makeCountChain(4)) // players: OK
+      .mockReturnValueOnce(makeSingleChain(null, { code: "OTHER_CODE", message: "db error" })); // rules: エラー
+    const error = await createMatch(validInput).catch((e) => e);
+    expect(error.code).toBe("internal_error");
+  });
+
+  it("rules クエリが PGRST116 エラーなら notFound を throw する (行なし扱い)", async () => {
+    mockFrom
+      .mockReturnValueOnce(makeCountChain(1)) // tables: OK
+      .mockReturnValueOnce(makeCountChain(4)) // players: OK
+      .mockReturnValueOnce(makeSingleChain(null, { code: "PGRST116", message: "0 rows" })); // rules: 行なし
+    const error = await createMatch(validInput).catch((e) => e);
+    expect(error.code).toBe("not_found");
+  });
+
+  it("RPC がデータなし・エラーなし(null)を返した場合は internalError を throw する", async () => {
+    mockFrom
+      .mockReturnValueOnce(makeCountChain(1))
+      .mockReturnValueOnce(makeCountChain(4))
+      .mockReturnValueOnce(makeSingleChain(mockRule));
+    mockRpc.mockResolvedValueOnce({ data: null, error: null });
+    const error = await createMatch(validInput).catch((e) => e);
+    expect(error.code).toBe("internal_error");
+  });
+
+  it("RPC が正しいパラメータで呼ばれることを検証する", async () => {
+    setupHappyPath("rpc-param-check-id");
+    await createMatch(validInput);
+    expect(mockRpc).toHaveBeenCalledWith(
+      "create_match_with_results",
+      expect.objectContaining({
+        p_tournament_id: T_ID,
+        p_round_number: 1,
+        p_rule_id: RULE_ID,
+        p_uma: mockRule.uma,
+        p_return_points: mockRule.return_points,
+        p_table_id: null, // tableId 省略なので null
+      })
+    );
+  });
+
+  it("RPC の p_results に player_id・score・rank が含まれることを検証する", async () => {
+    setupHappyPath("rpc-results-check-id");
+    await createMatch(validInput);
+    const call = mockRpc.mock.calls[0];
+    const pResults = (call[1] as { p_results: Array<Record<string, unknown>> }).p_results;
+    expect(pResults).toHaveLength(4);
+    expect(pResults[0]).toHaveProperty("player_id");
+    expect(pResults[0]).toHaveProperty("score");
+    expect(pResults[0]).toHaveProperty("rank");
+    expect(pResults[0]).toHaveProperty("base_point");
+    expect(pResults[0]).toHaveProperty("uma_point");
+    expect(pResults[0]).toHaveProperty("oka_point");
+    expect(pResults[0]).toHaveProperty("total_point");
+  });
+
+  it("tableId 省略時に tables カウントが 0 なら卓なし大会として正常に続行する", async () => {
+    mockFrom
+      .mockReturnValueOnce(makeCountChain(0)) // tables: 0件 → 卓なし大会として通過
+      .mockReturnValueOnce(makeCountChain(4)) // players: OK
+      .mockReturnValueOnce(makeSingleChain(mockRule)); // rules: OK
+    mockRpc.mockResolvedValueOnce({ data: "no-table-match-id", error: null });
+    const result = await createMatch(validInput);
+    expect(result).toEqual({ id: "no-table-match-id" });
   });
 });
