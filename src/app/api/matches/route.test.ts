@@ -55,7 +55,7 @@ describe("POST /api/matches", () => {
     expect(res.status).toBe(400);
   });
 
-  it("400: ビジネスルール違反のとき createMatch が弾く", async () => {
+  it("404: ビジネスルール違反のとき createMatch が弾く", async () => {
     mockFrom.mockReturnValueOnce(makeChain({ count: 0 })); // 卓が存在しない
     const res = await POST(makeReq({ ...baseBody, inputs: validInputs }));
     expect(res.status).toBe(404);

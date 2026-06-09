@@ -53,7 +53,7 @@ describe("parseCreateMatch", () => {
   });
 
   it("inputs が 5 件なら badRequest を throw する", () => {
-    const extraInput = { playerId: "00000000-0000-0000-0000-000000000015", score: 0 };
+    const extraInput = { playerId: "00000000-0000-4000-8000-000000000015", score: 0 };
     expect(() =>
       parseCreateMatch({ ...validInput, inputs: [...validInput.inputs, extraInput] })
     ).toThrow();
@@ -70,6 +70,7 @@ describe("parseCreateMatch", () => {
   });
 
   it("throw したエラーは status 400 を持つ", () => {
+    expect.assertions(1);
     try {
       parseCreateMatch({});
     } catch (e: unknown) {

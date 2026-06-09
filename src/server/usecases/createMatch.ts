@@ -20,44 +20,48 @@ export async function createMatch(input: CreateMatchInput): Promise<{ id: string
   const supabase = getSupabaseAdmin();
 
   if (normalizedTableId) {
-    const { count: tableCount } = await supabase
+    const { count: tableCount, error: tableError } = await supabase
       .from("tables")
       .select("id", { count: "exact", head: true })
       .eq("id", normalizedTableId)
       .eq("tournament_id", tournamentId);
 
+    if (tableError) throw internalError("卓の確認に失敗しました");
     if (!tableCount || tableCount === 0) {
       throw notFound("指定された卓が見つかりません");
     }
   } else {
     // 卓を省略できるのは単一卓のときだけ。2卓以上ある大会ではどの卓か曖昧になるため必須。
-    const { count: tableCount } = await supabase
+    const { count: tableCount, error: tableError } = await supabase
       .from("tables")
       .select("id", { count: "exact", head: true })
       .eq("tournament_id", tournamentId);
 
+    if (tableError) throw internalError("卓の確認に失敗しました");
     if (tableCount && tableCount >= 2) {
       throw badRequest("卓を選択してください");
     }
   }
 
-  const { count: playerCount } = await supabase
+  const { count: playerCount, error: playerError } = await supabase
     .from("players")
     .select("id", { count: "exact", head: true })
     .eq("tournament_id", tournamentId)
     .in("id", playerIds);
 
+  if (playerError) throw internalError("プレイヤーの確認に失敗しました");
   if (!playerCount || playerCount !== 4) {
     throw notFound("指定されたプレイヤーが見つかりません");
   }
 
-  const { data: rule } = await supabase
+  const { data: rule, error: ruleError } = await supabase
     .from("rules")
     .select("uma, return_points")
     .eq("id", ruleId)
     .eq("tournament_id", tournamentId)
     .single();
 
+  if (ruleError && ruleError.code !== "PGRST116") throw internalError("ルールの取得に失敗しました");
   if (!rule) {
     throw notFound("指定されたルールが見つかりません");
   }
