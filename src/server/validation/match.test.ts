@@ -34,8 +34,8 @@ describe("parseCreateMatch", () => {
     ).not.toThrow();
   });
 
-  it("tournamentId が UUID でなければ badRequest を throw する", () => {
-    expect(() => parseCreateMatch({ ...validInput, tournamentId: "not-a-uuid" })).toThrow();
+  it("tournamentId が空文字なら badRequest を throw する", () => {
+    expect(() => parseCreateMatch({ ...validInput, tournamentId: "" })).toThrow();
   });
 
   it("roundNumber が 0 なら badRequest を throw する", () => {

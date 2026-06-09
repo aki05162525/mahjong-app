@@ -2,7 +2,7 @@ import * as z from "zod";
 import { badRequest } from "@/server/http/errors";
 
 const schema = z.object({
-  tournamentId: z.uuid(),
+  tournamentId: z.string().trim().min(1),
   tableId: z.uuid().nullable().optional(),
   roundNumber: z.int().min(1),
   ruleId: z.uuid(),
