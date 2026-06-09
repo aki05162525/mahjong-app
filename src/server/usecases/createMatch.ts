@@ -71,27 +71,14 @@ export async function createMatch(input: CreateMatchInput): Promise<{ id: string
     { uma: rule.uma, returnPoints: rule.return_points }
   );
 
-  const { data: match, error: matchError } = await supabase
-    .from("matches")
-    .insert({
-      tournament_id: tournamentId,
-      table_id: normalizedTableId,
-      round_number: roundNumber,
-      rule_id: ruleId,
-      uma: rule.uma,
-      return_points: rule.return_points,
-    })
-    .select("id")
-    .single();
-
-  if (matchError || !match) {
-    throw internalError("保存に失敗しました");
-  }
-
-  const { error: resultsError } = await supabase.from("match_results").insert(
-    results.map((r) => ({
-      match_id: match.id,
-      tournament_id: tournamentId,
+  const { data: matchId, error: rpcError } = await supabase.rpc("create_match_with_results", {
+    p_tournament_id: tournamentId,
+    p_table_id: normalizedTableId,
+    p_round_number: roundNumber,
+    p_rule_id: ruleId,
+    p_uma: rule.uma,
+    p_return_points: rule.return_points,
+    p_results: results.map((r) => ({
       player_id: r.playerId,
       score: r.score,
       rank: r.rank,
@@ -99,13 +86,9 @@ export async function createMatch(input: CreateMatchInput): Promise<{ id: string
       uma_point: r.umaPoint,
       oka_point: r.okaPoint,
       total_point: r.totalPoint,
-    }))
-  );
+    })),
+  });
 
-  if (resultsError) {
-    await supabase.from("matches").delete().eq("id", match.id);
-    throw internalError("保存に失敗しました");
-  }
-
-  return { id: match.id };
+  if (rpcError || !matchId) throw internalError("保存に失敗しました");
+  return { id: matchId };
 }
