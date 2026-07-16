@@ -141,5 +141,12 @@ describe("createMatch", () => {
     setupHappyPath("new-match-id");
     const result = await createMatch(validInput);
     expect(result).toEqual({ id: "new-match-id" });
+    expect(mockRpc.mock.calls[0][1]).not.toHaveProperty("p_table_id");
+  });
+
+  it("tableId を指定した場合は RPC に渡す", async () => {
+    setupHappyPath();
+    await createMatch({ ...validInput, tableId: TABLE_ID });
+    expect(mockRpc.mock.calls[0][1]).toHaveProperty("p_table_id", TABLE_ID);
   });
 });

@@ -71,9 +71,8 @@ export async function createMatch(input: CreateMatchInput): Promise<{ id: string
     { uma: rule.uma, returnPoints: rule.return_points }
   );
 
-  const { data: matchId, error: rpcError } = await supabase.rpc("create_match_with_results", {
+  const rpcInput = {
     p_tournament_id: tournamentId,
-    p_table_id: normalizedTableId,
     p_round_number: roundNumber,
     p_rule_id: ruleId,
     p_uma: rule.uma,
@@ -87,7 +86,13 @@ export async function createMatch(input: CreateMatchInput): Promise<{ id: string
       oka_point: r.okaPoint,
       total_point: r.totalPoint,
     })),
-  });
+    ...(normalizedTableId ? { p_table_id: normalizedTableId } : {}),
+  };
+
+  const { data: matchId, error: rpcError } = await supabase.rpc(
+    "create_match_with_results",
+    rpcInput
+  );
 
   if (rpcError || !matchId) throw internalError("保存に失敗しました");
   return { id: matchId };

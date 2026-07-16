@@ -1,11 +1,6 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5";
-  };
   graphql_public: {
     Tables: {
       [_ in never]: never;
@@ -284,17 +279,14 @@ export type Database = {
           p_return_points: number;
           p_round_number: number;
           p_rule_id: string;
-          p_table_id: string | null;
+          p_table_id?: string;
           p_tournament_id: string;
           p_uma: number[];
         };
         Returns: string;
       };
       delete_match_and_renumber: {
-        Args: {
-          p_match_id: string;
-          p_tournament_id: string;
-        };
+        Args: { p_match_id: string; p_tournament_id: string };
         Returns: undefined;
       };
     };
