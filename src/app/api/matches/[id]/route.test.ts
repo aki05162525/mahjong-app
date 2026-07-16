@@ -24,6 +24,8 @@ function makeChain(result: object) {
 const makeRequest = (id: string) =>
   new NextRequest(`http://localhost/api/matches/${id}`, { method: "DELETE" });
 const makeParams = (id: string) => Promise.resolve({ id });
+const MATCH_ID = "00000000-0000-4000-8000-000000000001";
+const MISSING_ID = "00000000-0000-4000-8000-000000000002";
 
 describe("DELETE /api/matches/[id]", () => {
   beforeEach(() => {
@@ -35,14 +37,21 @@ describe("DELETE /api/matches/[id]", () => {
 
   it("401: 未ログインはDBへアクセスせず拒否する", async () => {
     mockGetAuthUser.mockResolvedValueOnce(null);
-    const response = await DELETE(makeRequest("match-1"), { params: makeParams("match-1") });
+    const response = await DELETE(makeRequest(MATCH_ID), { params: makeParams(MATCH_ID) });
     expect(response.status).toBe(401);
+    expect(mockFrom).not.toHaveBeenCalled();
+  });
+
+  it("400: UUIDでない対局IDはDBへアクセスせず拒否する", async () => {
+    const response = await DELETE(makeRequest("invalid"), { params: makeParams("invalid") });
+    expect(response.status).toBe(400);
+    expect(mockGetAuthUser).not.toHaveBeenCalled();
     expect(mockFrom).not.toHaveBeenCalled();
   });
 
   it("404: 対局が存在しない", async () => {
     mockFrom.mockReturnValueOnce(makeChain({ data: null, error: { code: "PGRST116" } }));
-    const response = await DELETE(makeRequest("missing"), { params: makeParams("missing") });
+    const response = await DELETE(makeRequest(MISSING_ID), { params: makeParams(MISSING_ID) });
     expect(response.status).toBe(404);
     expect(mockRpc).not.toHaveBeenCalled();
   });
@@ -51,7 +60,7 @@ describe("DELETE /api/matches/[id]", () => {
     mockFrom
       .mockReturnValueOnce(makeChain({ data: { tournament_id: "t1" }, error: null }))
       .mockReturnValueOnce(makeChain({ data: { owner_id: "other" }, error: null }));
-    const response = await DELETE(makeRequest("match-1"), { params: makeParams("match-1") });
+    const response = await DELETE(makeRequest(MATCH_ID), { params: makeParams(MATCH_ID) });
     expect(response.status).toBe(403);
     expect(mockRpc).not.toHaveBeenCalled();
   });
@@ -62,12 +71,12 @@ describe("DELETE /api/matches/[id]", () => {
       .mockReturnValueOnce(makeChain({ data: { owner_id: "owner-1" }, error: null }));
     mockRpc.mockResolvedValueOnce({ error: null });
 
-    const response = await DELETE(makeRequest("match-1"), { params: makeParams("match-1") });
+    const response = await DELETE(makeRequest(MATCH_ID), { params: makeParams(MATCH_ID) });
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ ok: true });
     expect(mockRpc).toHaveBeenCalledWith("delete_match_and_renumber", {
-      p_match_id: "match-1",
+      p_match_id: MATCH_ID,
       p_tournament_id: "t1",
     });
   });
@@ -78,7 +87,7 @@ describe("DELETE /api/matches/[id]", () => {
       .mockReturnValueOnce(makeChain({ data: { owner_id: "owner-1" }, error: null }));
     mockRpc.mockResolvedValueOnce({ error: { message: "boom" } });
 
-    const response = await DELETE(makeRequest("match-1"), { params: makeParams("match-1") });
+    const response = await DELETE(makeRequest(MATCH_ID), { params: makeParams(MATCH_ID) });
     expect(response.status).toBe(500);
     expect((await response.json()).error).toBe("削除に失敗しました");
   });

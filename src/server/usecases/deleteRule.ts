@@ -9,7 +9,7 @@ export async function deleteRule(input: DeleteRuleInput): Promise<{ ok: true }> 
   const supabase = getSupabaseAdmin();
   const { data: rule, error: ruleError } = await supabase
     .from("rules")
-    .select("tournament_id, is_default")
+    .select("tournament_id")
     .eq("id", input.ruleId)
     .single();
 
@@ -17,13 +17,18 @@ export async function deleteRule(input: DeleteRuleInput): Promise<{ ok: true }> 
   if (!rule) throw notFound("ルールが見つかりません");
 
   await requireTournamentOwner(rule.tournament_id, user);
-  if (rule.is_default) {
+
+  const { data: status, error } = await supabase.rpc("delete_rule_if_not_default", {
+    p_rule_id: input.ruleId,
+    p_tournament_id: rule.tournament_id,
+  });
+  if (error) throw internalError("削除に失敗しました");
+  if (status === "not_found") throw notFound("ルールが見つかりません");
+  if (status === "default_required") {
     throw badRequest(
       "デフォルトのルールは削除できません。別のルールをデフォルトにしてから削除してください"
     );
   }
-
-  const { error } = await supabase.from("rules").delete().eq("id", input.ruleId);
-  if (error) throw internalError("削除に失敗しました");
+  if (status !== "deleted") throw internalError("削除に失敗しました");
   return { ok: true };
 }

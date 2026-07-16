@@ -79,7 +79,9 @@ describe("POST /api/players", () => {
     });
 
     it("409: 同名プレイヤーが既に存在する", async () => {
-      mockFrom.mockReturnValueOnce(ownerChain()).mockReturnValueOnce(makeChain({ count: 1 }));
+      mockFrom
+        .mockReturnValueOnce(ownerChain())
+        .mockReturnValueOnce(makeChain({ data: null, error: { code: "23505" } }));
       const res = await POST(makeReq({ tournamentId: "t1", name: "Alice" }));
       expect(res.status).toBe(409);
       expect((await res.json()).error).toMatch(/重複|既に存在/);
@@ -90,7 +92,6 @@ describe("POST /api/players", () => {
     it("200: 正常に登録できる", async () => {
       mockFrom
         .mockReturnValueOnce(ownerChain())
-        .mockReturnValueOnce(makeChain({ count: 0 }))
         .mockReturnValueOnce(makeChain({ data: { id: "player-id" }, error: null }));
       const res = await POST(makeReq({ tournamentId: "t1", name: "Alice" }));
       expect(res.status).toBe(200);
@@ -100,7 +101,6 @@ describe("POST /api/players", () => {
     it("200: 前後の空白をトリムして登録する", async () => {
       mockFrom
         .mockReturnValueOnce(ownerChain())
-        .mockReturnValueOnce(makeChain({ count: 0 }))
         .mockReturnValueOnce(makeChain({ data: { id: "player-id" }, error: null }));
       const res = await POST(makeReq({ tournamentId: "t1", name: "  Bob  " }));
       expect(res.status).toBe(200);

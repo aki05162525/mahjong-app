@@ -19,15 +19,18 @@ jobs:
           node-version: "24"
           cache: "pnpm"
 
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@ab058987d8d6c725971f6cf9d0b5c98467e30bd1 # v1
         with:
-          version: latest
+          version: v2.109.1
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Start local database
         run: supabase db start
+
+      - name: Test database
+        run: supabase test db
 
       - name: Check database types are up to date
         run: |

@@ -285,9 +285,34 @@ export type Database = {
         };
         Returns: string;
       };
+      create_rule_atomic: {
+        Args: {
+          p_is_default: boolean;
+          p_name: string;
+          p_return_points: number;
+          p_tournament_id: string;
+          p_uma: number[];
+        };
+        Returns: string;
+      };
       delete_match_and_renumber: {
         Args: { p_match_id: string; p_tournament_id: string };
         Returns: undefined;
+      };
+      delete_rule_if_not_default: {
+        Args: { p_rule_id: string; p_tournament_id: string };
+        Returns: string;
+      };
+      update_rule_atomic: {
+        Args: {
+          p_is_default?: boolean;
+          p_name: string;
+          p_return_points: number;
+          p_rule_id: string;
+          p_tournament_id: string;
+          p_uma: number[];
+        };
+        Returns: string;
       };
     };
     Enums: {

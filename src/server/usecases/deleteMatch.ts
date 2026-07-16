@@ -2,8 +2,7 @@ import { getSupabaseAdmin } from "@/infra/supabase-admin";
 import { requireTournamentOwner } from "@/server/auth/requireTournamentOwner";
 import { requireUser } from "@/server/auth/requireUser";
 import { internalError, notFound } from "@/server/http/errors";
-
-export type DeleteMatchInput = { matchId: string };
+import type { DeleteMatchInput } from "@/server/validation/match";
 
 export async function deleteMatch(input: DeleteMatchInput): Promise<{ ok: true }> {
   const user = await requireUser();

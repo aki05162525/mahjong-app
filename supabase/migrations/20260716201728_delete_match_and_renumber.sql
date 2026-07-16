@@ -19,11 +19,11 @@ begin
     raise exception 'match not found';
   end if;
 
-  -- 卓を使わない単一卓モードでは大会全体を、卓がある場合は同じ卓だけを再採番する。
+  -- NULLを含め、同じ卓に属する後続対局だけを再採番する。
   update matches
   set round_number = round_number - 1
   where tournament_id = p_tournament_id
-    and (v_table_id is null or table_id = v_table_id)
+    and table_id is not distinct from v_table_id
     and round_number > v_round;
 end;
 $$;

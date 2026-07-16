@@ -1,7 +1,7 @@
 import { getSupabaseAdmin } from "@/infra/supabase-admin";
 import { requireTournamentOwner } from "@/server/auth/requireTournamentOwner";
 import { requireUser } from "@/server/auth/requireUser";
-import { internalError, notFound } from "@/server/http/errors";
+import { badRequest, internalError, notFound } from "@/server/http/errors";
 import type { UpdateRuleInput } from "@/server/validation/rule";
 
 export async function updateRule(input: UpdateRuleInput): Promise<{ ok: true }> {
@@ -18,26 +18,20 @@ export async function updateRule(input: UpdateRuleInput): Promise<{ ok: true }> 
 
   await requireTournamentOwner(rule.tournament_id, user);
 
-  if (input.isDefault) {
-    const { error } = await supabase
-      .from("rules")
-      .update({ is_default: false })
-      .eq("tournament_id", rule.tournament_id)
-      .eq("is_default", true)
-      .neq("id", input.ruleId);
-    if (error) throw internalError("既存のデフォルトルールの更新に失敗しました");
-  }
-
-  const { error } = await supabase
-    .from("rules")
-    .update({
-      name: input.name,
-      uma: input.uma,
-      return_points: input.returnPoints,
-      is_default: input.isDefault,
-    })
-    .eq("id", input.ruleId);
+  const { data: status, error } = await supabase.rpc("update_rule_atomic", {
+    p_rule_id: input.ruleId,
+    p_tournament_id: rule.tournament_id,
+    p_name: input.name,
+    p_uma: input.uma,
+    p_return_points: input.returnPoints,
+    ...(input.isDefault === undefined ? {} : { p_is_default: input.isDefault }),
+  });
 
   if (error) throw internalError("変更に失敗しました");
+  if (status === "not_found") throw notFound("ルールが見つかりません");
+  if (status === "default_required") {
+    throw badRequest("デフォルトのルールは解除できません。別のルールをデフォルトにしてください");
+  }
+  if (status !== "updated") throw internalError("変更に失敗しました");
   return { ok: true };
 }

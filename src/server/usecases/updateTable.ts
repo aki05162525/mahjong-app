@@ -18,20 +18,11 @@ export async function updateTable(input: UpdateTableInput): Promise<{ ok: true }
 
   await requireTournamentOwner(table.tournament_id, user);
 
-  const { count, error: countError } = await supabase
-    .from("tables")
-    .select("id", { count: "exact", head: true })
-    .eq("tournament_id", table.tournament_id)
-    .eq("name", input.name)
-    .neq("id", input.tableId);
-
-  if (countError) throw internalError("卓の確認に失敗しました");
-  if (count && count > 0) throw conflict("同じ名前の卓が既に存在します");
-
   const { error } = await supabase
     .from("tables")
     .update({ name: input.name })
     .eq("id", input.tableId);
+  if (error?.code === "23505") throw conflict("同じ名前の卓が既に存在します");
   if (error) throw internalError("変更に失敗しました");
   return { ok: true };
 }

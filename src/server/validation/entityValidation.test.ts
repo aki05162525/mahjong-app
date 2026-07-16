@@ -48,9 +48,9 @@ describe("rule validation", () => {
     returnPoints: 30000,
   };
 
-  it("isDefaultを省略するとfalseにする", () => {
+  it("作成時の省略はfalse、更新時の省略は変更なしとして扱う", () => {
     expect(parseCreateRule({ tournamentId: "t1", ...validRule }).isDefault).toBe(false);
-    expect(parseUpdateRule("r1", validRule).isDefault).toBe(false);
+    expect(parseUpdateRule("r1", validRule).isDefault).toBeUndefined();
   });
 
   it("ウマの合計と返し点を検証する", async () => {

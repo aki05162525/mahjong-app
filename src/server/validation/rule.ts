@@ -17,15 +17,15 @@ const ruleFields = {
   returnPoints: z
     .int({ error: "返し点は25000以上の整数で指定してください" })
     .min(25000, "返し点は25000以上の整数で指定してください"),
-  isDefault: z.boolean().default(false),
 };
 
 const createSchema = z.object({
   tournamentId: z.string({ error: "大会IDが必要です" }).trim().min(1, "大会IDが必要です"),
   ...ruleFields,
+  isDefault: z.boolean().default(false),
 });
 
-const updateSchema = z.object(ruleFields);
+const updateSchema = z.object({ ...ruleFields, isDefault: z.boolean().optional() });
 
 export type CreateRuleInput = z.infer<typeof createSchema>;
 export type UpdateRuleInput = z.infer<typeof updateSchema> & { ruleId: string };

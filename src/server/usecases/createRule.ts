@@ -7,27 +7,14 @@ export async function createRule(input: CreateRuleInput): Promise<{ id: string }
   await requireTournamentOwner(input.tournamentId);
   const supabase = getSupabaseAdmin();
 
-  if (input.isDefault) {
-    const { error } = await supabase
-      .from("rules")
-      .update({ is_default: false })
-      .eq("tournament_id", input.tournamentId)
-      .eq("is_default", true);
-    if (error) throw internalError("既存のデフォルトルールの更新に失敗しました");
-  }
+  const { data, error } = await supabase.rpc("create_rule_atomic", {
+    p_tournament_id: input.tournamentId,
+    p_name: input.name,
+    p_uma: input.uma,
+    p_return_points: input.returnPoints,
+    p_is_default: input.isDefault,
+  });
 
-  const { data, error } = await supabase
-    .from("rules")
-    .insert({
-      tournament_id: input.tournamentId,
-      name: input.name,
-      uma: input.uma,
-      return_points: input.returnPoints,
-      is_default: input.isDefault,
-    })
-    .select("id")
-    .single();
-
-  if (error) throw internalError("ルールの作成に失敗しました");
-  return { id: data.id };
+  if (error || !data) throw internalError("ルールの作成に失敗しました");
+  return { id: data };
 }

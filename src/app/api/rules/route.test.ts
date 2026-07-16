@@ -7,8 +7,9 @@ vi.mock("@/infra/supabase-server", () => ({
 }));
 
 const mockFrom = vi.hoisted(() => vi.fn());
+const mockRpc = vi.hoisted(() => vi.fn());
 vi.mock("@/infra/supabase-admin", () => ({
-  getSupabaseAdmin: () => ({ from: mockFrom }),
+  getSupabaseAdmin: () => ({ from: mockFrom, rpc: mockRpc }),
 }));
 
 import { POST } from "./route";
@@ -43,6 +44,7 @@ const validBody = {
 describe("POST /api/rules", () => {
   beforeEach(() => {
     mockFrom.mockReset();
+    mockRpc.mockReset();
     mockGetAuthUser.mockResolvedValue({ id: "owner-1" });
   });
 
@@ -66,26 +68,25 @@ describe("POST /api/rules", () => {
   });
 
   it("200: 正常に作成できる", async () => {
-    mockFrom
-      .mockReturnValueOnce(makeChain({ data: { owner_id: "owner-1" }, error: null })) // tournament
-      .mockReturnValueOnce(makeChain({ data: { id: "rule-new" }, error: null })); // insert
+    mockFrom.mockReturnValueOnce(makeChain({ data: { owner_id: "owner-1" }, error: null }));
+    mockRpc.mockResolvedValueOnce({ data: "rule-new", error: null });
     const res = await POST(makeReq(validBody));
     expect(res.status).toBe(200);
     expect((await res.json()).id).toBe("rule-new");
   });
 
-  it("200: isDefault=true のとき、既存のデフォルトを解除してから作成する", async () => {
-    const unsetChain = makeChain({ data: null, error: null });
-    mockFrom
-      .mockReturnValueOnce(makeChain({ data: { owner_id: "owner-1" }, error: null })) // tournament
-      .mockReturnValueOnce(unsetChain) // 既存デフォルト解除
-      .mockReturnValueOnce(makeChain({ data: { id: "rule-new" }, error: null })); // insert
+  it("200: isDefault=true の作成を原子的なRPCへ委譲する", async () => {
+    mockFrom.mockReturnValueOnce(makeChain({ data: { owner_id: "owner-1" }, error: null }));
+    mockRpc.mockResolvedValueOnce({ data: "rule-new", error: null });
 
     await POST(makeReq({ ...validBody, isDefault: true }));
 
-    // is_default: false に更新する呼び出しがあること
-    expect(unsetChain.update as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
-      is_default: false,
+    expect(mockRpc).toHaveBeenCalledWith("create_rule_atomic", {
+      p_tournament_id: "t1",
+      p_name: "10-30",
+      p_uma: [30, 10, -10, -30],
+      p_return_points: 30000,
+      p_is_default: true,
     });
   });
 });
