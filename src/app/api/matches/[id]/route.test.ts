@@ -1,135 +1,85 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 const mockGetAuthUser = vi.hoisted(() => vi.fn());
-vi.mock("@/infra/supabase-server", () => ({
-  getAuthUser: mockGetAuthUser,
-}));
+vi.mock("@/infra/supabase-server", () => ({ getAuthUser: mockGetAuthUser }));
 
 const mockFrom = vi.hoisted(() => vi.fn());
+const mockRpc = vi.hoisted(() => vi.fn());
 vi.mock("@/infra/supabase-admin", () => ({
-  getSupabaseAdmin: () => ({ from: mockFrom }),
+  getSupabaseAdmin: () => ({ from: mockFrom, rpc: mockRpc }),
 }));
 
 import { DELETE } from "./route";
 
 function makeChain(result: object) {
   const chain: Record<string, unknown> = {};
-  for (const m of ["select", "insert", "update", "delete", "eq", "neq", "in", "gt", "single"]) {
-    chain[m] = vi.fn().mockReturnValue(chain);
+  for (const method of ["select", "eq", "single"]) {
+    chain[method] = vi.fn().mockReturnValue(chain);
   }
-  (chain as unknown as { then: (r: (v: unknown) => unknown) => Promise<unknown> }).then = (
-    resolve: (v: unknown) => unknown
-  ) => Promise.resolve(result).then(resolve);
+  chain.then = (resolve: (value: unknown) => unknown) => Promise.resolve(result).then(resolve);
   return chain;
 }
 
-function makeReq(matchId: string) {
-  return new NextRequest(`http://localhost/api/matches/${matchId}`, {
-    method: "DELETE",
-  });
-}
-
-function makeParams(id: string) {
-  return Promise.resolve({ id });
-}
+const makeRequest = (id: string) =>
+  new NextRequest(`http://localhost/api/matches/${id}`, { method: "DELETE" });
+const makeParams = (id: string) => Promise.resolve({ id });
 
 describe("DELETE /api/matches/[id]", () => {
   beforeEach(() => {
     mockFrom.mockReset();
-    mockGetAuthUser.mockResolvedValue({ id: "test-user-id" });
+    mockRpc.mockReset();
+    mockGetAuthUser.mockReset();
+    mockGetAuthUser.mockResolvedValue({ id: "owner-1" });
   });
 
-  describe("認証・認可", () => {
-    it("401: 未ログインは対局を削除できない", async () => {
-      mockGetAuthUser.mockResolvedValueOnce(null);
-      const res = await DELETE(makeReq("match-1"), { params: makeParams("match-1") });
-      expect(res.status).toBe(401);
-    });
-
-    it("403: オーナー以外は対局を削除できない", async () => {
-      mockFrom
-        .mockReturnValueOnce(makeChain({ data: { tournament_id: "t1" }, error: null }))
-        .mockReturnValueOnce(makeChain({ data: { owner_id: "other-user-id" }, error: null }));
-      const res = await DELETE(makeReq("match-1"), { params: makeParams("match-1") });
-      expect(res.status).toBe(403);
-    });
+  it("401: 未ログインはDBへアクセスせず拒否する", async () => {
+    mockGetAuthUser.mockResolvedValueOnce(null);
+    const response = await DELETE(makeRequest("match-1"), { params: makeParams("match-1") });
+    expect(response.status).toBe(401);
+    expect(mockFrom).not.toHaveBeenCalled();
   });
 
-  describe("バリデーション", () => {
-    it("404: 存在しない対局は削除できない", async () => {
-      mockFrom.mockReturnValueOnce(makeChain({ data: null, error: { code: "PGRST116" } }));
-      const res = await DELETE(makeReq("nonexistent"), { params: makeParams("nonexistent") });
-      expect(res.status).toBe(404);
-    });
+  it("404: 対局が存在しない", async () => {
+    mockFrom.mockReturnValueOnce(makeChain({ data: null, error: { code: "PGRST116" } }));
+    const response = await DELETE(makeRequest("missing"), { params: makeParams("missing") });
+    expect(response.status).toBe(404);
+    expect(mockRpc).not.toHaveBeenCalled();
   });
 
-  describe("正常系", () => {
-    it("200: オーナーは対局を削除できる（5人以上は繰り上げなし）", async () => {
-      mockFrom
-        .mockReturnValueOnce(
-          makeChain({ data: { tournament_id: "t1", round_number: 2 }, error: null })
-        )
-        .mockReturnValueOnce(makeChain({ data: { owner_id: "test-user-id" }, error: null }))
-        .mockReturnValueOnce(makeChain({ error: null })) // delete
-        .mockReturnValueOnce(makeChain({ count: 5 })); // 登録5人 → 回戦は手動採番なので触らない
-      const res = await DELETE(makeReq("match-1"), { params: makeParams("match-1") });
-      expect(res.status).toBe(200);
-      expect((await res.json()).ok).toBe(true);
-      // 後続の取得・更新は走らない
-      expect(mockFrom).toHaveBeenCalledTimes(4);
-    });
+  it("403: 大会オーナー以外は削除できない", async () => {
+    mockFrom
+      .mockReturnValueOnce(makeChain({ data: { tournament_id: "t1" }, error: null }))
+      .mockReturnValueOnce(makeChain({ data: { owner_id: "other" }, error: null }));
+    const response = await DELETE(makeRequest("match-1"), { params: makeParams("match-1") });
+    expect(response.status).toBe(403);
+    expect(mockRpc).not.toHaveBeenCalled();
+  });
 
-    it("200: 4人モードでは削除した回戦より後ろを1つずつ繰り上げる", async () => {
-      mockFrom
-        .mockReturnValueOnce(
-          makeChain({ data: { tournament_id: "t1", round_number: 2 }, error: null })
-        )
-        .mockReturnValueOnce(makeChain({ data: { owner_id: "test-user-id" }, error: null }))
-        .mockReturnValueOnce(makeChain({ error: null })) // delete
-        .mockReturnValueOnce(makeChain({ count: 4 })) // 登録ちょうど4人
-        .mockReturnValueOnce(
-          makeChain({
-            data: [
-              { id: "m4", round_number: 3 },
-              { id: "m5", round_number: 4 },
-            ],
-          })
-        ) // 第3を消したので第4・第5が後続
-        .mockReturnValueOnce(makeChain({ error: null })) // update m4 → 第3
-        .mockReturnValueOnce(makeChain({ error: null })); // update m5 → 第4
-      const res = await DELETE(makeReq("match-1"), { params: makeParams("match-1") });
-      expect(res.status).toBe(200);
-      // 後続2件ぶんの update が走る
-      expect(mockFrom).toHaveBeenCalledTimes(7);
+  it("200: 削除と再採番をRPCへ委譲する", async () => {
+    mockFrom
+      .mockReturnValueOnce(makeChain({ data: { tournament_id: "t1" }, error: null }))
+      .mockReturnValueOnce(makeChain({ data: { owner_id: "owner-1" }, error: null }));
+    mockRpc.mockResolvedValueOnce({ error: null });
+
+    const response = await DELETE(makeRequest("match-1"), { params: makeParams("match-1") });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ok: true });
+    expect(mockRpc).toHaveBeenCalledWith("delete_match_and_renumber", {
+      p_match_id: "match-1",
+      p_tournament_id: "t1",
     });
   });
 
-  describe("再採番の失敗", () => {
-    it("500: プレイヤー数の取得が失敗したら500（静かにスキップしない）", async () => {
-      mockFrom
-        .mockReturnValueOnce(
-          makeChain({ data: { tournament_id: "t1", round_number: 2 }, error: null })
-        )
-        .mockReturnValueOnce(makeChain({ data: { owner_id: "test-user-id" }, error: null }))
-        .mockReturnValueOnce(makeChain({ error: null })) // delete
-        .mockReturnValueOnce(makeChain({ count: null, error: { message: "boom" } })); // players count 失敗
-      const res = await DELETE(makeReq("match-1"), { params: makeParams("match-1") });
-      expect(res.status).toBe(500);
-    });
+  it("500: RPCが失敗した場合は削除失敗を返す", async () => {
+    mockFrom
+      .mockReturnValueOnce(makeChain({ data: { tournament_id: "t1" }, error: null }))
+      .mockReturnValueOnce(makeChain({ data: { owner_id: "owner-1" }, error: null }));
+    mockRpc.mockResolvedValueOnce({ error: { message: "boom" } });
 
-    it("500: 後続の繰り上げ update が1件でも失敗したら500", async () => {
-      mockFrom
-        .mockReturnValueOnce(
-          makeChain({ data: { tournament_id: "t1", round_number: 2 }, error: null })
-        )
-        .mockReturnValueOnce(makeChain({ data: { owner_id: "test-user-id" }, error: null }))
-        .mockReturnValueOnce(makeChain({ error: null })) // delete
-        .mockReturnValueOnce(makeChain({ count: 4 })) // 登録ちょうど4人
-        .mockReturnValueOnce(makeChain({ data: [{ id: "m4", round_number: 3 }] })) // 後続1件
-        .mockReturnValueOnce(makeChain({ error: { message: "boom" } })); // update 失敗
-      const res = await DELETE(makeReq("match-1"), { params: makeParams("match-1") });
-      expect(res.status).toBe(500);
-    });
+    const response = await DELETE(makeRequest("match-1"), { params: makeParams("match-1") });
+    expect(response.status).toBe(500);
+    expect((await response.json()).error).toBe("削除に失敗しました");
   });
 });

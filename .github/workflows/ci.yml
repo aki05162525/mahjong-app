@@ -19,8 +19,20 @@ jobs:
           node-version: "24"
           cache: "pnpm"
 
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.108.0
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Start local database
+        run: supabase db start
+
+      - name: Check database types are up to date
+        run: |
+          pnpm db:types
+          git diff --exit-code src/lib/database.types.ts
 
       - name: Lint
         run: pnpm lint

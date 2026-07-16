@@ -1,39 +1,8 @@
-import { NextRequest } from "next/server";
-import { getSupabaseAdmin } from "@/infra/supabase-admin";
+import type { NextRequest } from "next/server";
 import { route } from "@/server/http/route";
-import { badRequest, conflict, internalError } from "@/server/http/errors";
-import { requireUser } from "@/server/auth/requireUser";
-import { requireTournamentOwner } from "@/server/auth/requireTournamentOwner";
+import { createPlayer } from "@/server/usecases/createPlayer";
+import { parseCreatePlayer } from "@/server/validation/player";
 
 export async function POST(req: NextRequest) {
-  return route(async () => {
-    const user = await requireUser();
-
-    const { tournamentId, name } = await req.json();
-
-    if (!tournamentId) throw badRequest("大会IDが必要です");
-
-    await requireTournamentOwner(tournamentId, user);
-
-    const trimmed = (name ?? "").trim();
-    if (!trimmed) throw badRequest("名前を入力してください");
-    if (trimmed.length > 20) throw badRequest("名前は20文字以内で入力してください");
-
-    const { count } = await getSupabaseAdmin()
-      .from("players")
-      .select("id", { count: "exact", head: true })
-      .eq("tournament_id", tournamentId)
-      .eq("name", trimmed);
-
-    if (count && count > 0) throw conflict("同じ名前のプレイヤーが既に存在します");
-
-    const { data, error } = await getSupabaseAdmin()
-      .from("players")
-      .insert({ tournament_id: tournamentId, name: trimmed })
-      .select("id")
-      .single();
-
-    if (error) throw internalError("登録に失敗しました");
-    return { id: data.id };
-  });
+  return route(async () => createPlayer(parseCreatePlayer(await req.json())));
 }

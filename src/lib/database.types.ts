@@ -290,6 +290,13 @@ export type Database = {
         };
         Returns: string;
       };
+      delete_match_and_renumber: {
+        Args: {
+          p_match_id: string;
+          p_tournament_id: string;
+        };
+        Returns: undefined;
+      };
     };
     Enums: {
       [_ in never]: never;
