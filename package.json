@@ -12,7 +12,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:types": "supabase gen types typescript --local > src/lib/database.types.ts"
+    "db:types": "supabase gen types typescript --local | prettier --parser typescript > src/lib/database.types.ts"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.1",
