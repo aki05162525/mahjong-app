@@ -11,7 +11,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:types": "sh scripts/generate-database-types.sh"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.1",

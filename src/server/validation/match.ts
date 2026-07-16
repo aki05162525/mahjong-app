@@ -16,10 +16,19 @@ const schema = z.object({
     .length(4),
 });
 
+const deleteSchema = z.object({ matchId: z.uuid() });
+
 export type CreateMatchInput = z.infer<typeof schema>;
+export type DeleteMatchInput = z.infer<typeof deleteSchema>;
 
 export function parseCreateMatch(raw: unknown): CreateMatchInput {
   const result = schema.safeParse(raw);
   if (!result.success) throw badRequest("入力が正しくありません", z.flattenError(result.error));
+  return result.data;
+}
+
+export function parseDeleteMatch(raw: unknown): DeleteMatchInput {
+  const result = deleteSchema.safeParse(raw);
+  if (!result.success) throw badRequest("対局IDが正しくありません", z.flattenError(result.error));
   return result.data;
 }
