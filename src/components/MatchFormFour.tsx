@@ -11,6 +11,8 @@ type Props = {
   players: Player[]; // ちょうど4人
   rules: Rule[];
   maxRound: number;
+  /** 記録トークン。null ならログイン済みオーナーとしての記録を試みる */
+  writeToken?: string | null;
 };
 
 const WINDS = ["東", "南", "西", "北"] as const;
@@ -30,7 +32,13 @@ const arrayMove = (arr: string[], from: number, to: number) => {
  * ちょうど4人のときの対局入力。プレイヤー選択も回戦番号入力も不要（組み合わせは1通り、回戦は通し番号）。
  * 登録4人を東南西北に並べ、ドラッグで席順を変え、点数だけ入力する。並び順は保存後も引き継ぐ。
  */
-export default function MatchFormFour({ tournamentId, players, rules, maxRound }: Props) {
+export default function MatchFormFour({
+  tournamentId,
+  players,
+  rules,
+  maxRound,
+  writeToken = null,
+}: Props) {
   const ids = players.map((p) => p.id);
   const idsKey = ids.join(",");
 
@@ -107,7 +115,10 @@ export default function MatchFormFour({ tournamentId, players, rules, maxRound }
       const inputs = order.map((id) => ({ playerId: id, score: toActualScore(scores[id]) }));
       const res = await fetch("/api/matches", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(writeToken ? { "x-write-token": writeToken } : {}),
+        },
         body: JSON.stringify({
           tournamentId,
           tableId: null,
@@ -117,7 +128,12 @@ export default function MatchFormFour({ tournamentId, players, rules, maxRound }
         }),
       });
       if (!res.ok) {
-        setError((await res.json()).error ?? "保存に失敗しました");
+        const data = await res.json();
+        setError(
+          data.code === "INVALID_WRITE_TOKEN"
+            ? "このリンクは無効です。主催者に新しい記録用URLをもらってください"
+            : (data.error ?? "保存に失敗しました")
+        );
         return;
       }
       setScores({}); // 並び順(order)は引き継ぎ、点数だけクリア
