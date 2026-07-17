@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   badRequest,
   unauthorized,
+  invalidWriteToken,
   forbidden,
   notFound,
   conflict,
@@ -27,6 +28,25 @@ describe("AppError", () => {
   it("unauthorized はデフォルトメッセージを持つ", () => {
     const error = unauthorized();
     expect(error.message).toBe("ログインが必要です");
+  });
+
+  it("invalidWriteToken は status 401 と code 'INVALID_WRITE_TOKEN' を持つ", () => {
+    const error = invalidWriteToken("トークンが一致しません");
+    expect(error.status).toBe(401);
+    expect(error.code).toBe("INVALID_WRITE_TOKEN");
+    expect(error.message).toBe("トークンが一致しません");
+  });
+
+  it("invalidWriteToken はデフォルトメッセージを持つ", () => {
+    const error = invalidWriteToken();
+    expect(error.message).toBe(
+      "記録用リンクが無効です。主催者に新しい記録用URLをもらってください"
+    );
+  });
+
+  it("invalidWriteToken は unauthorized と同じ 401 だが code は異なる", () => {
+    expect(invalidWriteToken().status).toBe(unauthorized().status);
+    expect(invalidWriteToken().code).not.toBe(unauthorized().code);
   });
 
   it("forbidden は status 403 と code 'forbidden' を持つ", () => {
