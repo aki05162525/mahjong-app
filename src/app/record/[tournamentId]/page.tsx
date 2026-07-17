@@ -73,7 +73,8 @@ export default function RecordPage() {
   const canRecord = writeToken !== null || isOwner;
 
   return (
-    <div className="max-w-2xl mx-auto flex flex-col min-h-screen overflow-x-hidden">
+    // 閲覧ページとタブ幅・表の見え方を揃えるため、PC ではコンテナを広げる
+    <div className="w-full max-w-2xl lg:max-w-4xl mx-auto flex flex-col min-h-screen overflow-x-hidden">
       <div className="px-4 pt-4 pb-2 flex flex-col gap-1">
         <div className="flex items-start justify-between gap-2">
           <span
