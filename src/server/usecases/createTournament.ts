@@ -2,6 +2,7 @@ import { getSupabaseAdmin } from "@/infra/supabase-admin";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { SEED_RULES } from "@/lib/seedRules";
 import { requireUser } from "@/server/auth/requireUser";
+import { generateWriteToken } from "@/server/auth/writeToken";
 import { conflict, internalError, rateLimited } from "@/server/http/errors";
 import type { CreateTournamentInput } from "@/server/validation/tournament";
 import type { TablesInsert } from "@/lib/database.types";
@@ -9,7 +10,7 @@ import type { TablesInsert } from "@/lib/database.types";
 export async function createTournament(
   input: CreateTournamentInput,
   clientIp: string
-): Promise<{ id: string }> {
+): Promise<{ id: string; writeToken: string }> {
   if (!(await checkRateLimit(clientIp)).ok) {
     throw rateLimited("リクエストが多すぎます。しばらくしてから再試行してください");
   }
@@ -42,5 +43,16 @@ export async function createTournament(
     await supabase.from("tournaments").delete().eq("id", data.id);
     throw internalError("大会の作成に失敗しました");
   }
-  return { id: data.id };
+
+  // 記録トークンを発行。raw はこのレスポンスで一度だけ返し、以後は再表示不可（紛失時は再発行）
+  const { raw, hash } = generateWriteToken();
+  const { error: secretError } = await supabase
+    .from("tournament_write_secrets")
+    .insert({ tournament_id: data.id, token_hash: hash });
+
+  if (secretError) {
+    await supabase.from("tournaments").delete().eq("id", data.id);
+    throw internalError("大会の作成に失敗しました");
+  }
+  return { id: data.id, writeToken: raw };
 }
