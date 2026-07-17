@@ -79,53 +79,56 @@ export default function TournamentTabs({
 
       {/* コンテンツ */}
       <div className="px-4 py-6 flex-1">
-        {tab === "input" &&
-          input &&
-          (!input.canRecord ? (
-            <div className="flex flex-col gap-3 mt-4">
-              <p style={{ color: "var(--body)" }}>
-                このページで記録するには、主催者から配られた記録用URLで開いてください。
-              </p>
-              <p className="text-sm" style={{ color: "var(--muted)" }}>
-                URLが無効と言われた場合は、主催者に新しい記録用URLをもらってください。
-              </p>
-            </div>
-          ) : players.length === 4 && tables.length < 2 ? (
-            // ちょうど4人・単一卓は組み合わせが1通り。選択を省きドラッグ＋点数入力に特化する。
-            <MatchFormFour
-              tournamentId={tournamentId}
-              players={players}
-              rules={rules}
-              maxRound={maxRound}
-              writeToken={input.writeToken}
-            />
-          ) : players.length >= 4 ? (
-            <MatchForm
-              tournamentId={tournamentId}
-              players={players}
-              tables={tables}
-              rules={rules}
-              matches={matches}
-              matchCounts={matchCounts}
-              maxRound={maxRound}
-              writeToken={input.writeToken}
-            />
-          ) : (
-            <div className="flex flex-col gap-3 mt-4">
-              <p style={{ color: "var(--muted)" }}>
-                4人以上の選手を登録すると入力できます（現在 {players.length} 人）
-              </p>
-              {isOwner && (
-                <Link
-                  href={`/${tournamentId}/players`}
-                  className="rounded-lg px-4 py-3 text-lg font-semibold text-center active:opacity-80"
-                  style={{ background: "var(--primary)", color: "#fff" }}
-                >
-                  選手を登録する
-                </Link>
-              )}
-            </div>
-          ))}
+        {/* 入力フォームは広い画面では間延びするため、閲覧系タブと違い幅を抑えて中央寄せする */}
+        {tab === "input" && input && (
+          <div className="w-full max-w-xl mx-auto">
+            {!input.canRecord ? (
+              <div className="flex flex-col gap-3 mt-4">
+                <p style={{ color: "var(--body)" }}>
+                  このページで記録するには、主催者から配られた記録用URLで開いてください。
+                </p>
+                <p className="text-sm" style={{ color: "var(--muted)" }}>
+                  URLが無効と言われた場合は、主催者に新しい記録用URLをもらってください。
+                </p>
+              </div>
+            ) : players.length === 4 && tables.length < 2 ? (
+              // ちょうど4人・単一卓は組み合わせが1通り。選択を省きドラッグ＋点数入力に特化する。
+              <MatchFormFour
+                tournamentId={tournamentId}
+                players={players}
+                rules={rules}
+                maxRound={maxRound}
+                writeToken={input.writeToken}
+              />
+            ) : players.length >= 4 ? (
+              <MatchForm
+                tournamentId={tournamentId}
+                players={players}
+                tables={tables}
+                rules={rules}
+                matches={matches}
+                matchCounts={matchCounts}
+                maxRound={maxRound}
+                writeToken={input.writeToken}
+              />
+            ) : (
+              <div className="flex flex-col gap-3 mt-4">
+                <p style={{ color: "var(--muted)" }}>
+                  4人以上の選手を登録すると入力できます（現在 {players.length} 人）
+                </p>
+                {isOwner && (
+                  <Link
+                    href={`/${tournamentId}/players`}
+                    className="rounded-lg px-4 py-3 text-lg font-semibold text-center active:opacity-80"
+                    style={{ background: "var(--primary)", color: "#fff" }}
+                  >
+                    選手を登録する
+                  </Link>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {tab === "ranking" && <Ranking ranking={ranking} />}
 
