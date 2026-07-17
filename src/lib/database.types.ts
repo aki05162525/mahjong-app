@@ -247,6 +247,32 @@ export type Database = {
           },
         ];
       };
+      tournament_write_secrets: {
+        Row: {
+          created_at: string;
+          token_hash: string;
+          tournament_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          token_hash: string;
+          tournament_id: string;
+        };
+        Update: {
+          created_at?: string;
+          token_hash?: string;
+          tournament_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tournament_write_secrets_tournament_id_fkey";
+            columns: ["tournament_id"];
+            isOneToOne: true;
+            referencedRelation: "tournaments";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       tournaments: {
         Row: {
           created_at: string;
