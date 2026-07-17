@@ -9,12 +9,11 @@ import { useTables } from "@/hooks/useTables";
 import { useRules } from "@/hooks/useRules";
 import { useMatches } from "@/hooks/useMatches";
 import { useAuth } from "@/hooks/useAuth";
-import MatchForm from "@/components/MatchForm";
-import MatchFormFour from "@/components/MatchFormFour";
+import { loadWriteToken, saveWriteToken, buildRecordUrl } from "@/lib/recordToken";
 import MatchHistory from "@/components/MatchHistory";
 import Ranking from "@/components/Ranking";
 
-type Tab = "ranking" | "input" | "history";
+type Tab = "ranking" | "history";
 
 export default function TournamentPage() {
   const { tournamentId } = useParams<{ tournamentId: string }>();
@@ -27,11 +26,16 @@ export default function TournamentPage() {
 
   const isOwner = !!user && !!tournament && user.id === tournament.ownerId;
 
-  const [tab, setTab] = useState<Tab>("input");
+  const [tab, setTab] = useState<Tab>("ranking");
   const [copied, setCopied] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+  const [shareIssuing, setShareIssuing] = useState(false);
+  const [shareError, setShareError] = useState("");
+  const [shareCopied, setShareCopied] = useState(false);
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -61,6 +65,41 @@ export default function TournamentPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleOpenShare = () => {
+    setShowShareModal(true);
+    setShareError("");
+    setShareCopied(false);
+    // raw トークンは再表示不可。作成時に退避したものが手元にあればそれでリンクを作る
+    const stored = loadWriteToken(tournamentId);
+    setShareUrl(stored ? buildRecordUrl(window.location.origin, tournamentId, stored) : "");
+  };
+
+  // トークンを紛失している場合の再発行。旧リンクは失効する
+  const handleReissue = async () => {
+    setShareIssuing(true);
+    setShareError("");
+    try {
+      const res = await fetch(`/api/tournaments/${tournamentId}/write-token`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        setShareError(data.error ?? "記録用リンクの発行に失敗しました");
+        return;
+      }
+      saveWriteToken(tournamentId, data.writeToken);
+      setShareUrl(buildRecordUrl(window.location.origin, tournamentId, data.writeToken));
+    } catch {
+      setShareError("記録用リンクの発行に失敗しました");
+    } finally {
+      setShareIssuing(false);
+    }
+  };
+
+  const handleCopyShareUrl = () => {
+    navigator.clipboard.writeText(shareUrl);
+    setShareCopied(true);
+    setTimeout(() => setShareCopied(false), 2000);
+  };
+
   if (notFound) {
     return (
       <main className="flex flex-col items-center justify-center min-h-screen p-6 gap-6">
@@ -85,13 +124,9 @@ export default function TournamentPage() {
   }
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: "input", label: "入力" },
     { key: "ranking", label: "ランキング" },
     { key: "history", label: "履歴" },
   ];
-
-  const matchCounts = Object.fromEntries(ranking.map((r) => [r.playerId, r.matchCount]));
-  const maxRound = matches.reduce((max, m) => Math.max(max, m.roundNumber), 0);
 
   return (
     <div className="max-w-2xl mx-auto flex flex-col min-h-screen overflow-x-hidden">
@@ -111,6 +146,13 @@ export default function TournamentPage() {
             </button>
             {isOwner && (
               <>
+                <button
+                  onClick={handleOpenShare}
+                  className="text-sm rounded-lg px-3 py-1 active:opacity-70"
+                  style={{ color: "var(--primary)", border: "1px solid var(--primary)" }}
+                >
+                  記録リンクを共有
+                </button>
                 <Link
                   href={`/${tournamentId}/players`}
                   className="text-sm rounded-lg px-3 py-1 active:opacity-70"
@@ -183,6 +225,66 @@ export default function TournamentPage() {
         </div>
       )}
 
+      {/* 記録リンク共有モーダル */}
+      {showShareModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-6">
+          <div
+            className="rounded-xl p-6 w-full max-w-sm flex flex-col gap-4"
+            style={{ background: "var(--surface-card)", border: "1px solid var(--hairline)" }}
+          >
+            <h2 className="text-lg font-bold" style={{ color: "var(--ink)" }}>
+              記録リンクを共有
+            </h2>
+            {shareUrl ? (
+              <>
+                <p className="text-sm" style={{ color: "var(--body)" }}>
+                  このリンクを開いた人は誰でもこの大会の対局結果を記録できます。記録係にだけ渡してください。
+                </p>
+                <p
+                  className="text-xs break-all rounded-lg p-3 font-mono"
+                  style={{ background: "var(--canvas)", border: "1px solid var(--hairline)" }}
+                >
+                  {shareUrl}
+                </p>
+                <button
+                  onClick={handleCopyShareUrl}
+                  className="rounded-lg py-3 text-base font-semibold active:opacity-80"
+                  style={{ background: "var(--primary)", color: "#fff" }}
+                >
+                  {shareCopied ? "コピーしました！" : "リンクをコピー"}
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-sm" style={{ color: "var(--body)" }}>
+                  記録用リンクはこの端末に残っていません。新しいリンクを発行すると、いま配られているリンクは使えなくなります。
+                </p>
+                {shareError && (
+                  <p className="text-sm" style={{ color: "var(--error)" }}>
+                    {shareError}
+                  </p>
+                )}
+                <button
+                  onClick={handleReissue}
+                  disabled={shareIssuing}
+                  className="rounded-lg py-3 text-base font-semibold active:opacity-80 disabled:opacity-50"
+                  style={{ background: "var(--primary)", color: "#fff" }}
+                >
+                  {shareIssuing ? "発行中..." : "新しいリンクを発行"}
+                </button>
+              </>
+            )}
+            <button
+              onClick={() => setShowShareModal(false)}
+              className="rounded-lg py-3 text-base active:opacity-70"
+              style={{ color: "var(--muted)", border: "1px solid var(--hairline)" }}
+            >
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* タブ */}
       <div
         className="flex sticky top-0 z-10"
@@ -203,45 +305,9 @@ export default function TournamentPage() {
         ))}
       </div>
 
-      {/* コンテンツ */}
+      {/* コンテンツ（閲覧専用。記録は /record/[tournamentId] で行う） */}
       <div className="px-4 py-6 flex-1">
         {tab === "ranking" && <Ranking ranking={ranking} />}
-
-        {tab === "input" &&
-          (players.length === 4 && tables.length < 2 ? (
-            // ちょうど4人・単一卓は組み合わせが1通り。選択を省きドラッグ＋点数入力に特化する。
-            <MatchFormFour
-              tournamentId={tournamentId}
-              players={players}
-              rules={rules}
-              maxRound={maxRound}
-            />
-          ) : players.length >= 4 ? (
-            <MatchForm
-              tournamentId={tournamentId}
-              players={players}
-              tables={tables}
-              rules={rules}
-              matches={matches}
-              matchCounts={matchCounts}
-              maxRound={maxRound}
-            />
-          ) : (
-            <div className="flex flex-col gap-3 mt-4">
-              <p style={{ color: "var(--muted)" }}>
-                4人以上の選手を登録すると入力できます（現在 {players.length} 人）
-              </p>
-              {isOwner && (
-                <Link
-                  href={`/${tournamentId}/players`}
-                  className="rounded-lg px-4 py-3 text-lg font-semibold text-center active:opacity-80"
-                  style={{ background: "var(--primary)", color: "#fff" }}
-                >
-                  選手を登録する
-                </Link>
-              )}
-            </div>
-          ))}
 
         {tab === "history" && (
           <MatchHistory matches={matches} isOwner={isOwner} showTable={tables.length >= 2} />

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/infra/supabase";
+import { saveWriteToken } from "@/lib/recordToken";
 import type { Tournament } from "@/lib/types";
 
 export default function TopPage() {
@@ -79,6 +80,9 @@ export default function TopPage() {
         setCreating(false);
         return;
       }
+      // 記録トークンの raw はこのレスポンスでしか受け取れない（再表示不可）。
+      // 「記録リンクを共有」で使えるように退避しておく
+      if (data.writeToken) saveWriteToken(data.id, data.writeToken);
       router.push(`/${data.id}`);
     } catch {
       setError("大会の作成に失敗しました");
