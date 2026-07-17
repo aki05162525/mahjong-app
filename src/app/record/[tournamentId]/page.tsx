@@ -10,13 +10,13 @@ import { useRules } from "@/hooks/useRules";
 import { useMatches } from "@/hooks/useMatches";
 import { useAuth } from "@/hooks/useAuth";
 import { parseTokenFromHash, saveWriteToken, loadWriteToken } from "@/lib/recordToken";
-import MatchForm from "@/components/MatchForm";
-import MatchFormFour from "@/components/MatchFormFour";
+import TournamentTabs from "@/components/TournamentTabs";
 
 /**
- * 記録専用ページ。主催者から配られた記録リンク（/record/[id]#k=<token>）で開く。
- * トークンは fragment で受け取り、localStorage に退避してから URL から消す。
- * fragment はサーバーに送信されないため、アクセスログにトークンが残らない。
+ * 記録ページ。主催者から配られた記録リンク（/record/[id]#k=<token>）で開く。
+ * 記録リンク＝閲覧の上位互換（読み取り + 書き込み）なので、入力に加えて
+ * ランキング・履歴タブも持つ。トークンは fragment で受け取り、localStorage に
+ * 退避してから URL から消す（fragment はサーバーに送信されずログに残らない）。
  */
 export default function RecordPage() {
   const { tournamentId } = useParams<{ tournamentId: string }>();
@@ -72,9 +72,6 @@ export default function RecordPage() {
   // トークンが無くてもオーナーは記録できる（サーバー側の owner バイパス）
   const canRecord = writeToken !== null || isOwner;
 
-  const matchCounts = Object.fromEntries(ranking.map((r) => [r.playerId, r.matchCount]));
-  const maxRound = matches.reduce((max, m) => Math.max(max, m.roundNumber), 0);
-
   return (
     <div className="max-w-2xl mx-auto flex flex-col min-h-screen overflow-x-hidden">
       <div className="px-4 pt-4 pb-2 flex flex-col gap-1">
@@ -90,7 +87,7 @@ export default function RecordPage() {
             className="text-sm rounded-lg px-3 py-1 active:opacity-70"
             style={{ color: "var(--primary)", border: "1px solid var(--primary)" }}
           >
-            ランキング・履歴を見る
+            閲覧ページを開く
           </Link>
         </div>
         <h1 className="text-xl font-bold" style={{ color: "var(--ink)" }}>
@@ -98,42 +95,16 @@ export default function RecordPage() {
         </h1>
       </div>
 
-      <div className="px-4 py-6 flex-1">
-        {!canRecord ? (
-          <div className="flex flex-col gap-3 mt-4">
-            <p style={{ color: "var(--body)" }}>
-              このページで記録するには、主催者から配られた記録用URLで開いてください。
-            </p>
-            <p className="text-sm" style={{ color: "var(--muted)" }}>
-              URLが無効と言われた場合は、主催者に新しい記録用URLをもらってください。
-            </p>
-          </div>
-        ) : players.length === 4 && tables.length < 2 ? (
-          // ちょうど4人・単一卓は組み合わせが1通り。選択を省きドラッグ＋点数入力に特化する。
-          <MatchFormFour
-            tournamentId={tournamentId}
-            players={players}
-            rules={rules}
-            maxRound={maxRound}
-            writeToken={writeToken}
-          />
-        ) : players.length >= 4 ? (
-          <MatchForm
-            tournamentId={tournamentId}
-            players={players}
-            tables={tables}
-            rules={rules}
-            matches={matches}
-            matchCounts={matchCounts}
-            maxRound={maxRound}
-            writeToken={writeToken}
-          />
-        ) : (
-          <p className="mt-4" style={{ color: "var(--muted)" }}>
-            4人以上の選手を登録すると入力できます（現在 {players.length} 人）
-          </p>
-        )}
-      </div>
+      <TournamentTabs
+        tournamentId={tournamentId}
+        players={players}
+        tables={tables}
+        rules={rules}
+        matches={matches}
+        ranking={ranking}
+        isOwner={isOwner}
+        input={{ writeToken, canRecord }}
+      />
     </div>
   );
 }
