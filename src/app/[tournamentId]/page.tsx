@@ -10,10 +10,7 @@ import { useRules } from "@/hooks/useRules";
 import { useMatches } from "@/hooks/useMatches";
 import { useAuth } from "@/hooks/useAuth";
 import { loadWriteToken, saveWriteToken, buildRecordUrl } from "@/lib/recordToken";
-import MatchHistory from "@/components/MatchHistory";
-import Ranking from "@/components/Ranking";
-
-type Tab = "ranking" | "history";
+import TournamentTabs from "@/components/TournamentTabs";
 
 export default function TournamentPage() {
   const { tournamentId } = useParams<{ tournamentId: string }>();
@@ -26,7 +23,6 @@ export default function TournamentPage() {
 
   const isOwner = !!user && !!tournament && user.id === tournament.ownerId;
 
-  const [tab, setTab] = useState<Tab>("ranking");
   const [copied, setCopied] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -122,11 +118,6 @@ export default function TournamentPage() {
       </main>
     );
   }
-
-  const tabs: { key: Tab; label: string }[] = [
-    { key: "ranking", label: "ランキング" },
-    { key: "history", label: "履歴" },
-  ];
 
   return (
     <div className="max-w-2xl mx-auto flex flex-col min-h-screen overflow-x-hidden">
@@ -285,34 +276,16 @@ export default function TournamentPage() {
         </div>
       )}
 
-      {/* タブ */}
-      <div
-        className="flex sticky top-0 z-10"
-        style={{ borderBottom: "1px solid var(--hairline)", background: "var(--canvas)" }}
-      >
-        {tabs.map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setTab(key)}
-            className="flex-1 py-3 text-base font-semibold border-b-2 transition-colors"
-            style={{
-              borderBottomColor: tab === key ? "var(--primary)" : "transparent",
-              color: tab === key ? "var(--primary)" : "var(--muted)",
-            }}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {/* コンテンツ（閲覧専用。記録は /record/[tournamentId] で行う） */}
-      <div className="px-4 py-6 flex-1">
-        {tab === "ranking" && <Ranking ranking={ranking} />}
-
-        {tab === "history" && (
-          <MatchHistory matches={matches} isOwner={isOwner} showTable={tables.length >= 2} />
-        )}
-      </div>
+      {/* 閲覧専用（入力タブなし）。記録は /record/[tournamentId] で行う */}
+      <TournamentTabs
+        tournamentId={tournamentId}
+        players={players}
+        tables={tables}
+        rules={rules}
+        matches={matches}
+        ranking={ranking}
+        isOwner={isOwner}
+      />
     </div>
   );
 }
