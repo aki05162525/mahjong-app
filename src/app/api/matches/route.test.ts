@@ -100,7 +100,10 @@ describe("POST /api/matches", () => {
 
   describe("バリデーションとビジネスルール", () => {
     it("404: ビジネスルール違反のとき createMatch が弾く", async () => {
-      mockFrom.mockReturnValueOnce(makeChain({ count: 0 })); // 卓が存在しない
+      mockFrom
+        .mockReturnValueOnce(makeChain({ count: 0 })) // 卓が存在しない
+        .mockReturnValueOnce(makeChain({ count: 4 }))
+        .mockReturnValueOnce(makeChain({ data: ruleRow, error: null }));
       const res = await POST(makeReq({ ...baseBody, inputs: validInputs }));
       expect(res.status).toBe(404);
     });

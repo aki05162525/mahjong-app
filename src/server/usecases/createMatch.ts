@@ -19,48 +19,56 @@ export async function createMatch(input: CreateMatchInput): Promise<{ id: string
 
   const supabase = getSupabaseAdmin();
 
-  if (normalizedTableId) {
-    const { count: tableCount, error: tableError } = await supabase
-      .from("tables")
-      .select("id", { count: "exact", head: true })
-      .eq("id", normalizedTableId)
-      .eq("tournament_id", tournamentId);
+  // 卓・プレイヤー・ルールは互いに依存しないため、同時に問い合わせる。
+  // 直列にすると Supabase までのネットワーク往復が3回分積み上がる。
+  const tableQuery = normalizedTableId
+    ? supabase
+        .from("tables")
+        .select("id", { count: "exact", head: true })
+        .eq("id", normalizedTableId)
+        .eq("tournament_id", tournamentId)
+    : // 卓を省略できるのは単一卓のときだけ。2卓以上ある大会ではどの卓か曖昧になるため必須。
+      supabase
+        .from("tables")
+        .select("id", { count: "exact", head: true })
+        .eq("tournament_id", tournamentId);
 
-    if (tableError) throw internalError("卓の確認に失敗しました");
-    if (!tableCount || tableCount === 0) {
-      throw notFound("指定された卓が見つかりません");
-    }
-  } else {
-    // 卓を省略できるのは単一卓のときだけ。2卓以上ある大会ではどの卓か曖昧になるため必須。
-    const { count: tableCount, error: tableError } = await supabase
-      .from("tables")
-      .select("id", { count: "exact", head: true })
-      .eq("tournament_id", tournamentId);
-
-    if (tableError) throw internalError("卓の確認に失敗しました");
-    if (tableCount && tableCount >= 2) {
-      throw badRequest("卓を選択してください");
-    }
-  }
-
-  const { count: playerCount, error: playerError } = await supabase
+  const playerQuery = supabase
     .from("players")
     .select("id", { count: "exact", head: true })
     .eq("tournament_id", tournamentId)
     .in("id", playerIds);
 
-  if (playerError) throw internalError("プレイヤーの確認に失敗しました");
-  if (!playerCount || playerCount !== 4) {
-    throw notFound("指定されたプレイヤーが見つかりません");
-  }
-
-  const { data: rule, error: ruleError } = await supabase
+  const ruleQuery = supabase
     .from("rules")
     .select("uma, return_points")
     .eq("id", ruleId)
     .eq("tournament_id", tournamentId)
     .single();
 
+  const [tableResult, playerResult, ruleResult] = await Promise.all([
+    tableQuery,
+    playerQuery,
+    ruleQuery,
+  ]);
+
+  const { count: tableCount, error: tableError } = tableResult;
+  if (tableError) throw internalError("卓の確認に失敗しました");
+  if (normalizedTableId) {
+    if (!tableCount || tableCount === 0) {
+      throw notFound("指定された卓が見つかりません");
+    }
+  } else if (tableCount && tableCount >= 2) {
+    throw badRequest("卓を選択してください");
+  }
+
+  const { count: playerCount, error: playerError } = playerResult;
+  if (playerError) throw internalError("プレイヤーの確認に失敗しました");
+  if (!playerCount || playerCount !== 4) {
+    throw notFound("指定されたプレイヤーが見つかりません");
+  }
+
+  const { data: rule, error: ruleError } = ruleResult;
   if (ruleError && ruleError.code !== "PGRST116") throw internalError("ルールの取得に失敗しました");
   if (!rule) {
     throw notFound("指定されたルールが見つかりません");
