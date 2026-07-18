@@ -1,22 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/infra/supabase";
 import type { Tournament } from "@/lib/types";
 
 export default function TopPage() {
-  const router = useRouter();
   const { user, loading, signInWithGoogle, signOut } = useAuth();
 
   const [tournamentCache, setTournamentCache] = useState<{
     userId: string;
     list: Tournament[];
   } | null>(null);
-  const myTournaments =
-    tournamentCache !== null && tournamentCache.userId === user?.id ? tournamentCache.list : [];
+  const listLoaded = tournamentCache !== null && tournamentCache.userId === user?.id;
+  const myTournaments = listLoaded ? tournamentCache.list : [];
 
   useEffect(() => {
     if (!user) return;
@@ -44,92 +42,97 @@ export default function TopPage() {
   }, [user]);
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen p-6 gap-10">
-      <h1 className="text-3xl font-bold text-center" style={{ color: "var(--ink)" }}>
-        🀄 小次郎麻雀大会スコア
-      </h1>
-
-      {/* ログイン済み: 大会作成 + マイ大会 */}
-      {!loading && user ? (
-        <>
-          <section
-            className="w-full max-w-sm flex flex-col gap-3 rounded-xl p-6 shadow-sm"
-            style={{ background: "var(--surface-card)", border: "1px solid var(--hairline)" }}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold" style={{ color: "var(--body)" }}>
-                新しい大会を作成
-              </h2>
-              <button
-                onClick={() => signOut()}
-                className="text-sm active:opacity-70"
-                style={{ color: "var(--muted)" }}
-              >
-                ログアウト
-              </button>
-            </div>
-            <p className="text-sm" style={{ color: "var(--muted)" }}>
-              大会名・選手・ルールを順番に登録して、記録を始める準備をします
-            </p>
-            <Link
-              href="/new"
-              className="rounded-lg px-4 py-3 text-lg font-semibold w-full text-center active:opacity-80"
-              style={{ background: "var(--primary)", color: "#fff" }}
+    <div className="min-h-screen flex flex-col">
+      <header className="border-b border-hairline bg-surface-card">
+        <div className="mx-auto flex h-14 w-full max-w-md items-center justify-between px-4">
+          <h1 className="font-bold text-ink">小次郎麻雀大会スコア</h1>
+          {!loading && user && (
+            <button
+              onClick={() => signOut()}
+              className="text-sm text-muted transition-colors hover:text-ink active:opacity-70"
             >
-              大会を作成
-            </Link>
-          </section>
-
-          {myTournaments.length > 0 && (
-            <section className="w-full max-w-sm flex flex-col gap-3">
-              <h2 className="text-xl font-semibold" style={{ color: "var(--body)" }}>
-                自分の大会
-              </h2>
-              <ul className="flex flex-col gap-2">
-                {myTournaments.map((t) => (
-                  <li key={t.id}>
-                    <button
-                      onClick={() => router.push(`/${t.id}`)}
-                      className="w-full text-left rounded-xl px-4 py-3 active:opacity-80"
-                      style={{
-                        background: "var(--surface-card)",
-                        border: "1px solid var(--hairline)",
-                      }}
-                    >
-                      <p className="font-semibold" style={{ color: "var(--ink)" }}>
-                        {t.name}
-                      </p>
-                      <p className="text-xs mt-0.5" style={{ color: "var(--muted)" }}>
-                        作成日: {t.createdAt.toLocaleDateString("ja-JP")}
-                      </p>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </section>
+              ログアウト
+            </button>
           )}
-        </>
-      ) : !loading ? (
-        /* 未ログイン: Googleログインボタン */
-        <section
-          className="w-full max-w-sm flex flex-col gap-3 rounded-xl p-6 shadow-sm"
-          style={{ background: "var(--surface-card)", border: "1px solid var(--hairline)" }}
-        >
-          <h2 className="text-xl font-semibold" style={{ color: "var(--body)" }}>
-            新しい大会を作成
-          </h2>
-          <p className="text-sm" style={{ color: "var(--muted)" }}>
-            大会を作成・管理するにはGoogleアカウントでログインしてください
-          </p>
-          <button
-            onClick={() => signInWithGoogle()}
-            className="rounded-lg px-4 py-3 text-lg font-semibold w-full active:opacity-80 flex items-center justify-center gap-2"
-            style={{ background: "var(--primary)", color: "#fff" }}
+        </div>
+      </header>
+
+      <main className="mx-auto flex w-full max-w-md flex-col gap-8 px-4 py-8">
+        {loading ? (
+          /* 認証確認中: 作成カードと同じ形のスケルトンで白画面のチラつきを防ぐ */
+          <section
+            aria-hidden
+            className="flex flex-col gap-3 rounded-xl border border-hairline bg-surface-card p-6 shadow-sm"
           >
-            Googleでログインして大会を作る
-          </button>
-        </section>
-      ) : null}
-    </main>
+            <div className="h-6 w-40 animate-pulse rounded bg-surface-strong" />
+            <div className="h-4 w-full animate-pulse rounded bg-surface-strong" />
+            <div className="h-12 w-full animate-pulse rounded-lg bg-surface-strong" />
+          </section>
+        ) : user ? (
+          /* ログイン済み: 大会作成 + マイ大会 */
+          <>
+            <section className="flex flex-col gap-3 rounded-xl border border-hairline bg-surface-card p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-ink">新しい大会を作成</h2>
+              <p className="text-sm text-muted">
+                大会名・選手・ルールを順番に登録して、記録を始める準備をします
+              </p>
+              <Link
+                href="/new"
+                className="mt-1 w-full rounded-lg bg-primary px-4 py-3 text-center text-base font-semibold text-white transition-colors hover:bg-primary-active active:bg-primary-active"
+              >
+                大会を作成
+              </Link>
+            </section>
+
+            {listLoaded && (
+              <section className="flex flex-col gap-3">
+                <h2 className="text-sm font-semibold text-muted">自分の大会</h2>
+                {myTournaments.length === 0 ? (
+                  <p className="text-sm text-muted">まだ大会がありません。</p>
+                ) : (
+                  <ul className="flex flex-col gap-2">
+                    {myTournaments.map((t) => (
+                      <li key={t.id}>
+                        <Link
+                          href={`/${t.id}`}
+                          className="group flex items-center justify-between gap-3 rounded-xl border border-hairline bg-surface-card px-4 py-3 transition-colors hover:border-primary"
+                        >
+                          <span className="flex flex-col">
+                            <span className="font-semibold text-ink">{t.name}</span>
+                            <span className="mt-0.5 text-xs text-muted">
+                              作成日: {t.createdAt.toLocaleDateString("ja-JP")}
+                            </span>
+                          </span>
+                          <span
+                            aria-hidden
+                            className="text-lg text-muted transition-colors group-hover:text-primary"
+                          >
+                            ›
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            )}
+          </>
+        ) : (
+          /* 未ログイン: Googleログインボタン */
+          <section className="flex flex-col gap-3 rounded-xl border border-hairline bg-surface-card p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-ink">大会を作成・管理する</h2>
+            <p className="text-sm text-muted">
+              Googleアカウントでログインすると、大会の作成と管理ができます
+            </p>
+            <button
+              onClick={() => signInWithGoogle()}
+              className="mt-1 w-full rounded-lg bg-primary px-4 py-3 text-base font-semibold text-white transition-colors hover:bg-primary-active active:bg-primary-active"
+            >
+              Googleでログイン
+            </button>
+          </section>
+        )}
+      </main>
+    </div>
   );
 }
