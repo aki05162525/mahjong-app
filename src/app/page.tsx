@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/infra/supabase";
-import { saveWriteToken } from "@/lib/recordToken";
 import type { Tournament } from "@/lib/types";
 
 export default function TopPage() {
@@ -12,9 +12,6 @@ export default function TopPage() {
   const { user, loading, signInWithGoogle, signOut } = useAuth();
 
   const [joinId, setJoinId] = useState("");
-  const [newName, setNewName] = useState("");
-  const [customId, setCustomId] = useState("");
-  const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
 
   const [tournamentCache, setTournamentCache] = useState<{
@@ -56,38 +53,6 @@ export default function TopPage() {
       return;
     }
     router.push(`/${id}`);
-  };
-
-  const handleCreate = async () => {
-    if (!newName.trim()) {
-      setError("大会名を入力してください");
-      return;
-    }
-    setCreating(true);
-    setError("");
-    try {
-      const res = await fetch("/api/create-tournament", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newName.trim(),
-          customId: customId.trim() || undefined,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "大会の作成に失敗しました");
-        setCreating(false);
-        return;
-      }
-      // 記録トークンの raw はこのレスポンスでしか受け取れない（再表示不可）。
-      // 「記録リンクを共有」で使えるように退避しておく
-      if (data.writeToken) saveWriteToken(data.id, data.writeToken);
-      router.push(`/${data.id}`);
-    } catch {
-      setError("大会の作成に失敗しました");
-      setCreating(false);
-    }
   };
 
   return (
@@ -147,35 +112,16 @@ export default function TopPage() {
                 ログアウト
               </button>
             </div>
-            <input
-              type="text"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              placeholder="大会名（例: 第1回麻雀大会）"
-              className="rounded-lg px-4 py-3 text-lg w-full"
-              style={{ border: "1px solid var(--hairline)", background: "var(--canvas)" }}
-            />
-            <div className="flex flex-col gap-1">
-              <input
-                type="text"
-                value={customId}
-                onChange={(e) => setCustomId(e.target.value)}
-                placeholder="大会ID・任意（例: mahjong2025）"
-                className="rounded-lg px-4 py-3 text-lg w-full"
-                style={{ border: "1px solid var(--hairline)", background: "var(--canvas)" }}
-              />
-              <p className="text-xs" style={{ color: "var(--muted)" }}>
-                空欄の場合は自動生成。英数字・ハイフン・アンダースコアのみ
-              </p>
-            </div>
-            <button
-              onClick={handleCreate}
-              disabled={creating}
-              className="rounded-lg px-4 py-3 text-lg font-semibold w-full active:opacity-80 disabled:opacity-50"
+            <p className="text-sm" style={{ color: "var(--muted)" }}>
+              大会名・選手・ルールを順番に登録して、記録を始める準備をします
+            </p>
+            <Link
+              href="/new"
+              className="rounded-lg px-4 py-3 text-lg font-semibold w-full text-center active:opacity-80"
               style={{ background: "var(--primary)", color: "#fff" }}
             >
-              {creating ? "作成中..." : "大会を作成"}
-            </button>
+              大会を作成
+            </Link>
           </section>
 
           {myTournaments.length > 0 && (
