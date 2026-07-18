@@ -122,14 +122,16 @@ export default function PlayerRegistration({
         プレイヤー登録
       </h2>
       {isOwner && (
-        <div className="flex gap-2">
+        // 入力欄が縮めない環境（ページ拡大率・文字サイズ拡大など）でもボタンが
+        // 画面外に出ないよう、1行に収まらないときは折り返して下に落とす。
+        <div className="flex flex-wrap gap-2">
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
             placeholder="プレイヤー名"
-            className="rounded-lg px-4 py-3 text-lg flex-1 min-w-0"
+            className="rounded-lg px-4 py-3 text-lg grow shrink basis-40 min-w-0"
             style={{ border: "1px solid var(--hairline)", background: "var(--canvas)" }}
           />
           <button
@@ -145,14 +147,14 @@ export default function PlayerRegistration({
       <ul className="flex flex-col gap-2">
         {optimisticPlayers.map((p) =>
           isOwner && editingId === p.id ? (
-            <li key={p.id} className="flex gap-2 items-center">
+            <li key={p.id} className="flex flex-wrap gap-2 items-center">
               <input
                 type="text"
                 value={editingName}
                 onChange={(e) => setEditingName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleRename()}
                 autoFocus
-                className="rounded-lg px-3 py-2 text-base flex-1 min-w-0"
+                className="rounded-lg px-3 py-2 text-base grow shrink basis-40 min-w-0"
                 style={{ border: "1px solid var(--primary)", background: "var(--canvas)" }}
               />
               <button
