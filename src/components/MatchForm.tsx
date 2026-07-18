@@ -14,8 +14,6 @@ type Props = {
   matches: Match[];
   matchCounts: Record<string, number>;
   maxRound: number;
-  /** 記録トークン。null ならログイン済みオーナーとしての記録を試みる */
-  writeToken?: string | null;
 };
 
 type PlayerSlot = {
@@ -44,7 +42,6 @@ export default function MatchForm({
   matches,
   matchCounts,
   maxRound,
-  writeToken = null,
 }: Props) {
   // 卓は複数卓のときだけ意味を持つ。2卓以上あるときだけ卓セレクタを出す。
   const multiTable = tables.length >= 2;
@@ -131,10 +128,7 @@ export default function MatchForm({
       const inputs = slots.map((s) => ({ playerId: s.playerId, score: toActualScore(s.score) }));
       const res = await fetch("/api/matches", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(writeToken ? { "x-write-token": writeToken } : {}),
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           tournamentId,
           tableId: multiTable ? tableId : null,
@@ -145,11 +139,7 @@ export default function MatchForm({
       });
       if (!res.ok) {
         const data = await res.json();
-        setError(
-          data.code === "INVALID_WRITE_TOKEN"
-            ? "このリンクは無効です。主催者に新しい記録用URLをもらってください"
-            : (data.error ?? "保存に失敗しました")
-        );
+        setError(data.error ?? "保存に失敗しました");
         return;
       }
       setSlots(newSlots());

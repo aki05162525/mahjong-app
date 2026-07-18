@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { SEED_RULES } from "@/lib/seedRules";
 import { validateRule } from "@/lib/ruleValidation";
-import { saveWriteToken, buildRecordUrl } from "@/lib/recordToken";
 
 // ルール選択肢。プリセットは大会作成時に seed されるルールを指す
 const PRESET_DESCRIPTIONS: Record<string, string> = {
@@ -43,7 +42,7 @@ export default function NewTournamentPage() {
   const [customReturn, setCustomReturn] = useState("30000");
 
   const [creating, setCreating] = useState(false);
-  const [created, setCreated] = useState<{ id: string; writeToken: string } | null>(null);
+  const [created, setCreated] = useState<{ id: string } | null>(null);
   const [copied, setCopied] = useState(false);
 
   const goNext = () => {
@@ -127,9 +126,7 @@ export default function NewTournamentPage() {
         setCreating(false);
         return;
       }
-      // raw トークンはこのレスポンスでしか受け取れない。共有用に退避する
-      saveWriteToken(data.id, data.writeToken);
-      setCreated({ id: data.id, writeToken: data.writeToken });
+      setCreated({ id: data.id });
       setCreating(false);
       goNext();
     } catch {
@@ -138,12 +135,10 @@ export default function NewTournamentPage() {
     }
   };
 
-  const recordUrl = created
-    ? buildRecordUrl(window.location.origin, created.id, created.writeToken)
-    : "";
+  const tournamentUrl = created ? `${window.location.origin}/${created.id}` : "";
 
-  const handleCopyRecordUrl = () => {
-    navigator.clipboard.writeText(recordUrl);
+  const handleCopyTournamentUrl = () => {
+    navigator.clipboard.writeText(tournamentUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -521,27 +516,24 @@ export default function NewTournamentPage() {
           </h2>
           <div className="flex flex-col gap-2">
             <p className="text-sm font-semibold" style={{ color: "var(--body)" }}>
-              記録用リンク
+              大会リンク
             </p>
             <p className="text-sm" style={{ color: "var(--body)" }}>
-              このリンクを開いた人は誰でも対局結果を記録できます。記録係にだけ渡してください。
+              このリンクを開いた人は誰でも結果の閲覧と記録ができます。参加者に共有してください。
             </p>
             <p
               className="text-xs break-all rounded-lg p-3 font-mono"
               style={{ background: "var(--canvas)", border: "1px solid var(--hairline)" }}
             >
-              {recordUrl}
+              {tournamentUrl}
             </p>
             <button
-              onClick={handleCopyRecordUrl}
+              onClick={handleCopyTournamentUrl}
               className="rounded-lg py-3 text-base font-semibold active:opacity-80"
               style={{ background: "var(--primary)", color: "#fff" }}
             >
-              {copied ? "コピーしました！" : "記録リンクをコピー"}
+              {copied ? "コピーしました！" : "大会リンクをコピー"}
             </button>
-            <p className="text-xs" style={{ color: "var(--muted)" }}>
-              リンクは大会ページの「記録リンクを共有」からも確認できます
-            </p>
           </div>
           <button
             onClick={() => router.push(`/${created.id}`)}
