@@ -10,7 +10,7 @@ import { saveWriteToken, buildRecordUrl } from "@/lib/recordToken";
 
 // ルール選択肢。プリセットは大会作成時に seed されるルールを指す
 const PRESET_DESCRIPTIONS: Record<string, string> = {
-  "10-20（ワンツー）": "ウマ 20 / 10 / -10 / -20・返し 30,000点。迷ったらこれ",
+  "10-20（ワンツー）": "ウマ 20 / 10 / -10 / -20・返し 30,000点",
   Mリーグルール: "ウマ 30 / 10 / -10 / -30・返し 30,000点",
 };
 
