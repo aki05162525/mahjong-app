@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import { useEnterAdvance } from "@/hooks/useEnterAdvance";
 import { getUsedPlayerIds } from "@/lib/matchFilter";
 import { calculateMatchResults } from "@/lib/scoring";
 import { fmtPt } from "@/lib/utils";
@@ -80,6 +81,14 @@ export default function MatchForm({
     [matches, roundNumber]
   );
   const autoLastScore = useMemo(() => calcLastScore(slots), [slots]);
+  const lastIsAuto = autoLastScore !== "" && slots[3].score === autoLastScore;
+
+  // 確定キーで東→南→西と下の欄へ進む。自動計算で埋まった北は飛ばし、最後は
+  // 保存ボタンへフォーカスを移してキーボードを閉じる（保存はボタンで明示的に行う）。
+  const { inputRefs, endRef, advanceFrom, hintFor } = useEnterAdvance(
+    4,
+    (i) => i === 3 && lastIsAuto
+  );
 
   const previewPoints = useMemo<number[] | null>(() => {
     if (!selectedRule) return null;
@@ -223,7 +232,7 @@ export default function MatchForm({
       </div>
 
       {slots.map((slot, i) => {
-        const isAutoFilled = i === 3 && autoLastScore !== "" && slot.score === autoLastScore;
+        const isAutoFilled = i === 3 && lastIsAuto;
         return (
           <div key={i} className="flex gap-2 items-center">
             <span className="text-base font-medium w-6" style={{ color: "var(--muted)" }}>
@@ -250,9 +259,19 @@ export default function MatchForm({
             </select>
             <div className="flex items-center gap-1">
               <input
+                ref={(el) => {
+                  inputRefs.current[i] = el;
+                }}
                 type="number"
+                enterKeyHint={hintFor(i)}
                 value={slot.score}
                 onChange={(e) => updateSlot(i, "score", e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    advanceFrom(i);
+                  }
+                }}
                 placeholder={i === 3 && autoLastScore !== "" ? autoLastScore : "250"}
                 className="rounded-lg px-3 py-3 text-lg w-20 text-right"
                 style={{
@@ -294,6 +313,7 @@ export default function MatchForm({
       )}
 
       <button
+        ref={endRef}
         onClick={handleSave}
         disabled={saving}
         className="rounded-lg px-4 py-4 text-lg font-semibold active:opacity-80 disabled:opacity-50"

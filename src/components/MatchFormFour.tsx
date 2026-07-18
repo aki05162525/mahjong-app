@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useDragReorder } from "@/hooks/useDragReorder";
+import { useEnterAdvance } from "@/hooks/useEnterAdvance";
 import { toActualScore, autoFillSlot, previewPoints } from "@/lib/matchInput";
 import { fmtPt } from "@/lib/utils";
 import type { Player, Rule } from "@/lib/types";
@@ -70,6 +71,13 @@ export default function MatchFormFour({ tournamentId, players, rules, maxRound }
   const { listRef, styleFor, handleProps, draggingIndex } = useDragReorder<HTMLUListElement>(
     order.length,
     (from, to) => setOrder((prev) => arrayMove(prev, from, to))
+  );
+
+  // 確定キーで東→南→西と下の欄へ進む。自動計算枠は飛ばし、最後は保存ボタンへ
+  // フォーカスを移してキーボードを閉じる（保存自体はボタンで明示的に行う）。
+  const { inputRefs, endRef, advanceFrom, hintFor } = useEnterAdvance(
+    order.length,
+    (i) => order[i] === autoId
   );
 
   const updateScore = (id: string, value: string) => {
@@ -239,9 +247,19 @@ export default function MatchFormFour({ tournamentId, players, rules, maxRound }
                   </span>
                 </div>
                 <input
+                  ref={(el) => {
+                    inputRefs.current[i] = el;
+                  }}
                   type="number"
+                  enterKeyHint={hintFor(i)}
                   value={val}
                   onChange={(e) => updateScore(id, e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      advanceFrom(i);
+                    }
+                  }}
                   placeholder={placeholder}
                   className="rounded-lg px-3 py-3 text-lg w-20 text-right"
                   style={{
@@ -289,6 +307,7 @@ export default function MatchFormFour({ tournamentId, players, rules, maxRound }
       )}
 
       <button
+        ref={endRef}
         onClick={handleSave}
         disabled={saving}
         className="rounded-lg px-4 py-4 text-lg font-semibold active:opacity-80 disabled:opacity-50"
