@@ -19,13 +19,7 @@ export function useAuth() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signInWithGoogle = () =>
-    supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
-
   const signOut = () => supabase.auth.signOut();
 
-  return { user, loading: user === undefined, signInWithGoogle, signOut };
+  return { user, loading: user === undefined, signOut };
 }

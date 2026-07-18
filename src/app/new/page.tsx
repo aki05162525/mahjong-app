@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { useAuth } from "@/hooks/useAuth";
 import { SEED_RULES } from "@/lib/seedRules";
 import { validateRule } from "@/lib/ruleValidation";
@@ -19,7 +20,7 @@ const STEPS = ["大会情報", "選手登録", "ルール", "完了"] as const;
 
 export default function NewTournamentPage() {
   const router = useRouter();
-  const { user, loading, signInWithGoogle } = useAuth();
+  const { user, loading } = useAuth();
 
   const [step, setStep] = useState(0);
   const [error, setError] = useState("");
@@ -160,13 +161,7 @@ export default function NewTournamentPage() {
           <p className="text-sm" style={{ color: "var(--muted)" }}>
             大会を作成・管理するにはGoogleアカウントでログインしてください
           </p>
-          <button
-            onClick={() => signInWithGoogle()}
-            className="rounded-lg px-4 py-3 text-lg font-semibold w-full active:opacity-80"
-            style={{ background: "var(--primary)", color: "#fff" }}
-          >
-            Googleでログイン
-          </button>
+          <GoogleSignInButton />
           <Link href="/" className="text-sm text-center" style={{ color: "var(--primary)" }}>
             ← トップへ戻る
           </Link>
