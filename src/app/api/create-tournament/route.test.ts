@@ -72,38 +72,16 @@ describe("POST /api/create-tournament", () => {
       expect(res.status).toBe(400);
       expect((await res.json()).error).toMatch(/50文字/);
     });
-
-    it("400: カスタムIDに使用できない文字が含まれる", async () => {
-      const res = await POST(makeReq({ name: "テスト大会", customId: "invalid id!" }));
-      expect(res.status).toBe(400);
-      expect((await res.json()).error).toMatch(/英数字/);
-    });
-
-    it("409: カスタムIDがすでに使われている", async () => {
-      mockFrom.mockReturnValueOnce(makeChain({ data: null, error: { code: "23505" } }));
-      const res = await POST(makeReq({ name: "テスト大会", customId: "taken-id" }));
-      expect(res.status).toBe(409);
-      expect((await res.json()).error).toMatch(/使われています/);
-    });
   });
 
   describe("正常系", () => {
-    it("200: 自動IDで大会を作れる", async () => {
+    it("200: 大会を作れる（ID は自動生成）", async () => {
       mockFrom
         .mockReturnValueOnce(makeChain({ data: { id: "auto-generated-id" }, error: null })) // tournament
         .mockReturnValueOnce(makeChain({ error: null })); // seed rules
       const res = await POST(makeReq({ name: "テスト大会" }));
       expect(res.status).toBe(200);
       expect((await res.json()).id).toBe("auto-generated-id");
-    });
-
-    it("200: カスタムIDで大会を作れる", async () => {
-      mockFrom
-        .mockReturnValueOnce(makeChain({ data: { id: "my-tournament" }, error: null })) // tournament
-        .mockReturnValueOnce(makeChain({ error: null })); // seed rules
-      const res = await POST(makeReq({ name: "テスト大会", customId: "my-tournament" }));
-      expect(res.status).toBe(200);
-      expect((await res.json()).id).toBe("my-tournament");
     });
 
     it("200: 大会作成時に標準ルールを seed し、デフォルトを含む", async () => {
