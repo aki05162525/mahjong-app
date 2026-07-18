@@ -53,3 +53,6 @@ supabase/.temp/
 
 # migration
 serviceAccountKey.json
+
+# 作業用メモ
+.tmp/
