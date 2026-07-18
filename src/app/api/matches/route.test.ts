@@ -1,13 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 
-const mockCheckMatchIpLimit = vi.hoisted(() => vi.fn());
-const mockConsumeTournamentWriteLimit = vi.hoisted(() => vi.fn());
-vi.mock("@/lib/rate-limit", () => ({
-  checkMatchIpLimit: mockCheckMatchIpLimit,
-  consumeTournamentWriteLimit: mockConsumeTournamentWriteLimit,
-}));
-
 const mockFrom = vi.hoisted(() => vi.fn());
 const mockRpc = vi.hoisted(() => vi.fn());
 vi.mock("@/infra/supabase-admin", () => ({
@@ -63,42 +56,19 @@ function mockCreateMatchSuccess() {
 }
 
 // 認可は「大会 URL を知っていること」なので認証・トークンは不要。
-// 乱用対策のレート制限（IP プレフィルタ → 大会バケット）だけを検証する。
 describe("POST /api/matches", () => {
   beforeEach(() => {
     mockFrom.mockReset();
     mockRpc.mockReset();
-    mockCheckMatchIpLimit.mockReset();
-    mockConsumeTournamentWriteLimit.mockReset();
-    mockCheckMatchIpLimit.mockResolvedValue({ ok: true });
-    mockConsumeTournamentWriteLimit.mockResolvedValue({ ok: true });
-  });
-
-  describe("レート制限（順序固定: IP → 入力検証 → 大会バケット）", () => {
-    it("429: IP プレフィルタ超過時は DB も大会バケットも触らない", async () => {
-      mockCheckMatchIpLimit.mockResolvedValueOnce({ ok: false });
-      const res = await POST(makeReq({ ...baseBody, inputs: validInputs }));
-      expect(res.status).toBe(429);
-      expect(mockFrom).not.toHaveBeenCalled();
-      expect(mockConsumeTournamentWriteLimit).not.toHaveBeenCalled();
-    });
-
-    it("429: 大会バケットが枯渇していたら保存しない", async () => {
-      mockConsumeTournamentWriteLimit.mockResolvedValueOnce({ ok: false });
-      const res = await POST(makeReq({ ...baseBody, inputs: validInputs }));
-      expect(res.status).toBe(429);
-      expect(mockConsumeTournamentWriteLimit).toHaveBeenCalledWith(T_ID);
-      expect(mockRpc).not.toHaveBeenCalled();
-    });
-
-    it("400: 入力が不正なときは大会バケットを消費しない", async () => {
-      const res = await POST(makeReq({ ...baseBody, roundNumber: 0, inputs: validInputs }));
-      expect(res.status).toBe(400);
-      expect(mockConsumeTournamentWriteLimit).not.toHaveBeenCalled();
-    });
   });
 
   describe("バリデーションとビジネスルール", () => {
+    it("400: 入力が不正なときは DB に触らない", async () => {
+      const res = await POST(makeReq({ ...baseBody, roundNumber: 0, inputs: validInputs }));
+      expect(res.status).toBe(400);
+      expect(mockFrom).not.toHaveBeenCalled();
+    });
+
     it("404: ビジネスルール違反のとき createMatch が弾く", async () => {
       mockFrom
         .mockReturnValueOnce(makeChain({ count: 0 })) // 卓が存在しない
@@ -108,12 +78,11 @@ describe("POST /api/matches", () => {
       expect(res.status).toBe(404);
     });
 
-    it("200: 認証なし・トークンなしで記録でき、大会バケットを消費する", async () => {
+    it("200: 認証なし・トークンなしで記録できる", async () => {
       mockCreateMatchSuccess();
       const res = await POST(makeReq({ ...baseBody, inputs: validInputs }));
       expect(res.status).toBe(200);
       expect((await res.json()).id).toBe("match-id");
-      expect(mockConsumeTournamentWriteLimit).toHaveBeenCalledWith(T_ID);
     });
   });
 });

@@ -1,13 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  badRequest,
-  unauthorized,
-  forbidden,
-  notFound,
-  conflict,
-  rateLimited,
-  internalError,
-} from "./errors";
+import { badRequest, unauthorized, forbidden, notFound, conflict, internalError } from "./errors";
 
 describe("AppError", () => {
   it("badRequest は status 400 と code 'bad_request' を持つ", () => {
@@ -48,13 +40,6 @@ describe("AppError", () => {
     expect(error.status).toBe(409);
     expect(error.code).toBe("conflict");
     expect(error.message).toBe("既に存在します");
-  });
-
-  it("rateLimited は status 429 と code 'rate_limited' を持つ", () => {
-    const error = rateLimited();
-    expect(error.status).toBe(429);
-    expect(error.code).toBe("rate_limited");
-    expect(error.message).toBe("リクエストが多すぎます");
   });
 
   it("internalError は status 500 と code 'internal_error' を持つ", () => {

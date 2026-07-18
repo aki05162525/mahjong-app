@@ -1,8 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mockCheckRateLimit = vi.hoisted(() => vi.fn());
-vi.mock("@/lib/rate-limit", () => ({ checkRateLimit: mockCheckRateLimit }));
-
 const mockRequireUser = vi.hoisted(() => vi.fn());
 vi.mock("@/server/auth/requireUser", () => ({ requireUser: mockRequireUser }));
 
@@ -37,7 +34,6 @@ const failed = () => makeChain({ data: null, error: { code: "XX000" } });
 describe("createTournament", () => {
   beforeEach(() => {
     mockFrom.mockReset();
-    mockCheckRateLimit.mockReset().mockResolvedValue({ ok: true });
     mockRequireUser.mockReset().mockResolvedValue({ id: "owner-1" });
   });
 
@@ -45,7 +41,7 @@ describe("createTournament", () => {
     const rules = ok();
     mockFrom.mockReturnValueOnce(tournamentCreated()).mockReturnValueOnce(rules);
 
-    const result = await createTournament({ name: "大会" }, "ip");
+    const result = await createTournament({ name: "大会" });
     expect(result).toEqual({ id: T_ID });
     expect(rules.insert).toHaveBeenCalledWith(
       SEED_RULES.map((rule) =>
@@ -62,14 +58,11 @@ describe("createTournament", () => {
       .mockReturnValueOnce(rules)
       .mockReturnValueOnce(players);
 
-    await createTournament(
-      {
-        name: "大会",
-        players: ["A", "B", "C"],
-        rule: { type: "preset", name: "Mリーグルール" },
-      },
-      "ip"
-    );
+    await createTournament({
+      name: "大会",
+      players: ["A", "B", "C"],
+      rule: { type: "preset", name: "Mリーグルール" },
+    });
 
     const rows = rules.insert.mock.calls[0][0] as { name: string; is_default: boolean }[];
     expect(rows.filter((row) => row.is_default).map((row) => row.name)).toEqual(["Mリーグルール"]);
@@ -84,13 +77,10 @@ describe("createTournament", () => {
     const rules = ok();
     mockFrom.mockReturnValueOnce(tournamentCreated()).mockReturnValueOnce(rules);
 
-    await createTournament(
-      {
-        name: "大会",
-        rule: { type: "custom", name: "特別", uma: [15, 5, -5, -15], returnPoints: 25000 },
-      },
-      "ip"
-    );
+    await createTournament({
+      name: "大会",
+      rule: { type: "custom", name: "特別", uma: [15, 5, -5, -15], returnPoints: 25000 },
+    });
 
     const rows = rules.insert.mock.calls[0][0] as { name: string; is_default: boolean }[];
     expect(rows).toHaveLength(SEED_RULES.length + 1);
@@ -105,7 +95,7 @@ describe("createTournament", () => {
       .mockReturnValueOnce(failed()) // players
       .mockReturnValueOnce(deleteChain); // rollback delete
 
-    await expect(createTournament({ name: "大会", players: ["A"] }, "ip")).rejects.toMatchObject({
+    await expect(createTournament({ name: "大会", players: ["A"] })).rejects.toMatchObject({
       code: "internal_error",
     });
     expect(deleteChain.delete).toHaveBeenCalled();

@@ -1,9 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 
-const mockCheckRateLimit = vi.hoisted(() => vi.fn());
-vi.mock("@/lib/rate-limit", () => ({ checkRateLimit: mockCheckRateLimit }));
-
 const mockGetAuthUser = vi.hoisted(() => vi.fn());
 vi.mock("@/infra/supabase-server", () => ({
   getAuthUser: mockGetAuthUser,
@@ -38,25 +35,15 @@ function makeReq(body: object) {
 describe("POST /api/create-tournament", () => {
   beforeEach(() => {
     mockFrom.mockReset();
-    mockCheckRateLimit.mockReset();
     mockGetAuthUser.mockReset();
-    mockCheckRateLimit.mockResolvedValue({ ok: true });
     mockGetAuthUser.mockResolvedValue({ id: "test-user-id" });
   });
 
-  describe("認証・レート制限", () => {
+  describe("認証", () => {
     it("401: 未ログインは大会を作れない", async () => {
       mockGetAuthUser.mockResolvedValueOnce(null);
       const res = await POST(makeReq({ name: "テスト大会" }));
       expect(res.status).toBe(401);
-    });
-
-    it("429: レート制限に引っかかったら認証・DB 処理を行わずに返す", async () => {
-      mockCheckRateLimit.mockResolvedValueOnce({ ok: false });
-      const res = await POST(makeReq({ name: "テスト大会" }));
-      expect(res.status).toBe(429);
-      expect(mockGetAuthUser).not.toHaveBeenCalled();
-      expect(mockFrom).not.toHaveBeenCalled();
     });
   });
 

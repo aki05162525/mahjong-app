@@ -5,8 +5,5 @@ import { deleteTournament } from "@/server/usecases/deleteTournament";
 import { parseDeleteTournament } from "@/server/validation/tournament";
 
 export async function POST(req: NextRequest) {
-  return route(async () => {
-    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
-    return deleteTournament(parseDeleteTournament(await parseJson(req)), clientIp);
-  });
+  return route(async () => deleteTournament(parseDeleteTournament(await parseJson(req))));
 }
