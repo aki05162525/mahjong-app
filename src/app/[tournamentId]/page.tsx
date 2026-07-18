@@ -9,7 +9,6 @@ import { useTables } from "@/hooks/useTables";
 import { useRules } from "@/hooks/useRules";
 import { useMatches } from "@/hooks/useMatches";
 import { useAuth } from "@/hooks/useAuth";
-import { loadWriteToken, saveWriteToken, buildRecordUrl } from "@/lib/recordToken";
 import TournamentTabs from "@/components/TournamentTabs";
 
 export default function TournamentPage() {
@@ -27,11 +26,6 @@ export default function TournamentPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [shareUrl, setShareUrl] = useState("");
-  const [shareIssuing, setShareIssuing] = useState(false);
-  const [shareError, setShareError] = useState("");
-  const [shareCopied, setShareCopied] = useState(false);
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -59,41 +53,6 @@ export default function TournamentPage() {
     navigator.clipboard.writeText(window.location.href);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleOpenShare = () => {
-    setShowShareModal(true);
-    setShareError("");
-    setShareCopied(false);
-    // raw トークンは再表示不可。作成時に退避したものが手元にあればそれでリンクを作る
-    const stored = loadWriteToken(tournamentId);
-    setShareUrl(stored ? buildRecordUrl(window.location.origin, tournamentId, stored) : "");
-  };
-
-  // トークンを紛失している場合の再発行。旧リンクは失効する
-  const handleReissue = async () => {
-    setShareIssuing(true);
-    setShareError("");
-    try {
-      const res = await fetch(`/api/tournaments/${tournamentId}/write-token`, { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) {
-        setShareError(data.error ?? "記録用リンクの発行に失敗しました");
-        return;
-      }
-      saveWriteToken(tournamentId, data.writeToken);
-      setShareUrl(buildRecordUrl(window.location.origin, tournamentId, data.writeToken));
-    } catch {
-      setShareError("記録用リンクの発行に失敗しました");
-    } finally {
-      setShareIssuing(false);
-    }
-  };
-
-  const handleCopyShareUrl = () => {
-    navigator.clipboard.writeText(shareUrl);
-    setShareCopied(true);
-    setTimeout(() => setShareCopied(false), 2000);
   };
 
   if (notFound) {
@@ -138,13 +97,6 @@ export default function TournamentPage() {
             </button>
             {isOwner && (
               <>
-                <button
-                  onClick={handleOpenShare}
-                  className="text-sm rounded-lg px-3 py-1 active:opacity-70"
-                  style={{ color: "var(--primary)", border: "1px solid var(--primary)" }}
-                >
-                  記録リンクを共有
-                </button>
                 <Link
                   href={`/${tournamentId}/players`}
                   className="text-sm rounded-lg px-3 py-1 active:opacity-70"
@@ -217,67 +169,6 @@ export default function TournamentPage() {
         </div>
       )}
 
-      {/* 記録リンク共有モーダル */}
-      {showShareModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-6">
-          <div
-            className="rounded-xl p-6 w-full max-w-sm flex flex-col gap-4"
-            style={{ background: "var(--surface-card)", border: "1px solid var(--hairline)" }}
-          >
-            <h2 className="text-lg font-bold" style={{ color: "var(--ink)" }}>
-              記録リンクを共有
-            </h2>
-            {shareUrl ? (
-              <>
-                <p className="text-sm" style={{ color: "var(--body)" }}>
-                  このリンクを開いた人は誰でもこの大会の対局結果を記録できます。記録係にだけ渡してください。
-                </p>
-                <p
-                  className="text-xs break-all rounded-lg p-3 font-mono"
-                  style={{ background: "var(--canvas)", border: "1px solid var(--hairline)" }}
-                >
-                  {shareUrl}
-                </p>
-                <button
-                  onClick={handleCopyShareUrl}
-                  className="rounded-lg py-3 text-base font-semibold active:opacity-80"
-                  style={{ background: "var(--primary)", color: "#fff" }}
-                >
-                  {shareCopied ? "コピーしました！" : "リンクをコピー"}
-                </button>
-              </>
-            ) : (
-              <>
-                <p className="text-sm" style={{ color: "var(--body)" }}>
-                  記録用リンクはこの端末に残っていません。新しいリンクを発行すると、いま配られているリンクは使えなくなります。
-                </p>
-                {shareError && (
-                  <p className="text-sm" style={{ color: "var(--error)" }}>
-                    {shareError}
-                  </p>
-                )}
-                <button
-                  onClick={handleReissue}
-                  disabled={shareIssuing}
-                  className="rounded-lg py-3 text-base font-semibold active:opacity-80 disabled:opacity-50"
-                  style={{ background: "var(--primary)", color: "#fff" }}
-                >
-                  {shareIssuing ? "発行中..." : "新しいリンクを発行"}
-                </button>
-              </>
-            )}
-            <button
-              onClick={() => setShowShareModal(false)}
-              className="rounded-lg py-3 text-base active:opacity-70"
-              style={{ color: "var(--muted)", border: "1px solid var(--hairline)" }}
-            >
-              閉じる
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 閲覧専用（入力タブなし）。記録は /record/[tournamentId] で行う */}
       <TournamentTabs
         tournamentId={tournamentId}
         players={players}
