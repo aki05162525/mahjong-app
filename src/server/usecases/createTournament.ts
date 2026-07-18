@@ -29,19 +29,46 @@ export async function createTournament(
     throw internalError("大会の作成に失敗しました");
   }
 
-  const { error: seedError } = await supabase.from("rules").insert(
-    SEED_RULES.map((rule) => ({
-      tournament_id: data.id,
-      name: rule.name,
-      uma: [...rule.uma],
-      return_points: rule.returnPoints,
-      is_default: rule.isDefault,
-    }))
-  );
-
-  if (seedError) {
+  // 失敗時は大会ごと削除する（rules / players は FK cascade で消える）
+  const rollback = async () => {
     await supabase.from("tournaments").delete().eq("id", data.id);
+  };
+
+  // デフォルトは大会あたり1件のみ（rules_one_default_per_tournament）。
+  // プリセット指定なら seed のフラグを差し替え、カスタムならその1件だけを立てる
+  const chosen = input.rule;
+  const ruleRows: TablesInsert<"rules">[] = SEED_RULES.map((rule) => ({
+    tournament_id: data.id,
+    name: rule.name,
+    uma: [...rule.uma],
+    return_points: rule.returnPoints,
+    is_default:
+      chosen === undefined ? rule.isDefault : chosen.type === "preset" && chosen.name === rule.name,
+  }));
+  if (chosen?.type === "custom") {
+    ruleRows.push({
+      tournament_id: data.id,
+      name: chosen.name,
+      uma: chosen.uma,
+      return_points: chosen.returnPoints,
+      is_default: true,
+    });
+  }
+
+  const { error: seedError } = await supabase.from("rules").insert(ruleRows);
+  if (seedError) {
+    await rollback();
     throw internalError("大会の作成に失敗しました");
+  }
+
+  if (input.players && input.players.length > 0) {
+    const { error: playersError } = await supabase
+      .from("players")
+      .insert(input.players.map((name) => ({ tournament_id: data.id, name })));
+    if (playersError) {
+      await rollback();
+      throw internalError("大会の作成に失敗しました");
+    }
   }
 
   // 記録トークンを発行。raw はこのレスポンスで一度だけ返し、以後は再表示不可（紛失時は再発行）
@@ -51,7 +78,7 @@ export async function createTournament(
     .insert({ tournament_id: data.id, token_hash: hash });
 
   if (secretError) {
-    await supabase.from("tournaments").delete().eq("id", data.id);
+    await rollback();
     throw internalError("大会の作成に失敗しました");
   }
   return { id: data.id, writeToken: raw };
