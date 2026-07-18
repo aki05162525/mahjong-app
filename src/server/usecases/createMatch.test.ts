@@ -98,13 +98,19 @@ describe("createMatch", () => {
   });
 
   it("指定した tableId が存在しなければ notFound を throw する", async () => {
-    mockFrom.mockReturnValueOnce(makeCountChain(0)); // tables: 見つからない
+    mockFrom
+      .mockReturnValueOnce(makeCountChain(0)) // tables: 見つからない
+      .mockReturnValueOnce(makeCountChain(4))
+      .mockReturnValueOnce(makeSingleChain(mockRule));
     const error = await createMatch({ ...validInput, tableId: TABLE_ID }).catch((e) => e);
     expect(error.code).toBe("not_found");
   });
 
   it("tableId 省略 + 2卓以上なら badRequest を throw する", async () => {
-    mockFrom.mockReturnValueOnce(makeCountChain(2)); // tables: 2卓ある
+    mockFrom
+      .mockReturnValueOnce(makeCountChain(2)) // tables: 2卓ある
+      .mockReturnValueOnce(makeCountChain(4))
+      .mockReturnValueOnce(makeSingleChain(mockRule));
     const error = await createMatch(validInput).catch((e) => e);
     expect(error.code).toBe("bad_request");
     expect(error.message).toBe("卓を選択してください");
@@ -113,7 +119,8 @@ describe("createMatch", () => {
   it("プレイヤーが存在しなければ notFound を throw する", async () => {
     mockFrom
       .mockReturnValueOnce(makeCountChain(1)) // tables: OK
-      .mockReturnValueOnce(makeCountChain(3)); // players: 3人しかいない
+      .mockReturnValueOnce(makeCountChain(3)) // players: 3人しかいない
+      .mockReturnValueOnce(makeSingleChain(mockRule));
     const error = await createMatch(validInput).catch((e) => e);
     expect(error.code).toBe("not_found");
   });
