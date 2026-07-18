@@ -81,4 +81,39 @@ describe("tournament validation", () => {
     );
     await expectBadRequest(() => parseDeleteTournament({ tournamentId: "" }), "大会ID");
   });
+
+  it("ウィザード入力（選手・ルール選択）を受け付ける", () => {
+    const parsed = parseCreateTournament({
+      name: "大会",
+      players: [" A ", "B"],
+      rule: { type: "preset", name: "Mリーグルール" },
+    });
+    expect(parsed.players).toEqual(["A", "B"]);
+    expect(parsed.rule).toEqual({ type: "preset", name: "Mリーグルール" });
+
+    const custom = parseCreateTournament({
+      name: "大会",
+      rule: { type: "custom", name: "特別ルール", uma: [30, 10, -10, -30], returnPoints: 30000 },
+    });
+    expect(custom.rule).toMatchObject({ type: "custom", name: "特別ルール" });
+  });
+
+  it("選手名の重複・存在しないプリセット・不正なカスタムルールを拒否する", async () => {
+    await expectBadRequest(
+      () => parseCreateTournament({ name: "大会", players: ["A", " A "] }),
+      "重複"
+    );
+    await expectBadRequest(
+      () => parseCreateTournament({ name: "大会", rule: { type: "preset", name: "未知" } }),
+      "プリセット"
+    );
+    await expectBadRequest(
+      () =>
+        parseCreateTournament({
+          name: "大会",
+          rule: { type: "custom", name: "x", uma: [1, 0, 0, 0], returnPoints: 30000 },
+        }),
+      "合計"
+    );
+  });
 });

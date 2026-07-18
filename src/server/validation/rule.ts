@@ -1,7 +1,7 @@
 import * as z from "zod";
 import { badRequest } from "@/server/http/errors";
 
-const ruleFields = {
+export const ruleFields = {
   name: z
     .string({ error: "ルール名（名前）を入力してください" })
     .trim()

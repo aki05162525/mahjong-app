@@ -1,7 +1,7 @@
 import * as z from "zod";
 import { badRequest } from "@/server/http/errors";
 
-const nameSchema = z
+export const playerNameSchema = z
   .string({ error: "名前を入力してください" })
   .trim()
   .min(1, "名前を入力してください")
@@ -9,10 +9,10 @@ const nameSchema = z
 
 const createSchema = z.object({
   tournamentId: z.string({ error: "大会IDが必要です" }).trim().min(1, "大会IDが必要です"),
-  name: nameSchema,
+  name: playerNameSchema,
 });
 
-const updateSchema = z.object({ name: nameSchema });
+const updateSchema = z.object({ name: playerNameSchema });
 
 export type CreatePlayerInput = z.infer<typeof createSchema>;
 export type UpdatePlayerInput = z.infer<typeof updateSchema> & { playerId: string };
