@@ -26,7 +26,6 @@ export default function NewTournamentPage() {
 
   // ステップ1: 大会情報
   const [name, setName] = useState("");
-  const [customId, setCustomId] = useState("");
 
   // ステップ2: 選手（作成実行までローカルに保持）
   const [players, setPlayers] = useState<string[]>([]);
@@ -57,10 +56,6 @@ export default function NewTournamentPage() {
   const handleNextFromInfo = () => {
     if (!name.trim()) {
       setError("大会名を入力してください");
-      return;
-    }
-    if (customId.trim() && !/^[a-zA-Z0-9_-]+$/.test(customId.trim())) {
-      setError("IDは英数字・ハイフン・アンダースコアのみ使えます");
       return;
     }
     goNext();
@@ -115,7 +110,6 @@ export default function NewTournamentPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
-          customId: customId.trim() || undefined,
           players,
           rule,
         }),
@@ -248,27 +242,6 @@ export default function NewTournamentPage() {
               className="rounded-lg px-4 py-3 text-lg w-full"
               style={{ border: "1px solid var(--hairline)", background: "var(--canvas)" }}
             />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="tournament-id"
-              className="font-semibold"
-              style={{ color: "var(--body)" }}
-            >
-              大会ID（任意）
-            </label>
-            <input
-              id="tournament-id"
-              type="text"
-              value={customId}
-              onChange={(e) => setCustomId(e.target.value)}
-              placeholder="例: mahjong2026"
-              className="rounded-lg px-4 py-3 text-lg w-full"
-              style={{ border: "1px solid var(--hairline)", background: "var(--canvas)" }}
-            />
-            <p className="text-xs" style={{ color: "var(--muted)" }}>
-              空欄の場合は自動生成。英数字・ハイフン・アンダースコアのみ
-            </p>
           </div>
           <button
             onClick={handleNextFromInfo}
