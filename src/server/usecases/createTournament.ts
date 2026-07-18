@@ -2,7 +2,7 @@ import { getSupabaseAdmin } from "@/infra/supabase-admin";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { SEED_RULES } from "@/lib/seedRules";
 import { requireUser } from "@/server/auth/requireUser";
-import { conflict, internalError, rateLimited } from "@/server/http/errors";
+import { internalError, rateLimited } from "@/server/http/errors";
 import type { CreateTournamentInput } from "@/server/validation/tournament";
 import type { TablesInsert } from "@/lib/database.types";
 
@@ -16,17 +16,12 @@ export async function createTournament(
 
   const user = await requireUser();
   const supabase = getSupabaseAdmin();
-  const insert: TablesInsert<"tournaments"> = input.customId
-    ? { id: input.customId, name: input.name, owner_id: user.id }
-    : { name: input.name, owner_id: user.id };
+  // id は指定せず DB の gen_random_uuid() に任せる。推測不能な ID であることが
+  // 「URL を知っている人だけが書き込める」という認可の前提になっている
+  const insert: TablesInsert<"tournaments"> = { name: input.name, owner_id: user.id };
 
   const { data, error } = await supabase.from("tournaments").insert(insert).select("id").single();
-  if (error) {
-    if (error.code === "23505" && input.customId) {
-      throw conflict(`「${input.customId}」はすでに使われています`);
-    }
-    throw internalError("大会の作成に失敗しました");
-  }
+  if (error) throw internalError("大会の作成に失敗しました");
 
   // 失敗時は大会ごと削除する（rules / players は FK cascade で消える）
   const rollback = async () => {

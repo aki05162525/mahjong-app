@@ -66,19 +66,11 @@ describe("rule validation", () => {
 });
 
 describe("tournament validation", () => {
-  it("大会名とカスタムIDを正規化する", () => {
-    expect(parseCreateTournament({ name: " 大会 ", customId: " custom-id " })).toEqual({
-      name: "大会",
-      customId: "custom-id",
-    });
-    expect(parseCreateTournament({ name: "大会", customId: "" }).customId).toBeUndefined();
+  it("大会名を正規化する", () => {
+    expect(parseCreateTournament({ name: " 大会 " })).toEqual({ name: "大会" });
   });
 
-  it("不正なカスタムIDと空の削除IDを拒否する", async () => {
-    await expectBadRequest(
-      () => parseCreateTournament({ name: "大会", customId: "invalid id" }),
-      "英数字"
-    );
+  it("空の削除IDを拒否する", async () => {
     await expectBadRequest(() => parseDeleteTournament({ tournamentId: "" }), "大会ID");
   });
 
