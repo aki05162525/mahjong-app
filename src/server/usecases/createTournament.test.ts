@@ -45,7 +45,7 @@ describe("createTournament", () => {
     const rules = ok();
     mockFrom.mockReturnValueOnce(tournamentCreated()).mockReturnValueOnce(rules);
 
-    const result = await createTournament({ name: "大会", customId: undefined }, "ip");
+    const result = await createTournament({ name: "大会" }, "ip");
     expect(result).toEqual({ id: T_ID });
     expect(rules.insert).toHaveBeenCalledWith(
       SEED_RULES.map((rule) =>
@@ -65,7 +65,6 @@ describe("createTournament", () => {
     await createTournament(
       {
         name: "大会",
-        customId: undefined,
         players: ["A", "B", "C"],
         rule: { type: "preset", name: "Mリーグルール" },
       },
@@ -88,7 +87,6 @@ describe("createTournament", () => {
     await createTournament(
       {
         name: "大会",
-        customId: undefined,
         rule: { type: "custom", name: "特別", uma: [15, 5, -5, -15], returnPoints: 25000 },
       },
       "ip"
@@ -107,9 +105,9 @@ describe("createTournament", () => {
       .mockReturnValueOnce(failed()) // players
       .mockReturnValueOnce(deleteChain); // rollback delete
 
-    await expect(
-      createTournament({ name: "大会", customId: undefined, players: ["A"] }, "ip")
-    ).rejects.toMatchObject({ code: "internal_error" });
+    await expect(createTournament({ name: "大会", players: ["A"] }, "ip")).rejects.toMatchObject({
+      code: "internal_error",
+    });
     expect(deleteChain.delete).toHaveBeenCalled();
     expect(deleteChain.eq).toHaveBeenCalledWith("id", T_ID);
   });

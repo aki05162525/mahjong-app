@@ -30,20 +30,6 @@ const createSchema = z.object({
     .trim()
     .min(1, "大会名を入力してください")
     .max(50, "大会名は50文字以内で入力してください"),
-  customId: z
-    .string()
-    .trim()
-    .refine(
-      (value) => value === "" || /^[a-zA-Z0-9_-]+$/.test(value),
-      "IDは英数字・ハイフン・アンダースコアのみ使えます"
-    )
-    .refine(
-      // アプリの静的ルートと衝突する ID は大会ページに到達できなくなるため拒否する
-      (value) => !["new", "record", "auth", "api"].includes(value.toLowerCase()),
-      "このIDは使えません"
-    )
-    .optional()
-    .transform((value) => value || undefined),
   players: z
     .array(playerNameSchema, { error: "プレイヤーは名前の配列で指定してください" })
     .max(100, "プレイヤーは100人までです")
