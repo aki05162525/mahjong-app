@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
-import { generateWriteToken } from "@/server/auth/writeToken";
 
 const mockCheckMatchIpLimit = vi.hoisted(() => vi.fn());
 const mockConsumeTournamentWriteLimit = vi.hoisted(() => vi.fn());
@@ -8,9 +7,6 @@ vi.mock("@/lib/rate-limit", () => ({
   checkMatchIpLimit: mockCheckMatchIpLimit,
   consumeTournamentWriteLimit: mockConsumeTournamentWriteLimit,
 }));
-
-const mockGetAuthUser = vi.hoisted(() => vi.fn());
-vi.mock("@/infra/supabase-server", () => ({ getAuthUser: mockGetAuthUser }));
 
 const mockFrom = vi.hoisted(() => vi.fn());
 const mockRpc = vi.hoisted(() => vi.fn());
@@ -31,10 +27,10 @@ function makeChain(result: object) {
   return chain;
 }
 
-function makeReq(body: object, headers: Record<string, string> = {}) {
+function makeReq(body: object) {
   return new NextRequest("http://localhost/api/matches", {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...headers },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
 }
@@ -46,7 +42,6 @@ const P1 = "00000000-0000-4000-8000-000000000011";
 const P2 = "00000000-0000-4000-8000-000000000012";
 const P3 = "00000000-0000-4000-8000-000000000013";
 const P4 = "00000000-0000-4000-8000-000000000014";
-const OWNER = { id: "00000000-0000-4000-8000-0000000000aa" };
 
 const validInputs = [
   { playerId: P1, score: 42000 },
@@ -67,20 +62,20 @@ function mockCreateMatchSuccess() {
   mockRpc.mockResolvedValueOnce({ data: "match-id", error: null });
 }
 
+// 認可は「大会 URL を知っていること」なので認証・トークンは不要。
+// 乱用対策のレート制限（IP プレフィルタ → 大会バケット）だけを検証する。
 describe("POST /api/matches", () => {
   beforeEach(() => {
     mockFrom.mockReset();
     mockRpc.mockReset();
-    mockGetAuthUser.mockReset();
     mockCheckMatchIpLimit.mockReset();
     mockConsumeTournamentWriteLimit.mockReset();
     mockCheckMatchIpLimit.mockResolvedValue({ ok: true });
     mockConsumeTournamentWriteLimit.mockResolvedValue({ ok: true });
-    mockGetAuthUser.mockResolvedValue(null);
   });
 
-  describe("認可とレート制限（順序固定: IP → token || owner → 大会バケット）", () => {
-    it("429: IP プレフィルタ超過時はトークン照合も DB も触らない", async () => {
+  describe("レート制限（順序固定: IP → 入力検証 → 大会バケット）", () => {
+    it("429: IP プレフィルタ超過時は DB も大会バケットも触らない", async () => {
       mockCheckMatchIpLimit.mockResolvedValueOnce({ ok: false });
       const res = await POST(makeReq({ ...baseBody, inputs: validInputs }));
       expect(res.status).toBe(429);
@@ -88,106 +83,34 @@ describe("POST /api/matches", () => {
       expect(mockConsumeTournamentWriteLimit).not.toHaveBeenCalled();
     });
 
-    it("401 INVALID_WRITE_TOKEN: 無効トークンは拒否し、大会バケットを消費しない", async () => {
-      const { hash } = generateWriteToken(); // 提示トークンとは別のハッシュが保存されている
-      mockFrom.mockReturnValueOnce(makeChain({ data: { token_hash: hash }, error: null }));
-
-      const res = await POST(
-        makeReq({ ...baseBody, inputs: validInputs }, { "x-write-token": "wrong-token" })
-      );
-
-      expect(res.status).toBe(401);
-      expect((await res.json()).code).toBe("INVALID_WRITE_TOKEN");
-      expect(mockConsumeTournamentWriteLimit).not.toHaveBeenCalled();
-      expect(mockRpc).not.toHaveBeenCalled();
-    });
-
-    it("200: 有効トークンで記録でき、大会バケットを消費する", async () => {
-      const { raw, hash } = generateWriteToken();
-      mockFrom.mockReturnValueOnce(makeChain({ data: { token_hash: hash }, error: null }));
-      mockCreateMatchSuccess();
-
-      const res = await POST(
-        makeReq({ ...baseBody, inputs: validInputs }, { "x-write-token": raw })
-      );
-
-      expect(res.status).toBe(200);
-      expect((await res.json()).id).toBe("match-id");
-      expect(mockConsumeTournamentWriteLimit).toHaveBeenCalledWith(T_ID);
-    });
-
-    it("200: トークン無しでもログイン済みオーナーなら記録できる", async () => {
-      mockGetAuthUser.mockResolvedValue(OWNER);
-      mockFrom.mockReturnValueOnce(makeChain({ data: { owner_id: OWNER.id }, error: null }));
-      mockCreateMatchSuccess();
-
-      const res = await POST(makeReq({ ...baseBody, inputs: validInputs }));
-
-      expect(res.status).toBe(200);
-      expect(mockConsumeTournamentWriteLimit).toHaveBeenCalledWith(T_ID);
-    });
-
-    it("401: トークン無し・未ログインは拒否する", async () => {
-      const res = await POST(makeReq({ ...baseBody, inputs: validInputs }));
-      expect(res.status).toBe(401);
-      expect((await res.json()).code).toBe("unauthorized");
-      expect(mockConsumeTournamentWriteLimit).not.toHaveBeenCalled();
-    });
-
-    it("200: 無効トークンでもログイン済みオーナーなら記録できる（token || owner）", async () => {
-      const { hash } = generateWriteToken();
-      mockGetAuthUser.mockResolvedValue(OWNER);
-      mockFrom
-        .mockReturnValueOnce(makeChain({ data: { token_hash: hash }, error: null })) // トークン照合: 不一致
-        .mockReturnValueOnce(makeChain({ data: { owner_id: OWNER.id }, error: null })); // オーナー確認: OK
-      mockCreateMatchSuccess();
-
-      const res = await POST(
-        makeReq({ ...baseBody, inputs: validInputs }, { "x-write-token": "wrong-token" })
-      );
-
-      expect(res.status).toBe(200);
-    });
-
     it("429: 大会バケットが枯渇していたら保存しない", async () => {
-      const { raw, hash } = generateWriteToken();
-      mockFrom.mockReturnValueOnce(makeChain({ data: { token_hash: hash }, error: null }));
       mockConsumeTournamentWriteLimit.mockResolvedValueOnce({ ok: false });
-
-      const res = await POST(
-        makeReq({ ...baseBody, inputs: validInputs }, { "x-write-token": raw })
-      );
-
+      const res = await POST(makeReq({ ...baseBody, inputs: validInputs }));
       expect(res.status).toBe(429);
+      expect(mockConsumeTournamentWriteLimit).toHaveBeenCalledWith(T_ID);
       expect(mockRpc).not.toHaveBeenCalled();
+    });
+
+    it("400: 入力が不正なときは大会バケットを消費しない", async () => {
+      const res = await POST(makeReq({ ...baseBody, roundNumber: 0, inputs: validInputs }));
+      expect(res.status).toBe(400);
+      expect(mockConsumeTournamentWriteLimit).not.toHaveBeenCalled();
     });
   });
 
-  describe("バリデーションとビジネスルール（オーナーとして通過後）", () => {
-    beforeEach(() => {
-      mockGetAuthUser.mockResolvedValue(OWNER);
-    });
-
-    it("400: 入力が不正なとき parseCreateMatch が弾く", async () => {
-      const res = await POST(makeReq({ ...baseBody, roundNumber: 0, inputs: validInputs }));
-      expect(res.status).toBe(400);
-    });
-
+  describe("バリデーションとビジネスルール", () => {
     it("404: ビジネスルール違反のとき createMatch が弾く", async () => {
-      mockFrom
-        .mockReturnValueOnce(makeChain({ data: { owner_id: OWNER.id }, error: null })) // オーナー確認
-        .mockReturnValueOnce(makeChain({ count: 0 })); // 卓が存在しない
+      mockFrom.mockReturnValueOnce(makeChain({ count: 0 })); // 卓が存在しない
       const res = await POST(makeReq({ ...baseBody, inputs: validInputs }));
       expect(res.status).toBe(404);
     });
 
-    it("200: 正常系で id を返す", async () => {
-      mockFrom.mockReturnValueOnce(makeChain({ data: { owner_id: OWNER.id }, error: null }));
+    it("200: 認証なし・トークンなしで記録でき、大会バケットを消費する", async () => {
       mockCreateMatchSuccess();
-
       const res = await POST(makeReq({ ...baseBody, inputs: validInputs }));
       expect(res.status).toBe(200);
       expect((await res.json()).id).toBe("match-id");
+      expect(mockConsumeTournamentWriteLimit).toHaveBeenCalledWith(T_ID);
     });
   });
 });

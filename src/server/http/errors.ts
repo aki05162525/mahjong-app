@@ -1,7 +1,6 @@
 export type ErrorCode =
   | "bad_request"
   | "unauthorized"
-  | "INVALID_WRITE_TOKEN"
   | "forbidden"
   | "not_found"
   | "conflict"
@@ -11,8 +10,6 @@ export type ErrorCode =
 const STATUS: Record<ErrorCode, number> = {
   bad_request: 400,
   unauthorized: 401,
-  // 通常の 401 と区別するための専用コード。クライアントは「リンクが無効」の UX を出す
-  INVALID_WRITE_TOKEN: 401,
   forbidden: 403,
   not_found: 404,
   conflict: 409,
@@ -37,9 +34,6 @@ export const badRequest = (message: string, details?: unknown) =>
   new AppError("bad_request", message, details);
 export const unauthorized = (message = "ログインが必要です") =>
   new AppError("unauthorized", message);
-export const invalidWriteToken = (
-  message = "記録用リンクが無効です。主催者に新しい記録用URLをもらってください"
-) => new AppError("INVALID_WRITE_TOKEN", message);
 export const forbidden = (message = "権限がありません") => new AppError("forbidden", message);
 export const notFound = (message: string) => new AppError("not_found", message);
 export const conflict = (message: string) => new AppError("conflict", message);

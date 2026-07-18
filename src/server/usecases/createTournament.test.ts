@@ -6,9 +6,6 @@ vi.mock("@/lib/rate-limit", () => ({ checkRateLimit: mockCheckRateLimit }));
 const mockRequireUser = vi.hoisted(() => vi.fn());
 vi.mock("@/server/auth/requireUser", () => ({ requireUser: mockRequireUser }));
 
-const mockGenerateWriteToken = vi.hoisted(() => vi.fn());
-vi.mock("@/server/auth/writeToken", () => ({ generateWriteToken: mockGenerateWriteToken }));
-
 const mockFrom = vi.hoisted(() => vi.fn());
 vi.mock("@/infra/supabase-admin", () => ({
   getSupabaseAdmin: () => ({ from: mockFrom }),
@@ -42,18 +39,14 @@ describe("createTournament", () => {
     mockFrom.mockReset();
     mockCheckRateLimit.mockReset().mockResolvedValue({ ok: true });
     mockRequireUser.mockReset().mockResolvedValue({ id: "owner-1" });
-    mockGenerateWriteToken.mockReset().mockReturnValue({ raw: "raw-token", hash: "hashed" });
   });
 
   it("rule未指定ならseedのデフォルトをそのまま使う", async () => {
     const rules = ok();
-    mockFrom
-      .mockReturnValueOnce(tournamentCreated())
-      .mockReturnValueOnce(rules)
-      .mockReturnValueOnce(ok()); // write secret
+    mockFrom.mockReturnValueOnce(tournamentCreated()).mockReturnValueOnce(rules);
 
     const result = await createTournament({ name: "大会", customId: undefined }, "ip");
-    expect(result).toEqual({ id: T_ID, writeToken: "raw-token" });
+    expect(result).toEqual({ id: T_ID });
     expect(rules.insert).toHaveBeenCalledWith(
       SEED_RULES.map((rule) =>
         expect.objectContaining({ name: rule.name, is_default: rule.isDefault })
@@ -67,8 +60,7 @@ describe("createTournament", () => {
     mockFrom
       .mockReturnValueOnce(tournamentCreated())
       .mockReturnValueOnce(rules)
-      .mockReturnValueOnce(players)
-      .mockReturnValueOnce(ok()); // write secret
+      .mockReturnValueOnce(players);
 
     await createTournament(
       {
@@ -91,10 +83,7 @@ describe("createTournament", () => {
 
   it("カスタムルールはseedに追加され、それだけがデフォルトになる", async () => {
     const rules = ok();
-    mockFrom
-      .mockReturnValueOnce(tournamentCreated())
-      .mockReturnValueOnce(rules)
-      .mockReturnValueOnce(ok()); // write secret
+    mockFrom.mockReturnValueOnce(tournamentCreated()).mockReturnValueOnce(rules);
 
     await createTournament(
       {

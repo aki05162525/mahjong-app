@@ -91,8 +91,7 @@ describe("POST /api/create-tournament", () => {
     it("200: 自動IDで大会を作れる", async () => {
       mockFrom
         .mockReturnValueOnce(makeChain({ data: { id: "auto-generated-id" }, error: null })) // tournament
-        .mockReturnValueOnce(makeChain({ error: null })) // seed rules
-        .mockReturnValueOnce(makeChain({ error: null })); // write secret
+        .mockReturnValueOnce(makeChain({ error: null })); // seed rules
       const res = await POST(makeReq({ name: "テスト大会" }));
       expect(res.status).toBe(200);
       expect((await res.json()).id).toBe("auto-generated-id");
@@ -101,40 +100,17 @@ describe("POST /api/create-tournament", () => {
     it("200: カスタムIDで大会を作れる", async () => {
       mockFrom
         .mockReturnValueOnce(makeChain({ data: { id: "my-tournament" }, error: null })) // tournament
-        .mockReturnValueOnce(makeChain({ error: null })) // seed rules
-        .mockReturnValueOnce(makeChain({ error: null })); // write secret
+        .mockReturnValueOnce(makeChain({ error: null })); // seed rules
       const res = await POST(makeReq({ name: "テスト大会", customId: "my-tournament" }));
       expect(res.status).toBe(200);
       expect((await res.json()).id).toBe("my-tournament");
-    });
-
-    it("200: 記録トークン（raw）を発行し、DB にはハッシュだけを保存する", async () => {
-      const secretChain = makeChain({ error: null });
-      mockFrom
-        .mockReturnValueOnce(makeChain({ data: { id: "auto-generated-id" }, error: null })) // tournament
-        .mockReturnValueOnce(makeChain({ error: null })) // seed rules
-        .mockReturnValueOnce(secretChain); // write secret
-
-      const res = await POST(makeReq({ name: "テスト大会" }));
-
-      const { writeToken } = await res.json();
-      expect(writeToken).toMatch(/^[A-Za-z0-9_-]{43}$/); // 32 bytes の base64url
-
-      const inserted = (secretChain.insert as ReturnType<typeof vi.fn>).mock.calls[0][0] as {
-        tournament_id: string;
-        token_hash: string;
-      };
-      expect(inserted.tournament_id).toBe("auto-generated-id");
-      expect(inserted.token_hash).not.toBe(writeToken); // raw をそのまま保存しない
-      expect(inserted.token_hash).toMatch(/^[0-9a-f]{64}$/); // sha256 hex
     });
 
     it("200: 大会作成時に標準ルールを seed し、デフォルトを含む", async () => {
       const seedChain = makeChain({ error: null });
       mockFrom
         .mockReturnValueOnce(makeChain({ data: { id: "auto-generated-id" }, error: null })) // tournament
-        .mockReturnValueOnce(seedChain) // seed rules
-        .mockReturnValueOnce(makeChain({ error: null })); // write secret
+        .mockReturnValueOnce(seedChain); // seed rules
 
       await POST(makeReq({ name: "テスト大会" }));
 
@@ -151,24 +127,6 @@ describe("POST /api/create-tournament", () => {
       mockFrom
         .mockReturnValueOnce(makeChain({ data: { id: "auto-generated-id" }, error: null })) // tournament insert
         .mockReturnValueOnce(makeChain({ error: { message: "seed failed" } })) // seed rules 失敗
-        .mockReturnValueOnce(deleteChain); // ロールバックの delete
-
-      const res = await POST(makeReq({ name: "テスト大会" }));
-
-      expect(res.status).toBe(500);
-      expect(deleteChain.delete as ReturnType<typeof vi.fn>).toHaveBeenCalled();
-      expect(deleteChain.eq as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(
-        "id",
-        "auto-generated-id"
-      );
-    });
-
-    it("500: 記録トークンの保存に失敗したら大会を削除して 500 を返す", async () => {
-      const deleteChain = makeChain({ error: null });
-      mockFrom
-        .mockReturnValueOnce(makeChain({ data: { id: "auto-generated-id" }, error: null })) // tournament insert
-        .mockReturnValueOnce(makeChain({ error: null })) // seed rules
-        .mockReturnValueOnce(makeChain({ error: { message: "secret failed" } })) // write secret 失敗
         .mockReturnValueOnce(deleteChain); // ロールバックの delete
 
       const res = await POST(makeReq({ name: "テスト大会" }));
