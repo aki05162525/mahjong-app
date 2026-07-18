@@ -45,7 +45,7 @@ export default function TopPage() {
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-hairline bg-surface-card">
         <div className="mx-auto flex h-14 w-full max-w-md items-center justify-between px-4">
-          <h1 className="font-bold text-ink">小次郎麻雀大会スコア</h1>
+          <h1 className="font-bold text-ink">ウマオカ</h1>
           {!loading && user && (
             <button
               onClick={() => signOut()}
