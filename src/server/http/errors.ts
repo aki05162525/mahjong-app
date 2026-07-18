@@ -4,7 +4,6 @@ export type ErrorCode =
   | "forbidden"
   | "not_found"
   | "conflict"
-  | "rate_limited"
   | "internal_error";
 
 const STATUS: Record<ErrorCode, number> = {
@@ -13,7 +12,6 @@ const STATUS: Record<ErrorCode, number> = {
   forbidden: 403,
   not_found: 404,
   conflict: 409,
-  rate_limited: 429,
   internal_error: 500,
 };
 
@@ -37,6 +35,4 @@ export const unauthorized = (message = "ログインが必要です") =>
 export const forbidden = (message = "権限がありません") => new AppError("forbidden", message);
 export const notFound = (message: string) => new AppError("not_found", message);
 export const conflict = (message: string) => new AppError("conflict", message);
-export const rateLimited = (message = "リクエストが多すぎます") =>
-  new AppError("rate_limited", message);
 export const internalError = (message = "内部エラー") => new AppError("internal_error", message);

@@ -1,19 +1,11 @@
 import { getSupabaseAdmin } from "@/infra/supabase-admin";
-import { checkRateLimit } from "@/lib/rate-limit";
 import { SEED_RULES } from "@/lib/seedRules";
 import { requireUser } from "@/server/auth/requireUser";
-import { internalError, rateLimited } from "@/server/http/errors";
+import { internalError } from "@/server/http/errors";
 import type { CreateTournamentInput } from "@/server/validation/tournament";
 import type { TablesInsert } from "@/lib/database.types";
 
-export async function createTournament(
-  input: CreateTournamentInput,
-  clientIp: string
-): Promise<{ id: string }> {
-  if (!(await checkRateLimit(clientIp)).ok) {
-    throw rateLimited("リクエストが多すぎます。しばらくしてから再試行してください");
-  }
-
+export async function createTournament(input: CreateTournamentInput): Promise<{ id: string }> {
   const user = await requireUser();
   const supabase = getSupabaseAdmin();
   // id は指定せず DB の gen_random_uuid() に任せる。推測不能な ID であることが
