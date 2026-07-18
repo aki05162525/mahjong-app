@@ -4,11 +4,13 @@ import { useState } from "react";
 import type { Match } from "@/lib/types";
 import { formatUma } from "@/lib/formatUma";
 import { fmtPt } from "@/lib/utils";
+import ConfirmDialog from "./ConfirmDialog";
 
 type Props = { matches: Match[]; isOwner?: boolean; showTable?: boolean };
 
 export default function MatchHistory({ matches, isOwner = false, showTable = false }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<Set<string>>(new Set());
 
   // 履歴に登場する重複なしのプレイヤー一覧（名前順）
@@ -35,7 +37,7 @@ export default function MatchHistory({ matches, isOwner = false, showTable = fal
   };
 
   const handleDelete = async (matchId: string) => {
-    if (!confirm("この対局結果を削除しますか？")) return;
+    setPendingDeleteId(null);
     setDeletingId(matchId);
     try {
       const res = await fetch(`/api/matches/${matchId}`, { method: "DELETE" });
@@ -143,7 +145,7 @@ export default function MatchHistory({ matches, isOwner = false, showTable = fal
                     </span>
                     {isOwner && (
                       <button
-                        onClick={() => handleDelete(match.id)}
+                        onClick={() => setPendingDeleteId(match.id)}
                         disabled={deletingId === match.id}
                         className="rounded-lg px-3 py-1 text-sm active:opacity-70 disabled:opacity-40"
                         style={{ color: "var(--error)", border: "1px solid var(--error)" }}
@@ -219,6 +221,13 @@ export default function MatchHistory({ matches, isOwner = false, showTable = fal
           })}
         </div>
       )}
+      <ConfirmDialog
+        open={pendingDeleteId !== null}
+        title="この対局結果を削除しますか？"
+        message="この操作は取り消せません。"
+        onConfirm={() => pendingDeleteId && handleDelete(pendingDeleteId)}
+        onCancel={() => setPendingDeleteId(null)}
+      />
     </div>
   );
 }
