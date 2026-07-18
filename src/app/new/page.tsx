@@ -176,7 +176,7 @@ export default function NewTournamentPage() {
   }
 
   return (
-    <main className="max-w-md mx-auto px-4 py-6 flex flex-col gap-6 min-h-screen">
+    <main className="max-w-md sm:max-w-xl mx-auto px-4 py-6 sm:py-10 flex flex-col gap-6 sm:gap-8 min-h-screen">
       <div className="flex flex-col gap-1">
         {step === 0 && (
           <Link href="/" className="text-sm" style={{ color: "var(--primary)" }}>
@@ -222,7 +222,7 @@ export default function NewTournamentPage() {
       {/* ステップ1: 大会情報 */}
       {step === 0 && (
         <section
-          className="flex flex-col gap-4 rounded-xl p-6 shadow-sm"
+          className="flex flex-col gap-4 rounded-xl p-6 sm:p-8 shadow-sm"
           style={{ background: "var(--surface-card)", border: "1px solid var(--hairline)" }}
         >
           <div className="flex flex-col gap-1">
@@ -256,7 +256,7 @@ export default function NewTournamentPage() {
       {/* ステップ2: 選手登録 */}
       {step === 1 && (
         <section
-          className="flex flex-col gap-4 rounded-xl p-6 shadow-sm"
+          className="flex flex-col gap-4 rounded-xl p-6 sm:p-8 shadow-sm"
           style={{ background: "var(--surface-card)", border: "1px solid var(--hairline)" }}
         >
           <div className="flex flex-col gap-1">
@@ -334,7 +334,7 @@ export default function NewTournamentPage() {
       {/* ステップ3: ルール */}
       {step === 2 && (
         <section
-          className="flex flex-col gap-4 rounded-xl p-6 shadow-sm"
+          className="flex flex-col gap-4 rounded-xl p-6 sm:p-8 shadow-sm"
           style={{ background: "var(--surface-card)", border: "1px solid var(--hairline)" }}
         >
           <fieldset className="flex flex-col gap-2">
@@ -481,7 +481,7 @@ export default function NewTournamentPage() {
       {/* ステップ4: 完了 */}
       {step === 3 && created && (
         <section
-          className="flex flex-col gap-4 rounded-xl p-6 shadow-sm"
+          className="flex flex-col gap-4 rounded-xl p-6 sm:p-8 shadow-sm"
           style={{ background: "var(--surface-card)", border: "1px solid var(--hairline)" }}
         >
           <h2 className="text-lg font-bold" style={{ color: "var(--ink)" }}>
