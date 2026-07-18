@@ -129,12 +129,12 @@ export default function PlayerRegistration({
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
             placeholder="プレイヤー名"
-            className="rounded-lg px-4 py-3 text-lg flex-1"
+            className="rounded-lg px-4 py-3 text-lg flex-1 min-w-0"
             style={{ border: "1px solid var(--hairline)", background: "var(--canvas)" }}
           />
           <button
             onClick={handleAdd}
-            className="rounded-lg px-5 py-3 text-lg font-semibold active:opacity-80"
+            className="rounded-lg px-5 py-3 text-lg font-semibold active:opacity-80 shrink-0"
             style={{ background: "var(--primary)", color: "#fff" }}
           >
             追加
@@ -152,20 +152,20 @@ export default function PlayerRegistration({
                 onChange={(e) => setEditingName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleRename()}
                 autoFocus
-                className="rounded-lg px-3 py-2 text-base flex-1"
+                className="rounded-lg px-3 py-2 text-base flex-1 min-w-0"
                 style={{ border: "1px solid var(--primary)", background: "var(--canvas)" }}
               />
               <button
                 onClick={handleRename}
                 disabled={renaming}
-                className="rounded-lg px-3 py-2 text-sm font-semibold active:opacity-80 disabled:opacity-50"
+                className="rounded-lg px-3 py-2 text-sm font-semibold active:opacity-80 disabled:opacity-50 shrink-0"
                 style={{ background: "var(--primary)", color: "#fff" }}
               >
                 {renaming ? "保存中..." : "保存"}
               </button>
               <button
                 onClick={() => setEditingId(null)}
-                className="rounded-lg px-3 py-2 text-sm active:opacity-70"
+                className="rounded-lg px-3 py-2 text-sm active:opacity-70 shrink-0"
                 style={{ color: "var(--muted)", border: "1px solid var(--hairline)" }}
               >
                 キャンセル
@@ -177,11 +177,11 @@ export default function PlayerRegistration({
               className="flex items-center justify-between rounded-full px-4 py-2 text-base"
               style={{ background: "var(--surface-strong)", color: "var(--body)" }}
             >
-              <span>{p.name}</span>
+              <span className="min-w-0 truncate">{p.name}</span>
               {isOwner && !p.id.startsWith("optimistic-") && (
                 <button
                   onClick={() => startEdit(p)}
-                  className="text-xs active:opacity-70 ml-2"
+                  className="text-xs active:opacity-70 ml-2 shrink-0"
                   style={{ color: "var(--muted)" }}
                 >
                   編集
