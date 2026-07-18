@@ -36,7 +36,7 @@
     "lefthook": "^2.1.10",
     "prettier": "^3.9.5",
     "tailwindcss": "^4",
-    "typescript": "^7",
+    "typescript": "^6",
     "vitest": "^4.1.10"
   }
 }
