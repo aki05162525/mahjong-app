@@ -263,7 +263,9 @@ export default function NewTournamentPage() {
             <label htmlFor="player-name" className="font-semibold" style={{ color: "var(--body)" }}>
               参加する選手
             </label>
-            <div className="flex gap-2">
+            {/* 入力欄が縮めない環境（ページ拡大率・文字サイズ拡大など）でもボタンが
+                画面外に出ないよう、1行に収まらないときは折り返して下に落とす。 */}
+            <div className="flex flex-wrap gap-2">
               <input
                 id="player-name"
                 type="text"
@@ -275,7 +277,7 @@ export default function NewTournamentPage() {
                 }}
                 enterKeyHint="done"
                 placeholder="プレイヤー名"
-                className="rounded-lg px-4 py-3 text-lg flex-1 min-w-0"
+                className="rounded-lg px-4 py-3 text-lg grow shrink basis-40 min-w-0"
                 style={{ border: "1px solid var(--hairline)", background: "var(--canvas)" }}
               />
               <button
