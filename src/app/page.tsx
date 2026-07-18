@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/infra/supabase";
 import type { Tournament } from "@/lib/types";
 
 export default function TopPage() {
-  const { user, loading, signInWithGoogle, signOut } = useAuth();
+  const { user, loading, signOut } = useAuth();
 
   const [tournamentCache, setTournamentCache] = useState<{
     userId: string;
@@ -124,12 +125,7 @@ export default function TopPage() {
             <p className="text-sm text-muted">
               Googleアカウントでログインすると、大会の作成と管理ができます
             </p>
-            <button
-              onClick={() => signInWithGoogle()}
-              className="mt-1 w-full rounded-lg bg-primary px-4 py-3 text-base font-semibold text-white transition-colors hover:bg-primary-active active:bg-primary-active"
-            >
-              Googleでログイン
-            </button>
+            <GoogleSignInButton className="mt-1" />
           </section>
         )}
       </main>
