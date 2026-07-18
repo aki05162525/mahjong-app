@@ -1,27 +1,31 @@
 @import "tailwindcss";
 
 :root {
-  --canvas: #faf9f5;
-  --surface-soft: #f5f0e8;
-  --surface-card: #efe9de;
-  --surface-strong: #e8e0d2;
-  --hairline: #e6dfd8;
-  --primary: #cc785c;
-  --primary-active: #a9583e;
-  --primary-disabled: #e6dfd8;
-  --ink: #141413;
-  --body: #3d3d3a;
-  --muted: #6c6a64;
-  --success: #5db872;
-  --error: #c64545;
-  --warning: #d4a017;
-  --accent-teal: #5db8a6;
+  color-scheme: light;
+  accent-color: var(--primary);
+
+  --canvas: #fbfbf9;
+  --surface-soft: #f3f3ee;
+  --surface-card: #ffffff;
+  --surface-strong: #e9e9e2;
+  --hairline: #dedcd3;
+  --primary: #1f6f50;
+  --primary-active: #175339;
+  --primary-disabled: #c3d5cc;
+  --ink: #1a1a18;
+  --body: #3c3c38;
+  --muted: #6e6d65;
+  --success: #2f9e63;
+  --error: #c24040;
+  --warning: #b98a12;
+  --accent-teal: #2e8f83;
 }
 
 @theme inline {
   --color-canvas: var(--canvas);
   --color-surface-soft: var(--surface-soft);
   --color-surface-card: var(--surface-card);
+  --color-surface-strong: var(--surface-strong);
   --color-hairline: var(--hairline);
   --color-primary: var(--primary);
   --color-primary-active: var(--primary-active);
@@ -36,5 +40,9 @@
 body {
   background-color: var(--canvas);
   color: var(--ink);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }

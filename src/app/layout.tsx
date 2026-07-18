@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
+import { Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
+
+const notoSansJP = Noto_Sans_JP({
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "小次郎麻雀大会スコア",
@@ -13,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja" className="h-full">
-      <body className="min-h-full flex flex-col bg-white text-gray-900">{children}</body>
+      <body className={`${notoSansJP.className} min-h-full flex flex-col`}>{children}</body>
     </html>
   );
 }
