@@ -133,6 +133,17 @@ export function useMatches(tournamentId: string): { matches: Match[]; ranking: R
       updateState(next);
     };
 
+    // DELETE の old record には REPLICA IDENTITY（デフォルト = 主キー）の列しか入らないため、
+    // tournament_id によるサーバー側フィルタは評価されずイベントが届かない。
+    // フィルタなしで購読し、自分の一覧にある id の削除だけ拾って再取得する。
+    // ローカル削除でなく再取得なのは、削除 RPC が後続対局の round_number を再採番するため。
+    const handleMatchDelete = (payload: { old: Partial<MatchRow> }) => {
+      const deletedId = payload.old.id;
+      if (deletedId && matchesRef.current.some((m) => m.id === deletedId)) {
+        debouncedFetch();
+      }
+    };
+
     const handleResultInsert = (payload: { new: MatchResultRow }) => {
       const next = applyResultInsert(matchesRef.current, payload.new, playersCacheRef.current);
       if (next === null) {
@@ -160,9 +171,8 @@ export function useMatches(tournamentId: string): { matches: Match[]; ranking: R
           event: "DELETE",
           schema: "public",
           table: "matches",
-          filter: `tournament_id=eq.${tournamentId}`,
         },
-        debouncedFetch
+        handleMatchDelete
       )
       .subscribe();
 

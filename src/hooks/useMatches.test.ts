@@ -177,22 +177,67 @@ describe("useMatches — matches INSERT イベントの差分更新", () => {
     expect(fromChain.then).toHaveBeenCalled();
   });
 
-  it("matches DELETE が来たとき fetchMatches を呼ぶ（削除の反映）", () => {
-    const captured: { matchDeleteHandler: (() => void) | null } = { matchDeleteHandler: null };
-    mockOn.mockImplementation(
-      (_event: string, filter: Record<string, unknown>, handler: () => void) => {
-        if (filter.table === "matches" && filter.event === "DELETE")
-          captured.matchDeleteHandler = handler;
-        return { on: mockOn, subscribe: mockSubscribe };
-      }
-    );
+  // DELETE の old record は主キーのみで tournament_id を持たないため、サーバー側フィルタなしで
+  // 購読し、自分の一覧にある id かどうかをクライアント側で判定する
+  describe("matches DELETE イベント", () => {
+    type DeleteHandler = (payload: { old: { id?: string } }) => void;
+    type InsertHandler = (payload: { new: unknown }) => void;
 
-    useMatches("tournament-123");
-    fromChain.then.mockClear();
+    const captured: { deleteHandler: DeleteHandler | null; insertHandler: InsertHandler | null } = {
+      deleteHandler: null,
+      insertHandler: null,
+    };
 
-    captured.matchDeleteHandler?.();
+    beforeEach(() => {
+      captured.deleteHandler = null;
+      captured.insertHandler = null;
+      mockOn.mockImplementation(
+        (_event: string, filter: Record<string, unknown>, handler: unknown) => {
+          if (filter.table === "matches" && filter.event === "DELETE")
+            captured.deleteHandler = handler as DeleteHandler;
+          if (filter.table === "matches" && filter.event === "INSERT")
+            captured.insertHandler = handler as InsertHandler;
+          return { on: mockOn, subscribe: mockSubscribe };
+        }
+      );
+    });
 
-    // DELETE → 全件再取得
-    expect(fromChain.then).toHaveBeenCalled();
+    // INSERT イベント経由で matchesRef に対局を積む
+    const seedMatch = (id: string) => {
+      mockApplyMatchInsert.mockReturnValue([{ id, results: [] }]);
+      captured.insertHandler?.({ new: { id } });
+    };
+
+    it("subscription に tournament_id フィルタを付けない", () => {
+      useMatches("tournament-123");
+
+      const deleteCall = mockOn.mock.calls.find(
+        (args: unknown[]) =>
+          (args[1] as Record<string, unknown>).table === "matches" &&
+          (args[1] as Record<string, unknown>).event === "DELETE"
+      );
+      expect(deleteCall).toBeDefined();
+      expect(deleteCall![1] as Record<string, unknown>).not.toHaveProperty("filter");
+    });
+
+    it("一覧にある対局の DELETE が来たとき fetchMatches を呼ぶ（削除の反映）", () => {
+      useMatches("tournament-123");
+      seedMatch("match-1");
+      fromChain.then.mockClear();
+
+      captured.deleteHandler?.({ old: { id: "match-1" } });
+
+      expect(fromChain.then).toHaveBeenCalled();
+    });
+
+    it("一覧にない対局（他大会）の DELETE は無視する", () => {
+      useMatches("tournament-123");
+      seedMatch("match-1");
+      fromChain.then.mockClear();
+
+      captured.deleteHandler?.({ old: { id: "other-tournament-match" } });
+
+      expect(fromChain.then).not.toHaveBeenCalled();
+    });
   });
 });
