@@ -16,6 +16,7 @@ const updateSchema = z.object({ name: playerNameSchema });
 
 export type CreatePlayerInput = z.infer<typeof createSchema>;
 export type UpdatePlayerInput = z.infer<typeof updateSchema> & { playerId: string };
+export type DeletePlayerInput = { playerId: string };
 
 function parse<T>(schema: z.ZodType<T>, raw: unknown): T {
   const result = schema.safeParse(raw);

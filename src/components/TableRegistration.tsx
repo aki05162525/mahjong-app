@@ -2,6 +2,7 @@
 
 import { useOptimistic, useState, useTransition } from "react";
 import type { Table } from "@/lib/types";
+import ConfirmDialog from "./ConfirmDialog";
 
 type Props = {
   tournamentId: string;
@@ -22,6 +23,8 @@ export default function TableRegistration({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [renaming, setRenaming] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<Table | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const [optimisticTables, addOptimisticTable] = useOptimistic(tables, (current, name: string) => [
     ...current,
@@ -113,6 +116,25 @@ export default function TableRegistration({
     await refresh();
   };
 
+  const handleDelete = async (id: string) => {
+    setPendingDelete(null);
+    setDeletingId(id);
+    setError("");
+    try {
+      const res = await fetch(`/api/tables/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        setError((await res.json()).error ?? "削除に失敗しました");
+        return;
+      }
+    } catch {
+      setError("削除に失敗しました");
+      return;
+    } finally {
+      setDeletingId(null);
+    }
+    await refresh();
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
@@ -183,18 +205,38 @@ export default function TableRegistration({
             >
               <span className="min-w-0 truncate">{t.name}</span>
               {isOwner && !t.id.startsWith("optimistic-") && (
-                <button
-                  onClick={() => startEdit(t)}
-                  className="text-xs active:opacity-70 ml-2 shrink-0"
-                  style={{ color: "var(--muted)" }}
-                >
-                  編集
-                </button>
+                <div className="flex gap-2 ml-2 shrink-0">
+                  <button
+                    onClick={() => startEdit(t)}
+                    className="text-xs active:opacity-70"
+                    style={{ color: "var(--muted)" }}
+                  >
+                    編集
+                  </button>
+                  <button
+                    onClick={() => {
+                      setPendingDelete(t);
+                      setError("");
+                    }}
+                    disabled={deletingId === t.id}
+                    className="text-xs active:opacity-70 disabled:opacity-40"
+                    style={{ color: "var(--error)" }}
+                  >
+                    {deletingId === t.id ? "削除中..." : "削除"}
+                  </button>
+                </div>
               )}
             </li>
           )
         )}
       </ul>
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title={`「${pendingDelete?.name ?? ""}」を削除しますか？`}
+        message="この操作は取り消せません。対局結果に記録されている卓は削除できません。"
+        onConfirm={() => pendingDelete && handleDelete(pendingDelete.id)}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 }

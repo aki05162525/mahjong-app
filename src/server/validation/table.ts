@@ -16,6 +16,7 @@ const updateSchema = z.object({ name: nameSchema });
 
 export type CreateTableInput = z.infer<typeof createSchema>;
 export type UpdateTableInput = z.infer<typeof updateSchema> & { tableId: string };
+export type DeleteTableInput = { tableId: string };
 
 function parse<T>(schema: z.ZodType<T>, raw: unknown): T {
   const result = schema.safeParse(raw);
