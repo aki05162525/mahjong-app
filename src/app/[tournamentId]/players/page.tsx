@@ -6,6 +6,7 @@ import { useTournament } from "@/hooks/useTournament";
 import { usePlayers } from "@/hooks/usePlayers";
 import { useTables } from "@/hooks/useTables";
 import { useAuth } from "@/hooks/useAuth";
+import { PAGE_CONTAINER } from "@/lib/layout";
 import PlayerRegistration from "@/components/PlayerRegistration";
 import TableRegistration from "@/components/TableRegistration";
 
@@ -19,7 +20,7 @@ export default function PlayersPage() {
   const isOwner = !!user && !!tournament && user.id === tournament.ownerId;
 
   return (
-    <main className="max-w-2xl mx-auto px-4 py-6 flex flex-col gap-6">
+    <main className={`${PAGE_CONTAINER} px-4 py-6 flex flex-col gap-6`}>
       <div className="flex flex-col gap-1">
         <Link href={`/${tournamentId}`} className="text-sm" style={{ color: "var(--primary)" }}>
           ← 大会ページへ戻る

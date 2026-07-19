@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { useAuth } from "@/hooks/useAuth";
+import { PAGE_CONTAINER } from "@/lib/layout";
 import { SEED_RULES } from "@/lib/seedRules";
 import { validateRule } from "@/lib/ruleValidation";
 
@@ -171,7 +172,9 @@ export default function NewTournamentPage() {
   }
 
   return (
-    <main className="max-w-md sm:max-w-xl mx-auto px-4 py-6 sm:py-10 flex flex-col gap-6 sm:gap-8 min-h-screen">
+    <main
+      className={`${PAGE_CONTAINER} px-4 py-6 sm:py-10 flex flex-col gap-6 sm:gap-8 min-h-screen`}
+    >
       <div className="flex flex-col gap-1">
         {step === 0 && (
           <Link href="/" className="text-sm" style={{ color: "var(--primary)" }}>

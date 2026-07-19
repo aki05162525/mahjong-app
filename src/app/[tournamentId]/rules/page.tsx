@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useTournament } from "@/hooks/useTournament";
 import { useRules } from "@/hooks/useRules";
 import { useAuth } from "@/hooks/useAuth";
+import { PAGE_CONTAINER } from "@/lib/layout";
 import RuleManagement from "@/components/RuleManagement";
 
 export default function RulesPage() {
@@ -16,7 +17,7 @@ export default function RulesPage() {
   const isOwner = !!user && !!tournament && user.id === tournament.ownerId;
 
   return (
-    <main className="max-w-2xl mx-auto px-4 py-6 flex flex-col gap-6">
+    <main className={`${PAGE_CONTAINER} px-4 py-6 flex flex-col gap-6`}>
       <div className="flex flex-col gap-1">
         <Link href={`/${tournamentId}`} className="text-sm" style={{ color: "var(--primary)" }}>
           ← 大会ページへ戻る

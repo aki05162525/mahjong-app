@@ -9,6 +9,7 @@ import { useTables } from "@/hooks/useTables";
 import { useRules } from "@/hooks/useRules";
 import { useMatches } from "@/hooks/useMatches";
 import { useAuth } from "@/hooks/useAuth";
+import { PAGE_CONTAINER } from "@/lib/layout";
 import TournamentTabs from "@/components/TournamentTabs";
 
 export default function TournamentPage() {
@@ -93,8 +94,8 @@ export default function TournamentPage() {
   }
 
   return (
-    // ランキング表（10列）が収まるよう PC ではコンテナを広げる。スマホは従来どおり
-    <div className="w-full max-w-2xl lg:max-w-4xl mx-auto flex flex-col min-h-screen overflow-x-hidden">
+    // 幅に収まらないランキング表は Ranking 側の overflow-x-auto で内側スクロールさせる
+    <div className={`${PAGE_CONTAINER} flex flex-col min-h-screen overflow-x-hidden`}>
       {/* ヘッダー */}
       <div className="px-4 pt-4 pb-2 flex flex-col gap-1">
         <div className="flex items-start justify-between gap-2">
