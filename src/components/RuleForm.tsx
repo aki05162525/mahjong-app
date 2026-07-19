@@ -80,7 +80,7 @@ export default function RuleForm({ initial, submitLabel, onSubmit, onCancel }: P
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="例: 社内ルール"
+          placeholder="例: 大会用ルール"
           className="rounded-lg px-4 py-2 w-full"
           style={inputStyle}
         />
