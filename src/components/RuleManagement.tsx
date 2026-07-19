@@ -100,6 +100,7 @@ export default function RuleManagement({ tournamentId, rules, isOwner = false, o
                   returnPoints: rule.returnPoints,
                   isDefault: rule.isDefault,
                 }}
+                existingNames={rules.filter((r) => r.id !== rule.id).map((r) => r.name)}
                 submitLabel="保存"
                 onSubmit={(values) => update(rule.id, values)}
                 onCancel={() => setEditingId(null)}
@@ -161,7 +162,13 @@ export default function RuleManagement({ tournamentId, rules, isOwner = false, o
           <h3 className="text-base font-semibold mb-2" style={{ color: "var(--body)" }}>
             新しいルール
           </h3>
-          <RuleForm submitLabel="追加" onSubmit={create} />
+          {/* key: 追加成功でルール一覧が変わったら再マウントして入力をリセットする */}
+          <RuleForm
+            key={rules.map((r) => r.name).join("\n")}
+            existingNames={rules.map((r) => r.name)}
+            submitLabel="追加"
+            onSubmit={create}
+          />
         </div>
       )}
     </div>
