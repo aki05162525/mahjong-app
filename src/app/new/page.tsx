@@ -410,7 +410,7 @@ export default function NewTournamentPage() {
                   type="text"
                   value={customName}
                   onChange={(e) => setCustomName(e.target.value)}
-                  placeholder="例: 社内ルール"
+                  placeholder="例: 大会用ルール"
                   className="rounded-lg px-4 py-2 w-full"
                   style={{ border: "1px solid var(--hairline)", background: "var(--canvas)" }}
                 />
