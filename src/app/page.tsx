@@ -5,6 +5,7 @@ import Link from "next/link";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/infra/supabase";
+import { PAGE_CONTAINER } from "@/lib/layout";
 import type { Tournament } from "@/lib/types";
 
 export default function TopPage() {
@@ -45,7 +46,7 @@ export default function TopPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-hairline bg-surface-card">
-        <div className="mx-auto flex h-14 w-full max-w-md items-center justify-between px-4">
+        <div className={`${PAGE_CONTAINER} flex h-14 items-center justify-between px-4`}>
           <h1 className="font-bold text-ink">ウマオカ</h1>
           {!loading && user && (
             <button
@@ -58,7 +59,7 @@ export default function TopPage() {
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-md flex-col gap-8 px-4 py-8">
+      <main className={`${PAGE_CONTAINER} flex flex-col gap-8 px-4 py-8`}>
         {loading ? (
           /* 認証確認中: 作成カードと同じ形のスケルトンで白画面のチラつきを防ぐ */
           <section
