@@ -15,7 +15,6 @@ type Props = {
 export default function RuleManagement({ tournamentId, rules, isOwner = false, onChange }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [adding, setAdding] = useState(false);
   const [error, setError] = useState("");
 
   // 再取得（onChange）は「成功した書き込みを画面に反映する」だけのベストエフォート。
@@ -40,7 +39,6 @@ export default function RuleManagement({ tournamentId, rules, isOwner = false, o
       return "作成に失敗しました";
     }
     await refresh();
-    setAdding(false);
     return null;
   };
 
@@ -158,26 +156,14 @@ export default function RuleManagement({ tournamentId, rules, isOwner = false, o
         )}
       </ul>
 
-      {isOwner &&
-        (adding ? (
-          <div className="rounded-xl p-3" style={{ border: "1px solid var(--primary)" }}>
-            <h3 className="text-base font-semibold mb-2" style={{ color: "var(--body)" }}>
-              新しいルール
-            </h3>
-            <RuleForm submitLabel="追加" onSubmit={create} onCancel={() => setAdding(false)} />
-          </div>
-        ) : (
-          <button
-            onClick={() => {
-              setAdding(true);
-              setError("");
-            }}
-            className="rounded-xl px-5 py-3 text-base font-semibold active:opacity-70 w-full"
-            style={{ color: "var(--primary)", border: "1px dashed var(--primary)" }}
-          >
-            ＋ ルールを追加
-          </button>
-        ))}
+      {isOwner && (
+        <div className="rounded-xl p-3" style={{ border: "1px solid var(--primary)" }}>
+          <h3 className="text-base font-semibold mb-2" style={{ color: "var(--body)" }}>
+            新しいルール
+          </h3>
+          <RuleForm submitLabel="追加" onSubmit={create} />
+        </div>
+      )}
     </div>
   );
 }
