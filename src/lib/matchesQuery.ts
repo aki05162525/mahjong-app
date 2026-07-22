@@ -78,7 +78,10 @@ export async function fetchMatches(
   supabase: SupabaseClient<Database>,
   tournamentId: string
 ): Promise<Match[]> {
-  const { data } = await matchesQuery(supabase, tournamentId);
+  const { data, error } = await matchesQuery(supabase, tournamentId);
+  if (error) {
+    console.error("fetchMatches failed", error);
+  }
   if (!data) return [];
   return (data as unknown as SupabaseMatch[]).map(toMatch);
 }
