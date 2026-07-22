@@ -45,6 +45,9 @@ async function loadGoogleFont(text: string): Promise<ArrayBuffer> {
     throw new Error("Google Fontの取得に失敗しました");
   }
   const fontResponse = await fetch(match[1], fetchOptions);
+  if (!fontResponse.ok) {
+    throw new Error(`Google Fontバイナリの取得に失敗しました: ${fontResponse.status}`);
+  }
   return fontResponse.arrayBuffer();
 }
 
@@ -52,10 +55,13 @@ export default async function Image({ params }: { params: Promise<{ tournamentId
   const { tournamentId } = await params;
   const supabase = getSupabasePublic();
 
-  const [{ data: tournament }, matches] = await Promise.all([
+  const [{ data: tournament, error: tournamentError }, matches] = await Promise.all([
     supabase.from("tournaments").select("name").eq("id", tournamentId).single(),
     fetchMatches(supabase, tournamentId),
   ]);
+  if (tournamentError) {
+    console.error("opengraph-image: fetch tournament failed", tournamentError);
+  }
 
   const tournamentName = tournament?.name ?? BRAND_TEXT;
   const top3 = buildRanking(matches).slice(0, 3);
