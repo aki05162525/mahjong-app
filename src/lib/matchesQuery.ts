@@ -73,3 +73,12 @@ export function matchesQuery(supabase: SupabaseClient<Database>, tournamentId: s
       .order("created_at")
   );
 }
+
+export async function fetchMatches(
+  supabase: SupabaseClient<Database>,
+  tournamentId: string
+): Promise<Match[]> {
+  const { data } = await matchesQuery(supabase, tournamentId);
+  if (!data) return [];
+  return (data as unknown as SupabaseMatch[]).map(toMatch);
+}
