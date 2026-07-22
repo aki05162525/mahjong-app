@@ -10,24 +10,41 @@ export const contentType = "image/png";
 
 // LINE 等のクローラーが取得するプレビュー用画像なので、対局のたびに再生成する必要はない。
 // 5分間はキャッシュを使い回し、フォント取得とランキング集計の負荷を抑える。
+// revalidate の値は静的解析される必要があるためリテラルで書く必要がある(下の
+// FETCH_REVALIDATE_SECONDS と値を揃えること)。
 export const revalidate = 300;
+
+// fetch はデフォルトでは無キャッシュのため、force-cache 相当を明示しないと
+// 上の revalidate export だけでは効かず、リクエストのたびに Google Fonts の
+// ダウンロードが走ってしまう。
+const FETCH_REVALIDATE_SECONDS = 300;
 
 const BRAND_TEXT = "ウマオカ";
 const TAGLINE = "みんなでつける、麻雀の成績表。";
 const EMPTY_MESSAGE = "対局結果はまだありません";
 const RANK_COLORS = ["#caa53d", "#9aa0a6", "#b1743a"];
 
+// 大会名は最大50文字まで許可されている(src/server/validation/tournament.ts)。
+// 長い名前でもヘッダーの高さが変わらないよう、文字数に応じてフォントサイズを
+// 落として2行以内に収める。
+function titleFontSize(text: string): number {
+  if (text.length <= 14) return 56;
+  if (text.length <= 24) return 44;
+  return 36;
+}
+
 // Google Fonts の css2 API は User-Agent が古いブラウザ扱いだと ttf/otf を返す。
 // next/og(satori) は woff2 未対応のため、素の fetch(モダンUAを送らない)でこの挙動を利用する。
 // text パラメータで実際に描画する文字だけを渡し、日本語フォントのフル取得を避ける。
 async function loadGoogleFont(text: string): Promise<ArrayBuffer> {
+  const fetchOptions = { next: { revalidate: FETCH_REVALIDATE_SECONDS } };
   const url = `https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@700&text=${encodeURIComponent(text)}`;
-  const css = await (await fetch(url)).text();
+  const css = await (await fetch(url, fetchOptions)).text();
   const match = css.match(/src: url\(([^)]+)\) format\('(opentype|truetype)'\)/);
   if (!match) {
     throw new Error("Google Fontの取得に失敗しました");
   }
-  const fontResponse = await fetch(match[1]);
+  const fontResponse = await fetch(match[1], fetchOptions);
   return fontResponse.arrayBuffer();
 }
 
@@ -66,13 +83,26 @@ export default async function Image({ params }: { params: Promise<{ tournamentId
         style={{
           display: "flex",
           flexDirection: "column",
+          justifyContent: "center",
           gap: 8,
-          padding: "48px 56px",
+          height: 210,
+          padding: "0 56px",
           background: "#1f6f50",
         }}
       >
         <div style={{ display: "flex", fontSize: 28, color: "#cfe3d7" }}>{BRAND_TEXT}</div>
-        <div style={{ display: "flex", fontSize: 56, fontWeight: 700, color: "#ffffff" }}>
+        <div
+          style={{
+            display: "-webkit-box",
+            WebkitBoxOrient: "vertical",
+            WebkitLineClamp: 2,
+            overflow: "hidden",
+            fontSize: titleFontSize(tournamentName),
+            lineHeight: 1.25,
+            fontWeight: 700,
+            color: "#ffffff",
+          }}
+        >
           {tournamentName}
         </div>
       </div>
