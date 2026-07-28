@@ -3,7 +3,7 @@ import { badRequest } from "@/server/http/errors";
 
 const schema = z.object({
   tournamentId: z.string().trim().min(1),
-  tableId: z.uuid().nullable().optional(),
+  tableId: z.uuid().nullish(),
   roundNumber: z.int().min(1),
   ruleId: z.uuid(),
   inputs: z
