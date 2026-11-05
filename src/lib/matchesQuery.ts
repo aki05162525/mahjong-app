@@ -70,7 +70,7 @@ export function matchesQuery(supabase: SupabaseClient<Database>, tournamentId: s
   return (
     supabase
       .from("matches")
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // oxlint-disable-next-line @typescript-eslint/no-explicit-any
       .select(MATCH_SELECT as any)
       .eq("tournament_id", tournamentId)
       .order("created_at")
