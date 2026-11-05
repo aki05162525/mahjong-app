@@ -1,82 +1,56 @@
 # リアルタイム同期の設計
 
-作成日: 2026-06-02
-
----
+作成日: 2026-06-02 / 更新日: 2026-11-05
 
 ## 概要
 
-複数人が同時に使う麻雀大会スコア管理アプリ。1局終わるたびにスコアを登録し、参加者全員の画面に即座に反映する必要がある。
+対局結果の追加・削除と、プレイヤー・卓の名前変更を Supabase Realtime で受け取り、対局履歴とランキングに反映する。定期的なポーリングは行わない。
 
-ポーリングではなく Supabase Realtime のプッシュ型同期を採用した。このアプリは「更新頻度は低い（1局ごと）が、更新されたら即座に全員に反映が必要」という特性を持つ。ポーリングは変更がなくてもリクエストが発生し続けるため（`ユーザー数 × 問い合わせ頻度`）、この特性に合わない。Realtime はDB変更があったときだけプッシュされるため、即時性と無駄なリクエストの排除を両立できる。
+中心となる実装は [`useMatches.ts`](../src/hooks/useMatches.ts)。初回に大会の対局一覧と、プレイヤー・卓の名前キャッシュを取得する。その後は INSERT を原則として差分反映し、差分を組み立てられない場合や削除・名前変更の際に対局一覧を再取得する。
 
----
+## 購読するイベント
 
-## 実装の詳細（`useMatches.ts`）
+`useMatches` は次の3チャンネルを購読する。表の「大会フィルター」は `tournament_id=eq.${tournamentId}` を指す。
 
-3つの Supabase Realtime チャンネルをサブスクライブしている：
+| チャンネル                      | 対象テーブル    | イベント | フィルター     | 受信後の処理                                                 |
+| ------------------------------- | --------------- | -------- | -------------- | ------------------------------------------------------------ |
+| `matches:${tournamentId}`       | `matches`       | `INSERT` | 大会フィルター | 対局を差分追加。卓名を補完できなければ再取得                 |
+| 同上                            | `matches`       | `DELETE` | なし           | 手元の対局一覧にあるIDなら再取得                             |
+| `match_results:${tournamentId}` | `match_results` | `INSERT` | 大会フィルター | 対局に結果を差分追加。対象対局・プレイヤー名がなければ再取得 |
+| `match_names:${tournamentId}`   | `players`       | `UPDATE` | 大会フィルター | プレイヤー名キャッシュを更新し、対局一覧を再取得             |
+| 同上                            | `tables`        | `UPDATE` | 大会フィルター | 卓名キャッシュを更新し、対局一覧を再取得                     |
 
-| チャンネル | 対象テーブル | イベント | フィルター |
-|---|---|---|---|
-| `matchChannel` | `matches` | `*` | `tournament_id=eq.${tournamentId}` |
-| `resultsChannel` | `match_results` | `INSERT` | なし |
-| `namesChannel` | `players`, `tables` | `UPDATE` | `tournament_id=eq.${tournamentId}` |
+`match_results` には `tournament_id` があり、INSERT の購読を大会ごとに絞っている。`(match_id, tournament_id)` の複合外部キーで、結果と対局が同じ大会に属することを保証している。
 
-いずれのイベントでも `fetchMatches()` を呼び出し、全件を再取得して State を更新する。
+`matches` の DELETE は大会フィルターを付けず、`payload.old.id` が手元の一覧にあるかで対象を判定する。現行の REPLICA IDENTITY は主キーのみで、削除イベントの旧レコードに `tournament_id` が含まれないため、この購読には大会フィルターを使っていない。
 
----
+## INSERT の差分反映と再取得
 
-## トレードオフ
+差分反映は [`matchUpdater.ts`](../src/lib/matchUpdater.ts) が担当する。
 
-### `resultsChannel` にフィルターがない理由
+- `applyMatchInsert` は対局を追加し、作成日時順に並べる。卓IDがあればキャッシュから卓名を補い、卓IDが `null` なら卓名を空文字にする。
+- `applyResultInsert` は対象対局にプレイヤーの結果を追加する。プレイヤー名はキャッシュから補う。
+- 既存の対局ID、または同じ対局に登録済みのプレイヤーIDは二重追加しない。
+- 必要な名前がキャッシュにない場合や、結果に対応する対局が手元にない場合は `null` を返し、対局一覧の再取得に切り替える。
 
-`match_results` テーブルには `tournament_id` カラムがない。テーブル構造は `tournaments → matches（tournament_id あり）→ match_results（match_id あり）` で、`match_results` から大会を特定するには `matches` を経由する必要がある。Supabase Realtime のフィルターはそのテーブルのカラムにしか使えないため、現状は他の大会の INSERT でも再フェッチが走る。
+再取得には [`matchesQuery.ts`](../src/lib/matchesQuery.ts) を使い、対局・結果にプレイヤー名と卓名を JOIN する。通常取得でも Realtime の差分追加でも卓IDを保持し、入力画面の卓別の回戦候補に利用する。
 
-**改善案**
-- `match_results` に `tournament_id` を追加してフィルターを有効化（正規化は崩れるがトレードオフとして合理的）
-- イベントの `payload` に含まれる `match_id` で自前フィルタリング
+対局一覧を更新するたびに `buildRanking` でランキングも再計算する。1対局の登録では対局1件と結果4件の INSERT が届くが、必要なキャッシュと対局が揃っていれば、これらは追加の全件取得なしで反映できる。
 
-### 全件再取得 vs 差分更新
+## 再取得のデバウンス
 
-現在は Realtime イベントを受け取るたびに全件を再取得している。
+イベントをきっかけとする対局一覧の再取得は、[`debounce.ts`](../src/lib/debounce.ts) で100ms待って実行する。待機中に再び要求された場合はタイマーを設定し直し、短時間に続く要求をまとめる。
 
-| | 全件再取得（現在） | 差分更新（payload活用） |
-|---|---|---|
-| 実装のシンプルさ | ◎ | △ |
-| データ量が増えたときの速度 | △ | ◎ |
-| 正確性 | ◎ | △（JOIN結果が payload に含まれないため補完が必要） |
+初回の取得と名前キャッシュの取得には、このデバウンスを適用しない。また、イベントが100ms以上離れて到着すれば複数回の再取得になり得るため、「1対局につき必ず1回」とは限らない。コンポーネントの終了時や大会IDの変更時には、待機中の再取得をキャンセルし、3チャンネルを解除する。
 
-差分更新が難しい理由：`postgres_changes` の `payload.new` にはそのテーブルの1行のみが入る。`useMatches` は `tables`・`players` を JOIN して取得しているため、payload だけでは `toMatch()` の変換ができない。
+## 削除時の扱い
 
-全件再取得のままで良い条件：1大会あたりの試合数が数十局以内、同時接続が数人程度。コストは `試合数 × 同時接続人数` で増えるため、スケールが見込まれる場合は差分更新を検討する。
+対局削除の RPC は、同じトランザクションで `match_results` を先に削除し、続いて `matches` を削除する。結果の削除は CASCADE に依存していない。
 
----
+`useMatches` は結果の DELETE を購読せず、対局の DELETE を受けた際の再取得で、対局と結果が削除された状態を反映する。RPC 名は互換性のため `delete_match_and_renumber` のままだが、他の対局の回戦番号は変更しない。
 
-## 既知のパフォーマンス問題
+## 現在の制約と追加取得
 
-### 問題1（最重要）: 1試合登録で `fetchMatches` が5回呼ばれる
-
-試合を1局登録すると、DBには `matches` 1行 + `match_results` 4行（4人分）が挿入される。
-
-```
-matchChannel   → matches INSERT        → fetchMatches() 1回
-resultsChannel → match_results INSERT × 4人 → fetchMatches() 4回
-合計: 全件再取得が5回走る
-```
-
-**改善案**: デバウンスを挟み、短時間に連続するイベントをまとめて1回の `fetchMatches()` に集約する。
-
-```ts
-const debouncedFetch = useMemo(
-  () => debounce(fetchMatches, 100),
-  [tournamentId]
-);
-```
-
-### 問題2: `resultsChannel` にフィルターなし（再掲）
-
-他の大会への試合登録でも、全ての開いているページで `fetchMatches()` が走る。問題1のデバウンスを入れると、1登録あたり5回 → 1回になるため、問題2の影響もあわせて小さくなる。
-
-### 問題3: player rename で `useMatches` と `usePlayers` が重複フェッチ
-
-`namesChannel`（`useMatches` 内）と `usePlayers` のチャンネルが同じ `players` テーブルの UPDATE を購読している。player名変更時に両方が発火し、matches の全件取得と players の取得が同時に走る。影響は player rename 時のみで頻度は低いため、優先度は低い。
+- `matches` と `match_results` の UPDATE は購読していない。既存の対局や結果を直接更新する機能を追加する場合は、同期処理も対応させる必要がある。
+- 名前キャッシュは初回と名前の UPDATE 時に取得する。新規プレイヤー・卓の INSERT では更新しないため、キャッシュにない名前を含む対局は差分反映できず、JOIN付きの再取得に切り替わる。対局一覧の再取得自体は名前キャッシュを更新しない。
+- プレイヤーの名前変更では、`useMatches` が名前キャッシュと対局一覧を取得し、別途 [`usePlayers.ts`](../src/hooks/usePlayers.ts) もプレイヤー一覧を取得する。卓の名前変更でも [`useTables.ts`](../src/hooks/useTables.ts) と同様に取得が重なる。各フックが自分の表示用データを持つ現在の構成によるもので、取得の共通化は未実施。
