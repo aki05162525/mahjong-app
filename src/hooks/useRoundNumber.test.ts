@@ -36,7 +36,7 @@ function render(matches: Match[] = [], tableId?: string | null) {
     state.cursor = 0;
     state.dirty = false;
     // このテストでは上の useState モックを使い、ループ1周を1回のレンダーとして扱う。
-    // eslint-disable-next-line react-hooks/rules-of-hooks
+    // oxlint-disable-next-line react-hooks/rules-of-hooks
     const result = useRoundNumber(matches, tableId);
     if (!state.dirty) return result;
   }

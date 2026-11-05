@@ -44,10 +44,12 @@ pnpm dev
 ```bash
 pnpm dev          # 開発サーバー起動
 pnpm build        # 本番ビルド
-pnpm lint         # ESLint
+pnpm lint         # Oxlint
 pnpm test         # テスト一度実行
 pnpm test:watch   # テストウォッチ
 ```
+
+Lintの設定と互換性については [Lintの運用](docs/lint.md) を参照。
 
 ## 機能概要
 
