@@ -1,10 +1,16 @@
 import { describe, it, expect } from "vitest";
-import { getUsedPlayerIds } from "./matchFilter";
+import { getSuggestedRound, getUsedPlayerIds } from "./matchFilter";
 import type { Match } from "./types";
 
-const makeMatch = (id: string, roundNumber: number, playerIds: string[]): Match => ({
+const makeMatch = (
+  id: string,
+  roundNumber: number,
+  playerIds: string[],
+  tableId: string | null = null
+): Match => ({
   id,
   roundNumber,
+  tableId,
   tableName: "A卓",
   createdAt: new Date(),
   uma: [30, 10, -10, -30],
@@ -19,6 +25,39 @@ const makeMatch = (id: string, roundNumber: number, playerIds: string[]): Match 
     okaPoint: 0,
     totalPoint: 0,
   })),
+});
+
+describe("getSuggestedRound", () => {
+  it("対局がない場合は第1回戦を提案する", () => {
+    expect(getSuggestedRound([])).toBe(1);
+    expect(getSuggestedRound([], "table-a")).toBe(1);
+  });
+
+  it("他卓の進行に影響されず、選んだ卓の次の回戦を提案する", () => {
+    const matches = [
+      makeMatch("a1", 1, [], "table-a"),
+      makeMatch("a2", 2, [], "table-a"),
+      makeMatch("b1", 1, [], "table-b"),
+    ];
+    expect(getSuggestedRound(matches, "table-a")).toBe(3);
+    expect(getSuggestedRound(matches, "table-b")).toBe(2);
+    expect(getSuggestedRound(matches, "table-c")).toBe(1);
+  });
+
+  it("飛び番や過去回戦の後入力があっても最大回戦の次を提案する", () => {
+    const matches = [makeMatch("a5", 5, [], "table-a"), makeMatch("a2", 2, [], "table-a")];
+    expect(getSuggestedRound(matches, "table-a")).toBe(6);
+  });
+
+  it("null を指定した場合は卓なしの対局だけを対象にする", () => {
+    const matches = [makeMatch("n2", 2, []), makeMatch("a5", 5, [], "table-a")];
+    expect(getSuggestedRound(matches, null)).toBe(3);
+  });
+
+  it("単一卓モードでは過去の卓ID付き対局も含める", () => {
+    const matches = [makeMatch("n2", 2, []), makeMatch("a5", 5, [], "table-a")];
+    expect(getSuggestedRound(matches)).toBe(6);
+  });
 });
 
 describe("getUsedPlayerIds", () => {

@@ -72,7 +72,7 @@ export function useMatches(tournamentId: string): { matches: Match[]; ranking: R
     // DELETE の old record には REPLICA IDENTITY（デフォルト = 主キー）の列しか入らないため、
     // tournament_id によるサーバー側フィルタは評価されずイベントが届かない。
     // フィルタなしで購読し、自分の一覧にある id の削除だけ拾って再取得する。
-    // ローカル削除でなく再取得なのは、削除 RPC が後続対局の round_number を再採番するため。
+    // 削除 RPC が対局と結果をまとめて消した後の状態を再取得する。
     const handleMatchDelete = (payload: { old: Partial<MatchRow> }) => {
       const deletedId = payload.old.id;
       if (deletedId && matchesRef.current.some((m) => m.id === deletedId)) {
@@ -112,7 +112,7 @@ export function useMatches(tournamentId: string): { matches: Match[]; ranking: R
       )
       .subscribe();
 
-    // DELETE は購読しない。match_results は matches 削除時の CASCADE でのみ消えるため、
+    // DELETE は購読しない。削除 RPC は match_results を先に、続いて matches を消すため、
     // matches の DELETE 購読による全件再取得で既にカバーされている。
     const resultsChannel = supabase
       .channel("match_results:" + tournamentId)

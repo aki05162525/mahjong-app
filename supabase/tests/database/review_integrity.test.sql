@@ -1,6 +1,6 @@
 begin;
 
-select plan(15);
+select plan(23);
 
 insert into auth.users (id)
 values ('00000000-0000-4000-8000-000000000001');
@@ -133,23 +133,80 @@ insert into matches (id, tournament_id, table_id, round_number, uma, return_poin
 values
   ('00000000-0000-4000-8000-000000000030', 'review-test', null, 1, array[20, 10, -10, -20], 30000),
   ('00000000-0000-4000-8000-000000000031', 'review-test', null, 2, array[20, 10, -10, -20], 30000),
-  ('00000000-0000-4000-8000-000000000032', 'review-test', '00000000-0000-4000-8000-000000000020', 2, array[20, 10, -10, -20], 30000);
+  ('00000000-0000-4000-8000-000000000032', 'review-test', '00000000-0000-4000-8000-000000000020', 2, array[20, 10, -10, -20], 30000),
+  ('00000000-0000-4000-8000-000000000033', 'review-test', '00000000-0000-4000-8000-000000000020', 7, array[20, 10, -10, -20], 30000),
+  ('00000000-0000-4000-8000-000000000034', 'review-test', '00000000-0000-4000-8000-000000000020', 2, array[20, 10, -10, -20], 30000),
+  ('00000000-0000-4000-8000-000000000035', 'review-test', null, 1, array[20, 10, -10, -20], 30000);
+
+insert into players (id, tournament_id, name)
+values ('00000000-0000-4000-8000-000000000040', 'review-test', 'Player');
+
+insert into match_results (match_id, tournament_id, player_id, score, rank, base_point, uma_point, oka_point, total_point)
+values ('00000000-0000-4000-8000-000000000030', 'review-test', '00000000-0000-4000-8000-000000000040', 25000, 1, -5, 20, 20, 35);
 
 select lives_ok(
   $$ select delete_match_and_renumber('00000000-0000-4000-8000-000000000030', 'review-test') $$,
-  'deleting a match and renumbering succeeds'
+  'deleting a match with results succeeds'
 );
 
 select is(
   (select round_number from matches where id = '00000000-0000-4000-8000-000000000031'),
-  1,
-  'a later NULL-table match is renumbered'
+  2,
+  'a later NULL-table match keeps its round number'
 );
 
 select is(
   (select round_number from matches where id = '00000000-0000-4000-8000-000000000032'),
   2,
   'a match assigned to another table is not renumbered'
+);
+
+select is(
+  (select count(*)::int from matches where id = '00000000-0000-4000-8000-000000000030'),
+  0,
+  'the selected match is removed'
+);
+
+select is(
+  (select count(*)::int from match_results where match_id = '00000000-0000-4000-8000-000000000030'),
+  0,
+  'the selected match results are removed'
+);
+
+select is(
+  (select round_number from matches where id = '00000000-0000-4000-8000-000000000035'),
+  1,
+  'another NULL-table match in the same round is preserved'
+);
+
+select lives_ok(
+  $$ select delete_match_and_renumber('00000000-0000-4000-8000-000000000032', 'review-test') $$,
+  'deleting a match assigned to a table succeeds'
+);
+
+select is(
+  (select round_number from matches where id = '00000000-0000-4000-8000-000000000033'),
+  7,
+  'a later round on the same table keeps its number and gap'
+);
+
+select is(
+  (select round_number from matches where id = '00000000-0000-4000-8000-000000000034'),
+  2,
+  'another match on the same table in the same round is preserved'
+);
+
+select throws_ok(
+  $$ select delete_match_and_renumber('00000000-0000-4000-8000-000000000033', 'another-tournament') $$,
+  'P0001',
+  'match not found',
+  'the tournament scope must match'
+);
+
+select is(
+  (select round_number from matches where id = '00000000-0000-4000-8000-000000000033'),
+  7,
+  'a rejected deletion leaves the match intact'
 );
 
 select * from finish();

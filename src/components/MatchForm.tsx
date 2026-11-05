@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { useEnterAdvance } from "@/hooks/useEnterAdvance";
-import { getUsedPlayerIds } from "@/lib/matchFilter";
+import { isValidRoundNumber, useRoundNumber } from "@/hooks/useRoundNumber";
+import RoundNumberInput from "@/components/RoundNumberInput";
 import { calculateMatchResults } from "@/lib/scoring";
 import { fmtPt } from "@/lib/utils";
 import type { Player, Table, Match, Rule } from "@/lib/types";
@@ -14,7 +15,6 @@ type Props = {
   rules: Rule[];
   matches: Match[];
   matchCounts: Record<string, number>;
-  maxRound: number;
 };
 
 type PlayerSlot = {
@@ -42,13 +42,15 @@ export default function MatchForm({
   rules,
   matches,
   matchCounts,
-  maxRound,
 }: Props) {
   // 卓は複数卓のときだけ意味を持つ。2卓以上あるときだけ卓セレクタを出す。
   const multiTable = tables.length >= 2;
 
-  const [roundNumber, setRoundNumber] = useState("");
   const [tableId, setTableId] = useState("");
+  const { roundNumber, setRoundNumber, pinRound, advanceRound } = useRoundNumber(
+    matches,
+    multiTable ? tableId || null : undefined
+  );
   const [ruleId, setRuleId] = useState("");
   const [slots, setSlots] = useState<PlayerSlot[]>(newSlots);
   const [error, setError] = useState("");
@@ -76,10 +78,6 @@ export default function MatchForm({
   }, []);
 
   const selectedIds = useMemo(() => slots.map((s) => s.playerId).filter(Boolean), [slots]);
-  const usedPlayerIds = useMemo(
-    () => (roundNumber ? getUsedPlayerIds(matches, Number(roundNumber)) : new Set<string>()),
-    [matches, roundNumber]
-  );
   const autoLastScore = useMemo(() => calcLastScore(slots), [slots]);
   const lastIsAuto = autoLastScore !== "" && slots[3].score === autoLastScore;
 
@@ -104,7 +102,7 @@ export default function MatchForm({
   }, [slots, selectedRule]);
 
   const validate = (): string | null => {
-    if (!roundNumber.trim()) return "回戦番号を入力してください";
+    if (!isValidRoundNumber(roundNumber)) return "有効な回戦番号（1以上の整数）を入力してください";
     if (multiTable && !tableId) return "卓を選択してください";
     if (!effectiveRuleId) return "ルールを選択してください";
     for (let i = 0; i < 4; i++) {
@@ -152,8 +150,7 @@ export default function MatchForm({
         return;
       }
       setSlots(newSlots());
-      setRoundNumber("");
-      setTableId("");
+      advanceRound();
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch {
@@ -166,30 +163,19 @@ export default function MatchForm({
   const selectStyle = { border: "1px solid var(--hairline)", background: "var(--canvas)" };
 
   return (
-    <div className="flex flex-col gap-4">
+    <fieldset disabled={saving} onChangeCapture={pinRound} className="flex min-w-0 flex-col gap-4">
       <h2 className="text-xl font-semibold" style={{ color: "var(--body)" }}>
         対局結果入力
       </h2>
 
       <div className="flex gap-3">
-        <div className="flex flex-col gap-1 flex-1">
-          <label className="text-sm font-medium" style={{ color: "var(--muted)" }}>
-            回戦
-          </label>
-          <select
-            value={roundNumber}
-            onChange={(e) => setRoundNumber(e.target.value)}
-            className="rounded-lg px-3 py-3 text-lg w-full"
-            style={selectStyle}
-          >
-            <option value="">選択</option>
-            {Array.from({ length: maxRound + 1 }, (_, i) => maxRound + 1 - i).map((n) => (
-              <option key={n} value={n}>
-                第{n}回戦
-              </option>
-            ))}
-          </select>
-        </div>
+        <RoundNumberInput
+          value={roundNumber}
+          onChange={setRoundNumber}
+          matches={matches}
+          players={players}
+          selectedIds={selectedIds}
+        />
         {multiTable && (
           <div className="flex flex-col gap-1 flex-1">
             <label className="text-sm font-medium" style={{ color: "var(--muted)" }}>
@@ -246,14 +232,10 @@ export default function MatchForm({
             >
               <option value="">プレイヤーを選択</option>
               {players
-                .filter(
-                  (p) =>
-                    p.id === slot.playerId ||
-                    (!selectedIds.includes(p.id) && !usedPlayerIds.has(p.id))
-                )
+                .filter((p) => p.id === slot.playerId || !selectedIds.includes(p.id))
                 .map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name}（{matchCounts[p.id] ?? 0}）
+                    {p.name}（{matchCounts[p.id] ?? 0}局済み）
                   </option>
                 ))}
             </select>
@@ -321,6 +303,6 @@ export default function MatchForm({
       >
         {saving ? "保存中..." : "対局結果を保存"}
       </button>
-    </div>
+    </fieldset>
   );
 }

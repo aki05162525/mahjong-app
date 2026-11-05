@@ -31,6 +31,7 @@ export type Rule = {
 export type Match = {
   id: string;
   roundNumber: number;
+  tableId: string | null;
   tableName: string;
   createdAt: Date;
   uma: number[];

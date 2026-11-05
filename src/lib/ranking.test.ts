@@ -5,6 +5,7 @@ import type { Match } from "./types";
 const makeMatch = (id: string, results: Match["results"]): Match => ({
   id,
   roundNumber: 1,
+  tableId: null,
   tableName: "A卓",
   createdAt: new Date(),
   uma: [30, 10, -10, -30],
