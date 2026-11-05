@@ -4,27 +4,30 @@ import type { Player } from "@/lib/types";
 
 export function usePlayers(tournamentId: string): {
   players: Player[];
-  refetch: () => PromiseLike<void>;
+  refetch: () => Promise<void>;
 } {
   const [players, setPlayers] = useState<Player[]>([]);
 
-  const refetch = useCallback(
-    () =>
-      supabase
+  const refetch = useCallback(async () => {
+    try {
+      await supabase
         .from("players")
         .select("id, name, created_at")
         .eq("tournament_id", tournamentId)
         // created_at が同値のときも並び順を固定するため id をタイブレークにする。
         .order("created_at")
         .order("id")
-        .then(({ data }) => {
+        .then(({ data, error }) => {
+          if (error) throw error;
           if (data)
             setPlayers(
               data.map((p) => ({ id: p.id, name: p.name, createdAt: new Date(p.created_at) }))
             );
-        }),
-    [tournamentId]
-  );
+        });
+    } catch (error) {
+      console.error("[usePlayers] Failed to fetch players", error);
+    }
+  }, [tournamentId]);
 
   useEffect(() => {
     refetch();

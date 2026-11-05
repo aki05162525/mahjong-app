@@ -4,13 +4,13 @@ import type { Rule } from "@/lib/types";
 
 export function useRules(tournamentId: string): {
   rules: Rule[];
-  refetch: () => PromiseLike<void>;
+  refetch: () => Promise<void>;
 } {
   const [rules, setRules] = useState<Rule[]>([]);
 
-  const refetch = useCallback(
-    () =>
-      supabase
+  const refetch = useCallback(async () => {
+    try {
+      await supabase
         .from("rules")
         .select("id, name, uma, return_points, is_default, created_at")
         .eq("tournament_id", tournamentId)
@@ -18,7 +18,8 @@ export function useRules(tournamentId: string): {
         // UPDATE（デフォルト切替など）後も並び順が動かないようにする。
         .order("created_at")
         .order("id")
-        .then(({ data }) => {
+        .then(({ data, error }) => {
+          if (error) throw error;
           if (data)
             setRules(
               data.map((r) => ({
@@ -30,9 +31,11 @@ export function useRules(tournamentId: string): {
                 createdAt: new Date(r.created_at),
               }))
             );
-        }),
-    [tournamentId]
-  );
+        });
+    } catch (error) {
+      console.error("[useRules] Failed to fetch rules", error);
+    }
+  }, [tournamentId]);
 
   useEffect(() => {
     refetch();

@@ -4,27 +4,30 @@ import type { Table } from "@/lib/types";
 
 export function useTables(tournamentId: string): {
   tables: Table[];
-  refetch: () => PromiseLike<void>;
+  refetch: () => Promise<void>;
 } {
   const [tables, setTables] = useState<Table[]>([]);
 
-  const refetch = useCallback(
-    () =>
-      supabase
+  const refetch = useCallback(async () => {
+    try {
+      await supabase
         .from("tables")
         .select("id, name, created_at")
         .eq("tournament_id", tournamentId)
         // created_at が同値のときも並び順を固定するため id をタイブレークにする。
         .order("created_at")
         .order("id")
-        .then(({ data }) => {
+        .then(({ data, error }) => {
+          if (error) throw error;
           if (data)
             setTables(
               data.map((t) => ({ id: t.id, name: t.name, createdAt: new Date(t.created_at) }))
             );
-        }),
-    [tournamentId]
-  );
+        });
+    } catch (error) {
+      console.error("[useTables] Failed to fetch tables", error);
+    }
+  }, [tournamentId]);
 
   useEffect(() => {
     refetch();
