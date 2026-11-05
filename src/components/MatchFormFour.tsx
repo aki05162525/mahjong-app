@@ -5,13 +5,15 @@ import { useDragReorder } from "@/hooks/useDragReorder";
 import { useEnterAdvance } from "@/hooks/useEnterAdvance";
 import { toActualScore, autoFillSlot, previewPoints } from "@/lib/matchInput";
 import { fmtPt } from "@/lib/utils";
-import type { Player, Rule } from "@/lib/types";
+import { isValidRoundNumber, useRoundNumber } from "@/hooks/useRoundNumber";
+import RoundNumberInput from "@/components/RoundNumberInput";
+import type { Match, Player, Rule } from "@/lib/types";
 
 type Props = {
   tournamentId: string;
   players: Player[]; // ちょうど4人
   rules: Rule[];
-  maxRound: number;
+  matches: Match[];
 };
 
 const WINDS = ["東", "南", "西", "北"] as const;
@@ -28,10 +30,11 @@ const arrayMove = (arr: string[], from: number, to: number) => {
 };
 
 /**
- * ちょうど4人のときの対局入力。プレイヤー選択も回戦番号入力も不要（組み合わせは1通り、回戦は通し番号）。
+ * ちょうど4人のときの対局入力。プレイヤー選択を省き、回戦は変更可能な候補を入れる。
  * 登録4人を東南西北に並べ、ドラッグで席順を変え、点数だけ入力する。並び順は保存後も引き継ぐ。
  */
-export default function MatchFormFour({ tournamentId, players, rules, maxRound }: Props) {
+export default function MatchFormFour({ tournamentId, players, rules, matches }: Props) {
+  const { roundNumber, setRoundNumber, pinRound, advanceRound } = useRoundNumber(matches);
   const ids = players.map((p) => p.id);
   const idsKey = ids.join(",");
 
@@ -66,11 +69,13 @@ export default function MatchFormFour({ tournamentId, players, rules, maxRound }
   const scoresArr = useMemo(() => order.map((id) => scores[id] ?? ""), [order, scores]);
   const preview = useMemo(() => previewPoints(scoresArr, selectedRule), [scoresArr, selectedRule]);
   const autoTarget = useMemo(() => autoFillSlot(scoresArr), [scoresArr]);
-  const nextRound = maxRound + 1;
 
   const { listRef, styleFor, handleProps, draggingIndex } = useDragReorder<HTMLUListElement>(
     order.length,
-    (from, to) => setOrder((prev) => arrayMove(prev, from, to))
+    (from, to) => {
+      pinRound();
+      setOrder((prev) => arrayMove(prev, from, to));
+    }
   );
 
   // 確定キーで東→南→西と下の欄へ進む。自動計算枠は飛ばし、最後は保存ボタンへ
@@ -99,6 +104,9 @@ export default function MatchFormFour({ tournamentId, players, rules, maxRound }
   const handleSave = async () => {
     setError("");
     setSuccess(false);
+    if (!isValidRoundNumber(roundNumber)) {
+      return setError("有効な回戦番号（1以上の整数）を入力してください");
+    }
     for (let i = 0; i < 4; i++) {
       if (scoresArr[i] === "") return setError(`${WINDS[i]}の点数を入力してください`);
       if (isNaN(Number(scoresArr[i]))) return setError(`${WINDS[i]}の点数は数値で入力してください`);
@@ -120,7 +128,7 @@ export default function MatchFormFour({ tournamentId, players, rules, maxRound }
           tournamentId,
           tableId: null,
           ruleId: effectiveRuleId,
-          roundNumber: nextRound,
+          roundNumber: Number(roundNumber),
           inputs,
         }),
       });
@@ -131,6 +139,7 @@ export default function MatchFormFour({ tournamentId, players, rules, maxRound }
       }
       setScores({}); // 並び順(order)は引き継ぎ、点数だけクリア
       setAutoId(null);
+      advanceRound();
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch {
@@ -141,15 +150,20 @@ export default function MatchFormFour({ tournamentId, players, rules, maxRound }
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <fieldset disabled={saving} onChangeCapture={pinRound} className="flex min-w-0 flex-col gap-4">
       <div className="flex items-baseline justify-between">
         <h2 className="text-xl font-semibold" style={{ color: "var(--body)" }}>
           対局結果入力
         </h2>
-        <span className="text-base font-semibold" style={{ color: "var(--primary)" }}>
-          第{nextRound}回戦
-        </span>
       </div>
+
+      <RoundNumberInput
+        value={roundNumber}
+        onChange={setRoundNumber}
+        matches={matches}
+        players={players}
+        selectedIds={order}
+      />
 
       <div className="flex flex-col gap-1">
         <label className="text-sm font-medium" style={{ color: "var(--muted)" }}>
@@ -315,6 +329,6 @@ export default function MatchFormFour({ tournamentId, players, rules, maxRound }
       >
         {saving ? "保存中..." : "対局結果を保存"}
       </button>
-    </div>
+    </fieldset>
   );
 }

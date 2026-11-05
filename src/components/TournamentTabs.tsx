@@ -42,7 +42,6 @@ export default function TournamentTabs({
   ];
 
   const matchCounts = Object.fromEntries(ranking.map((r) => [r.playerId, r.matchCount]));
-  const maxRound = matches.reduce((max, m) => Math.max(max, m.roundNumber), 0);
 
   return (
     <>
@@ -75,7 +74,7 @@ export default function TournamentTabs({
               tournamentId={tournamentId}
               players={players}
               rules={rules}
-              maxRound={maxRound}
+              matches={matches}
             />
           ) : players.length >= 4 ? (
             <MatchForm
@@ -85,7 +84,6 @@ export default function TournamentTabs({
               rules={rules}
               matches={matches}
               matchCounts={matchCounts}
-              maxRound={maxRound}
             />
           ) : (
             <div className="flex flex-col gap-3 mt-4">

@@ -18,6 +18,7 @@ export function applyMatchInsert(
   const newMatch: Match = {
     id: payload.id,
     roundNumber: payload.round_number,
+    tableId: payload.table_id,
     tableName,
     createdAt: new Date(payload.created_at),
     uma: payload.uma,

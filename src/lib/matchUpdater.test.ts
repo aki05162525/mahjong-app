@@ -5,6 +5,7 @@ import type { Match } from "./types";
 const baseMatch: Match = {
   id: "match-1",
   roundNumber: 1,
+  tableId: "table-1",
   tableName: "East Table",
   createdAt: new Date("2024-01-01T10:00:00Z"),
   uma: [30, 10, -10, -30],
@@ -49,6 +50,7 @@ describe("applyMatchInsert", () => {
     expect(result![1]).toMatchObject({
       id: "match-2",
       roundNumber: 2,
+      tableId: "table-2",
       tableName: "West Table",
     });
   });
@@ -129,7 +131,7 @@ describe("applyMatchInsert", () => {
     const result = applyMatchInsert([baseMatch], payload, tablesCache);
 
     expect(result).not.toBeNull();
-    expect(result![1]).toMatchObject({ id: "match-2", tableName: "" });
+    expect(result![1]).toMatchObject({ id: "match-2", tableId: null, tableName: "" });
   });
 
   it("すでに同じidのマッチが存在するとき、stateをそのまま返す（冪等性）", () => {

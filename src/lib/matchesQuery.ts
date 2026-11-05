@@ -5,6 +5,7 @@ import type { Match } from "@/lib/types";
 export const MATCH_SELECT = `
   id,
   round_number,
+  table_id,
   created_at,
   uma,
   return_points,
@@ -24,6 +25,7 @@ export const MATCH_SELECT = `
 export type SupabaseMatch = {
   id: string;
   round_number: number;
+  table_id: string | null;
   created_at: string;
   uma: number[];
   return_points: number;
@@ -44,6 +46,7 @@ export function toMatch(row: SupabaseMatch): Match {
   return {
     id: row.id,
     roundNumber: row.round_number,
+    tableId: row.table_id,
     tableName: row["tables!matches_table_id_fkey"]?.name ?? "",
     createdAt: new Date(row.created_at),
     uma: row.uma,
